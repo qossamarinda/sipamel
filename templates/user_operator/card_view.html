@@ -159,7 +159,6 @@
                                     <div class="position-absolute top-0 end-0 m-2">
                                         <span class="badge {% if image.status == 'aktif' %}bg-success
                                                           {% elif image.status == 'tidak_aktif' %}bg-danger
-                                                          {% elif image.status == 'tidak_berizin' %}bg-warning
                                                           {% elif image.status == 'tidak_sesuai' %}bg-secondary
                                                           {% else %}bg-info{% endif %}">
                                             {{ image.status|replace('_', ' ')|title }}
@@ -526,7 +525,6 @@ document.addEventListener('DOMContentLoaded', function() {
         switch(status) {
             case 'aktif': return 'bg-success';
             case 'tidak_aktif': return 'bg-danger';
-            case 'tidak_berizin': return 'bg-warning';
             case 'tidak_sesuai': return 'bg-secondary';
             default: return 'bg-info';
         }

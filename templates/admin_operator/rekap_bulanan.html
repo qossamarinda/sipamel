@@ -9,6 +9,10 @@
                          {% elif current_user.operator_type == 'indosat' %}#FF6600
                          {% elif current_user.operator_type == 'xl' %}#7F3F98
                          {% else %}#0d6efd{% endif %};
+        --operator-color-dark: {% if current_user.operator_type == 'telkom' or current_user.operator_type == 'telkomsel' %}#B81C14
+                              {% elif current_user.operator_type == 'indosat' %}#E65C00
+                              {% elif current_user.operator_type == 'xl' %}#6A2F82
+                              {% else %}#0b5ed7{% endif %};
         --operator-color-light: {% if current_user.operator_type == 'telkom' or current_user.operator_type == 'telkomsel' %}rgba(225, 37, 27, 0.1)
                                {% elif current_user.operator_type == 'indosat' %}rgba(255, 102, 0, 0.1)
                                {% elif current_user.operator_type == 'xl' %}rgba(127, 63, 152, 0.1)
@@ -90,7 +94,7 @@
         background: var(--operator-color-dark);
         color: white;
         transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(var(--operator-color-rgb), 0.3);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
     }
 
     .btn-outline-custom {
@@ -104,12 +108,14 @@
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
+        text-decoration: none;
     }
 
     .btn-outline-custom:hover {
         background: var(--operator-color-light);
         color: var(--operator-color-dark);
         transform: translateY(-2px);
+        text-decoration: none;
     }
 
     .info-card {
@@ -231,6 +237,7 @@
         align-items: center;
         gap: 0.75rem;
         box-shadow: 0 8px 20px rgba(25, 135, 84, 0.3);
+        text-decoration: none;
     }
 
     .btn-export:hover {
@@ -238,10 +245,11 @@
         transform: translateY(-3px);
         box-shadow: 0 12px 30px rgba(25, 135, 84, 0.4);
         color: white;
+        text-decoration: none;
     }
 
-    .btn-export i {
-        font-size: 1.3rem;
+    .btn-export:active {
+        transform: translateY(0);
     }
 
     .badge-operator {
@@ -251,6 +259,47 @@
         border-radius: 50px;
         font-size: 0.8rem;
         font-weight: 600;
+    }
+
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .loading-spinner {
+        width: 60px;
+        height: 60px;
+        border: 5px solid rgba(255,255,255,0.2);
+        border-top: 5px solid var(--operator-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+        color: white;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+
+    .loading-text.small {
+        font-size: 0.9rem;
+        font-weight: normal;
+        opacity: 0.8;
     }
 
     @media (max-width: 768px) {
@@ -271,6 +320,11 @@
         .export-card h3 {
             font-size: 1.5rem;
         }
+        
+        .btn-export {
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+        }
     }
 </style>
 {% endblock %}
@@ -278,7 +332,7 @@
 {% block content %}
 <div class="container-fluid px-0">
     <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <h3 class="mb-0">
             <i class="bi bi-calendar-month-fill me-2" style="color: var(--operator-color);"></i>
             Rekap Bulanan - {{ operator_name }}
@@ -331,7 +385,7 @@
                         <i class="bi bi-geo-alt"></i> Kota/Kabupaten
                     </label>
                     <select class="form-select" name="kota" id="kota">
-                        <option value="all" {% if kota == 'all' %}selected{% endif %}>Semua Kota/kab</option>
+                        <option value="all" {% if kota == 'all' %}selected{% endif %}>Semua Kota/Kabupaten</option>
                         {% for k in kota_list %}
                         <option value="{{ k }}" {% if kota == k %}selected{% endif %}>{{ k|title }}</option>
                         {% endfor %}
@@ -340,10 +394,10 @@
                 
                 <!-- Tombol Aksi -->
                 <div class="col-12 d-flex justify-content-end gap-2">
-                    <button type="submit" class="btn btn-primary-custom">
+                    <button type="submit" class="btn btn-primary-custom" id="btnTampilkan">
                         <i class="bi bi-search"></i> Tampilkan
                     </button>
-                    <a href="{{ url_for('admin_operator_rekap_bulanan') }}" class="btn btn-outline-custom">
+                    <a href="{{ url_for('admin_operator_rekap_bulanan') }}" class="btn btn-outline-custom" id="btnReset">
                         <i class="bi bi-arrow-clockwise"></i> Reset
                     </a>
                 </div>
@@ -351,7 +405,7 @@
         </div>
     </div>
 
-    <!-- Info Card -->
+    <!-- Info Card - Menampilkan filter yang sedang aktif -->
     <div class="info-card">
         <div class="info-icon">
             <i class="bi bi-info-circle"></i>
@@ -371,7 +425,7 @@
                 </span>
                 {% else %}
                 <span class="info-badge">
-                    <i class="bi bi-globe"></i> Semua Kota/kab
+                    <i class="bi bi-globe"></i> Semua Kota/Kabupaten
                 </span>
                 {% endif %}
             </p>
@@ -392,8 +446,10 @@
                     dengan gambar besar per grup stasiun untuk operator {{ operator_name }}.
                 </p>
                 
-                <a href="{{ url_for('admin_operator_rekap_bulanan_word_gambar', tahun=tahun, bulan=bulan, kota=kota) }}" 
-                   class="btn-export" target="_blank">
+                <a href="#" 
+                   id="downloadLink"
+                   class="btn-export" 
+                   target="_blank">
                     <i class="bi bi-file-word-fill"></i>
                     Export Word dengan Gambar
                 </a>
@@ -415,7 +471,7 @@
                         <div class="col-md-4">
                             <div class="d-flex align-items-center justify-content-center">
                                 <i class="bi bi-check-circle-fill text-success me-2"></i>
-                                <small class="text-muted">Per Grup</small>
+                                <small class="text-muted">Per Grup Stasiun</small>
                             </div>
                         </div>
                     </div>
@@ -435,7 +491,7 @@
                             <small class="text-muted">
                                 <strong>Info:</strong> Laporan akan menampilkan data untuk 
                                 <strong>{{ bulan_nama }} {{ tahun }}</strong> 
-                                dengan filter kota <strong>{% if kota != 'all' %}{{ kota|title }}{% else %}Semua Kota/kab{% endif %}</strong>.
+                                dengan filter kota <strong>{% if kota != 'all' %}{{ kota|title }}{% else %}Semua Kota/Kabupaten{% endif %}</strong>.
                                 Hanya stasiun yang memiliki data di bulan tersebut yang akan ditampilkan.
                             </small>
                         </div>
@@ -446,20 +502,219 @@
     </div>
 </div>
 
+<!-- Loading Overlay -->
+<div id="loadingOverlay" style="display: none;" class="loading-overlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Sedang memproses laporan...</div>
+    <div class="loading-text small">Mohon tunggu, proses ini mungkin memerlukan beberapa saat</div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Auto submit saat filter berubah (opsional)
-    const tahun = document.getElementById('tahun');
-    const bulan = document.getElementById('bulan');
-    const kota = document.getElementById('kota');
+    // Elemen-elemen DOM
+    const tahunSelect = document.getElementById('tahun');
+    const bulanSelect = document.getElementById('bulan');
+    const kotaSelect = document.getElementById('kota');
+    const btnTampilkan = document.getElementById('btnTampilkan');
+    const btnReset = document.getElementById('btnReset');
+    const downloadLink = document.getElementById('downloadLink');
+    const loadingOverlay = document.getElementById('loadingOverlay');
     
-    function submitForm() {
-        const params = new URLSearchParams({
-            tahun: tahun.value,
-            bulan: bulan.value,
-            kota: kota.value
+    // Base URL untuk download (menggunakan url_for yang sudah benar)
+    const baseDownloadUrl = "{{ url_for('admin_operator_rekap_bulanan_word_gambar') }}";
+    
+    /**
+     * Fungsi untuk mengupdate URL download link berdasarkan filter saat ini
+     */
+    function updateDownloadLink() {
+        const tahun = tahunSelect.value;
+        const bulan = bulanSelect.value;
+        const kota = kotaSelect.value;
+        
+        // Buat URL dengan parameter yang benar
+        let downloadUrl = baseDownloadUrl + '?' + 
+            'tahun=' + encodeURIComponent(tahun) + 
+            '&bulan=' + encodeURIComponent(bulan) + 
+            '&kota=' + encodeURIComponent(kota);
+        
+        downloadLink.href = downloadUrl;
+        
+        // Debug di console (untuk development)
+        if (window.console) {
+            console.log('📄 Download URL updated:', downloadUrl);
+            console.log('   Filters - Tahun:', tahun, 'Bulan:', bulan, 'Kota:', kota);
+        }
+        
+        return downloadUrl;
+    }
+    
+    /**
+     * Fungsi untuk submit form filter (refresh halaman dengan parameter baru)
+     */
+    function submitFilterForm() {
+        const tahun = tahunSelect.value;
+        const bulan = bulanSelect.value;
+        const kota = kotaSelect.value;
+        
+        // Buat URL untuk redirect
+        const redirectUrl = "{{ url_for('admin_operator_rekap_bulanan') }}?" + 
+            'tahun=' + encodeURIComponent(tahun) + 
+            '&bulan=' + encodeURIComponent(bulan) + 
+            '&kota=' + encodeURIComponent(kota);
+        
+        if (window.console) {
+            console.log('🔄 Submitting filter form to:', redirectUrl);
+        }
+        
+        window.location.href = redirectUrl;
+    }
+    
+    /**
+     * Fungsi untuk reset filter ke default (tahun sekarang, bulan sekarang, semua kota)
+     */
+    function resetFilters() {
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth() + 1;
+        
+        tahunSelect.value = currentYear;
+        bulanSelect.value = currentMonth;
+        kotaSelect.value = 'all';
+        
+        if (window.console) {
+            console.log('🔄 Filters reset to default - Tahun:', currentYear, 'Bulan:', currentMonth, 'Kota: all');
+        }
+        
+        // Submit form dengan nilai default
+        submitFilterForm();
+    }
+    
+    /**
+     * Fungsi untuk menampilkan loading overlay
+     */
+    function showLoading() {
+        if (loadingOverlay) {
+            loadingOverlay.style.display = 'flex';
+            document.body.style.overflow = 'hidden'; // Mencegah scroll saat loading
+        }
+    }
+    
+    /**
+     * Fungsi untuk menyembunyikan loading overlay
+     */
+    function hideLoading() {
+        if (loadingOverlay) {
+            loadingOverlay.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+    }
+    
+    /**
+     * Fungsi untuk handle download dengan loading indicator
+     */
+    function handleDownload(e) {
+        // Update URL terlebih dahulu
+        const downloadUrl = updateDownloadLink();
+        
+        if (!downloadUrl) {
+            e.preventDefault();
+            alert('URL download tidak valid');
+            return false;
+        }
+        
+        // Tampilkan loading overlay
+        showLoading();
+        
+        // Set timeout untuk menyembunyikan loading setelah 10 detik (fallback)
+        const hideTimeout = setTimeout(() => {
+            hideLoading();
+        }, 10000);
+        
+        // Saat link diklik, loading akan tetap tampil
+        // Setelah file mulai download, biasanya halaman tidak berubah
+        // Kita perlu menyembunyikan loading setelah file terdownload
+        // Cara: tunggu sebentar lalu sembunyikan
+        setTimeout(() => {
+            clearTimeout(hideTimeout);
+            hideLoading();
+        }, 3000);
+        
+        if (window.console) {
+            console.log('⬇️ Starting download from:', downloadUrl);
+        }
+        
+        // Biarkan link berfungsi normal
+        return true;
+    }
+    
+    // ===== EVENT LISTENERS =====
+    
+    // 1. Auto-update download link saat filter berubah (opsional)
+    if (tahunSelect) {
+        tahunSelect.addEventListener('change', function() {
+            updateDownloadLink();
         });
-        window.location.href = "{{ url_for('admin_operator_rekap_bulanan') }}?" + params.toString();
+    }
+    
+    if (bulanSelect) {
+        bulanSelect.addEventListener('change', function() {
+            updateDownloadLink();
+        });
+    }
+    
+    if (kotaSelect) {
+        kotaSelect.addEventListener('change', function() {
+            updateDownloadLink();
+        });
+    }
+    
+    // 2. Handle tombol Tampilkan (refresh halaman dengan filter baru)
+    if (btnTampilkan) {
+        btnTampilkan.addEventListener('click', function(e) {
+            e.preventDefault();
+            submitFilterForm();
+        });
+    }
+    
+    // 3. Handle tombol Reset
+    if (btnReset) {
+        btnReset.addEventListener('click', function(e) {
+            e.preventDefault();
+            resetFilters();
+        });
+    }
+    
+    // 4. Handle download link dengan loading indicator
+    if (downloadLink) {
+        downloadLink.addEventListener('click', function(e) {
+            handleDownload(e);
+        });
+    }
+    
+    // 5. Inisialisasi awal - update download link saat halaman pertama kali dimuat
+    updateDownloadLink();
+    
+    // 6. Tambahkan event listener untuk form submit (jika user tekan Enter di form)
+    const filterForm = document.getElementById('filterForm');
+    if (filterForm) {
+        filterForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitFilterForm();
+        });
+    }
+    
+    // 7. Debug info di console
+    if (window.console) {
+        console.log('========================================');
+        console.log('📊 Rekap Bulanan Page Loaded');
+        console.log('   Operator:', '{{ operator_name }}');
+        console.log('   Initial filters - Tahun:', tahunSelect?.value, 'Bulan:', bulanSelect?.value, 'Kota:', kotaSelect?.value);
+        console.log('   Download URL:', downloadLink?.href || 'Not found');
+        console.log('   Kota list:', {{ kota_list|tojson }});
+        console.log('========================================');
     }
 });
 </script>

@@ -42,43 +42,29 @@ app = Flask(__name__)
 app.secret_key = 'kunci-rahasia-stasiun-monitoring-2026'
 
 # ============================================================================
-# KONFIGURASI DATABASE (SQLITE UNTUK LOKAL, POSTGRESQL UNTUK PRODUCTION)
+# KONFIGURASI DATABASE (POSTGRESQL DI VPS)
 # ============================================================================
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
-# Deteksi environment
-is_production = os.environ.get('RENDER') or os.environ.get('DATABASE_URL') is not None
+# Ambil DATABASE_URL dari environment variable
+database_url = os.environ.get('DATABASE_URL')
 
-if is_production:
-    # PRODUCTION: Pakai PostgreSQL dari environment variable
-    database_url = os.environ.get('DATABASE_URL')
-    
-    # Fix untuk Supabase (handle password dengan karakter khusus)
-    if database_url and database_url.startswith('postgresql://'):
-        # Supabase sudah memberikan URL yang benar
-        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-        print("✅ Using PostgreSQL database (Supabase)")
-    else:
-        # Fallback ke SQLite jika DATABASE_URL tidak valid
-        app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(basedir, "db_opsel.db")}'
-        print("⚠️ DATABASE_URL tidak valid, menggunakan SQLite")
-else:
-    # DEVELOPMENT: Pakai SQLite lokal
-    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(basedir, "db_opsel.db")}'
-    print("✅ Using SQLite database (local development)")
+if not database_url:
+    # Fallback jika tidak ada di environment
+    database_url = 'postgresql://flask_user:rahasia123@localhost:5432/station_monitoring'
+    print("⚠️ DATABASE_URL tidak ditemukan, menggunakan default")
 
-# Konfigurasi tambahan untuk production
-if is_production:
-    # Pool settings untuk PostgreSQL
-    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-        'pool_size': 5,
-        'pool_recycle': 300,
-        'pool_pre_ping': True,
-    }
-
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_size': 10,
+    'pool_recycle': 300,
+    'pool_pre_ping': True,
+}
+
+print(f"✅ Using PostgreSQL database: {database_url.split('@')[1] if '@' in database_url else 'localhost'}")
+
 app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
@@ -96,7 +82,6 @@ FLASH_CATEGORIES = {
     'info': 'alert-info',
     'debug': 'alert-secondary'
 }
-
 # ============================================================================
 # KONFIGURASI CLOUDINARY
 # ============================================================================
@@ -138,7 +123,6 @@ KOTA_LIST = [
 STATUS_OPTIONS = {
     'aktif': 'Aktif',
     'tidak_aktif': 'Tidak Aktif',
-    'tidak_berizin': 'Tidak Berizin',
     'tidak_sesuai': 'Tidak Sesuai Parameter'
 }
 
@@ -269,6 +253,11 @@ class Stasiun(db.Model):
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Kolom baru untuk status pemeriksaan stasiun
+    status_pemeriksaan = db.Column(db.String(20), default='belum_diperiksa', nullable=False)
+    checked_at = db.Column(db.DateTime, nullable=True)  # Waktu pemeriksaan
+    checked_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)  # Yang memeriksa
     
     stasiun_lawan_list = db.relationship('StasiunLawan', backref='stasiun', lazy=True, cascade='all, delete-orphan')
     uploads = db.relationship('UploadGambar', backref='stasiun', lazy=True, cascade='all, delete-orphan')
@@ -548,7 +537,6 @@ def get_stations_with_detailed_groups_paginated(operator, kota='all', search_sta
                     'total': 0,
                     'aktif': 0,
                     'tidak_aktif': 0,
-                    'tidak_berizin': 0,
                     'tidak_sesuai': 0,
                     'belum_ada': 0
                 }
@@ -830,7 +818,7 @@ def get_station_detail_data(station_id):
             ).all()
         
         # Hitung statistik status
-        status_summary = {'aktif': 0, 'tidak_aktif': 0, 'tidak_berizin': 0, 'tidak_sesuai': 0}
+        status_summary = {'aktif': 0, 'tidak_aktif': 0, 'tidak_sesuai': 0}
         opponent_list = []
         
         for lawan in lawans_in_group:
@@ -886,7 +874,7 @@ def get_station_detail_data(station_id):
     
     # Hitung statistik total
     stasiun_lawan = StasiunLawan.query.filter_by(stasiun_id=station_id).all()
-    status_counts = {'aktif': 0, 'tidak_aktif': 0, 'tidak_berizin': 0, 'tidak_sesuai': 0}
+    status_counts = {'aktif': 0, 'tidak_aktif': 0, 'tidak_sesuai': 0}
     
     for lawan in stasiun_lawan:
         latest_status = StatusUpdate.query\
@@ -1973,7 +1961,6 @@ def admin_master_rekap_bulanan_word():
         no = 1
         total_aktif = 0
         total_tidak_aktif = 0
-        total_tidak_berizin = 0
         total_tidak_sesuai = 0
         total_belum_ada = 0
         
@@ -2028,8 +2015,6 @@ def admin_master_rekap_bulanan_word():
                                 total_aktif += 1
                             elif latest_status.status == 'tidak_aktif':
                                 total_tidak_aktif += 1
-                            elif latest_status.status == 'tidak_berizin':
-                                total_tidak_berizin += 1
                             elif latest_status.status == 'tidak_sesuai':
                                 total_tidak_sesuai += 1
                         else:
@@ -2071,8 +2056,6 @@ def admin_master_rekap_bulanan_word():
                                 total_aktif += 1
                             elif latest_status.status == 'tidak_aktif':
                                 total_tidak_aktif += 1
-                            elif latest_status.status == 'tidak_berizin':
-                                total_tidak_berizin += 1
                             elif latest_status.status == 'tidak_sesuai':
                                 total_tidak_sesuai += 1
                         else:
@@ -2093,7 +2076,7 @@ def admin_master_rekap_bulanan_word():
         
         # Header summary
         summary_headers = summary_table.rows[0].cells
-        headers = ['Aktif', 'Tidak Aktif', 'Tidak Berizin', 'Tidak Sesuai', 'Belum Ada', 'Total']
+        headers = ['Aktif', 'Tidak Aktif', 'Tidak Sesuai', 'Belum Ada', 'Total']
         for i, header in enumerate(headers):
             summary_headers[i].text = header
             summary_headers[i].paragraphs[0].runs[0].font.bold = True
@@ -2101,8 +2084,8 @@ def admin_master_rekap_bulanan_word():
         
         # Isi summary
         summary_values = summary_table.rows[1].cells
-        total_semua = total_aktif + total_tidak_aktif + total_tidak_berizin + total_tidak_sesuai + total_belum_ada
-        values = [total_aktif, total_tidak_aktif, total_tidak_berizin, total_tidak_sesuai, total_belum_ada, total_semua]
+        total_semua = total_aktif + total_tidak_aktif + total_tidak_sesuai + total_belum_ada
+        values = [total_aktif, total_tidak_aktif, total_tidak_sesuai, total_belum_ada, total_semua]
         for i, value in enumerate(values):
             summary_values[i].text = str(value)
             summary_values[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -2291,7 +2274,6 @@ def admin_master_rekap_tahunan_word():
             no = 1
             total_aktif_bulan = 0
             total_tidak_aktif_bulan = 0
-            total_tidak_berizin_bulan = 0
             total_tidak_sesuai_bulan = 0
             total_belum_ada_bulan = 0
             
@@ -2301,7 +2283,6 @@ def admin_master_rekap_tahunan_word():
                 # Hitung status untuk bulan ini
                 aktif_count = 0
                 tidak_aktif_count = 0
-                tidak_berizin_count = 0
                 tidak_sesuai_count = 0
                 belum_ada_count = 0
                 
@@ -2318,8 +2299,6 @@ def admin_master_rekap_tahunan_word():
                             aktif_count += 1
                         elif latest_status.status == 'tidak_aktif':
                             tidak_aktif_count += 1
-                        elif latest_status.status == 'tidak_berizin':
-                            tidak_berizin_count += 1
                         elif latest_status.status == 'tidak_sesuai':
                             tidak_sesuai_count += 1
                     else:
@@ -2342,7 +2321,6 @@ def admin_master_rekap_tahunan_word():
                 status_text = f"Total: {len(opponents)} stasiun lawan\n"
                 status_text += f"Aktif: {aktif_count}\n"
                 status_text += f"Tidak Aktif: {tidak_aktif_count}\n"
-                status_text += f"Tidak Berizin: {tidak_berizin_count}\n"
                 status_text += f"Tidak Sesuai: {tidak_sesuai_count}\n"
                 status_text += f"Belum Ada: {belum_ada_count}"
                 
@@ -2353,7 +2331,6 @@ def admin_master_rekap_tahunan_word():
                 
                 total_aktif_bulan += aktif_count
                 total_tidak_aktif_bulan += tidak_aktif_count
-                total_tidak_berizin_bulan += tidak_berizin_count
                 total_tidak_sesuai_bulan += tidak_sesuai_count
                 total_belum_ada_bulan += belum_ada_count
             
@@ -2363,7 +2340,6 @@ def admin_master_rekap_tahunan_word():
             summary.add_run(f"Rekapitulasi {bulan_nama[bulan-1]} {tahun}:\n").bold = True
             summary.add_run(f"Aktif: {total_aktif_bulan} | ")
             summary.add_run(f"Tidak Aktif: {total_tidak_aktif_bulan} | ")
-            summary.add_run(f"Tidak Berizin: {total_tidak_berizin_bulan} | ")
             summary.add_run(f"Tidak Sesuai: {total_tidak_sesuai_bulan} | ")
             summary.add_run(f"Belum Ada: {total_belum_ada_bulan}")
             
@@ -2379,7 +2355,7 @@ def admin_master_rekap_tahunan_word():
         
         # Header
         header_cells = summary_table.rows[0].cells
-        headers = ['Bulan', 'Aktif', 'Tidak Aktif', 'Tidak Berizin', 'Tidak Sesuai', 'Total']
+        headers = ['Bulan', 'Aktif', 'Tidak Aktif', 'Tidak Sesuai', 'Total']
         for i, header in enumerate(headers):
             header_cells[i].text = header
             header_cells[i].paragraphs[0].runs[0].font.bold = True
@@ -2499,6 +2475,46 @@ def admin_master_rekap_tahunan_word():
         traceback.print_exc()
         return redirect(url_for('admin_master_rekap_tahunan'))
 
+@app.route('/admin-master/update-status-pemeriksaan/<int:station_id>', methods=['POST'])
+@login_required
+@admin_master_required
+def admin_master_update_status_pemeriksaan(station_id):
+    """Update status pemeriksaan stasiun untuk Admin Master"""
+    try:
+        station = Stasiun.query.get_or_404(station_id)
+        data = request.get_json()
+        status = data.get('status')
+        
+        if status not in ['sudah_diperiksa', 'belum_diperiksa']:
+            return jsonify({'success': False, 'message': 'Status tidak valid'})
+        
+        # Update status
+        station.status_pemeriksaan = status
+        
+        if status == 'sudah_diperiksa':
+            station.checked_at = datetime.utcnow()
+            station.checked_by = current_user.id
+        else:
+            station.checked_at = None
+            station.checked_by = None
+        
+        db.session.commit()
+        
+        # Ambil informasi checker untuk response
+        checker_name = current_user.username if status == 'sudah_diperiksa' else None
+        checked_at_str = station.checked_at.strftime('%d/%m/%Y') if station.checked_at else None
+        
+        return jsonify({
+            'success': True,
+            'message': f'Status pemeriksaan berhasil diupdate menjadi "{status}"',
+            'checked_at': checked_at_str,
+            'checked_by': checker_name
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)})        
+
 # ============================================================================
 # TEMPLATE FILTERS
 # ============================================================================
@@ -2515,7 +2531,6 @@ def status_badge_class_filter(status):
     classes = {
         'aktif': 'bg-success',
         'tidak_aktif': 'bg-danger',
-        'tidak_berizin': 'bg-warning',
         'tidak_sesuai': 'bg-info',
         'riwayat': 'bg-secondary'
     }
@@ -2709,7 +2724,7 @@ def logout():
 @login_required
 @admin_operator_required
 def admin_operator_rekap_bulanan():
-    """Halaman rekap bulanan untuk Admin Operator - HANYA menampilkan form filter dan tombol export"""
+    """Halaman rekap bulanan untuk Admin Operator"""
     try:
         operator = current_user.operator_type
         
@@ -2734,12 +2749,22 @@ def admin_operator_rekap_bulanan():
             .all()
         kota_list_operator = [k[0] for k in kota_list_operator if k[0]]
         
+        # Jika tidak ada kota di database, gunakan KOTA_LIST default
+        if not kota_list_operator:
+            kota_list_operator = KOTA_LIST
+            print(f"⚠️ Tidak ada kota untuk operator {operator}, menggunakan KOTA_LIST default")
+        
+        # Validasi kota yang dipilih ada di list
+        if kota != 'all' and kota not in kota_list_operator:
+            print(f"⚠️ Kota '{kota}' tidak ada di list, reset ke 'all'")
+            kota = 'all'
+        
         print(f"\n{'='*60}")
         print(f"📅 HALAMAN REKAP BULANAN - OPERATOR {operator.upper()}")
         print(f"   Tahun: {tahun}, Bulan: {bulan_nama[bulan-1]}, Kota/Kab: {kota}")
+        print(f"   Kota list: {kota_list_operator}")
         print('='*60)
         
-        # Tidak perlu query data di sini, hanya render template dengan parameter filter
         return render_template('admin_operator/rekap_bulanan.html',
                              operator=operator,
                              operator_name=operator.upper(),
@@ -2754,7 +2779,6 @@ def admin_operator_rekap_bulanan():
         import traceback
         traceback.print_exc()
         return redirect(url_for('admin_operator_dashboard'))
-
 
 @app.route('/admin-operator/rekap-tahunan')
 @login_required
@@ -2807,16 +2831,39 @@ def admin_operator_rekap_bulanan_word_gambar():
         bulan = request.args.get('bulan', datetime.now().month, type=int)
         kota = request.args.get('kota', 'all')
         
+        # DEBUG: Log semua parameter
         print(f"\n{'='*80}")
         print(f"📄 EXPORT REKAP BULANAN WORD - OPERATOR {operator.upper()}")
-        print(f"   Tahun: {tahun}, Bulan: {bulan}, Kota/Kab: {kota}")
+        print(f"   Tahun (raw): {request.args.get('tahun')}")
+        print(f"   Tahun (parsed): {tahun}")
+        print(f"   Bulan (raw): {request.args.get('bulan')}")
+        print(f"   Bulan (parsed): {bulan}")
+        print(f"   Kota (raw): {request.args.get('kota')}")
+        print(f"   Kota (parsed): {kota}")
         print('='*80)
         
         # Query stasiun dengan filter operator (otomatis)
         query = Stasiun.query.filter_by(operator=operator)
         
-        if kota != 'all':
-            query = query.filter(Stasiun.kota == kota)
+        # Terapkan filter kota jika bukan 'all'
+        if kota != 'all' and kota:
+            # Coba filter dengan exact match
+            stations_with_kota = query.filter(Stasiun.kota == kota).count()
+            print(f"   Filter kota '{kota}' -> {stations_with_kota} stasiun ditemukan")
+            
+            # Jika tidak ada, coba dengan LIKE (case insensitive)
+            if stations_with_kota == 0:
+                stations_with_kota_like = Stasiun.query.filter_by(operator=operator)\
+                    .filter(Stasiun.kota.ilike(f'%{kota}%')).count()
+                print(f"   Filter LIKE '{kota}' -> {stations_with_kota_like} stasiun ditemukan")
+                
+                if stations_with_kota_like > 0:
+                    query = query.filter(Stasiun.kota.ilike(f'%{kota}%'))
+                else:
+                    query = query.filter(Stasiun.kota == kota)
+            else:
+                query = query.filter(Stasiun.kota == kota)
+            
             print(f"✅ Filter kota/Kab: {kota}")
         
         # Ambil semua stasiun yang memenuhi filter
@@ -4186,16 +4233,27 @@ def admin_master_daftar_stasiun():
     kota = request.args.get('kota', 'all')
     search_stasiun = request.args.get('search_stasiun', '').strip()
     
+    # Debug print untuk melihat nilai filter
+    print(f"\n{'='*50}")
+    print(f"FILTER - operator: {operator}")
+    print(f"FILTER - kota: {kota}")
+    print(f"FILTER - search: {search_stasiun}")
+    print(f"{'='*50}")
+    
     query = Stasiun.query
     
     if operator != 'all':
         query = query.filter_by(operator=operator)
+        print(f"✅ Filter operator applied: {operator}")
     
-    if kota != 'all':
-        query = query.filter_by(kota=kota)
+    if kota != 'all' and kota:
+        # Pastikan filter kota menggunakan LIKE untuk mengatasi case sensitivity
+        query = query.filter(Stasiun.kota.ilike(f'%{kota}%'))
+        print(f"✅ Filter kota applied: {kota}")
     
     if search_stasiun:
         query = query.filter(Stasiun.stasiun_name.ilike(f'%{search_stasiun}%'))
+        print(f"✅ Filter search applied: {search_stasiun}")
     
     per_page = request.args.get('per_page', 10, type=int)
     if per_page not in [10, 20, 50, 100]:
@@ -4205,11 +4263,20 @@ def admin_master_daftar_stasiun():
     stations_pagination = query.order_by(Stasiun.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
     
     stations = stations_pagination.items
+    
+    print(f"📊 Total stations found: {stations_pagination.total}")
+    
+    # Ambil data tambahan untuk setiap stasiun
     for station in stations:
         station.stasiun_lawan_list = StasiunLawan.query\
             .filter_by(stasiun_id=station.id)\
             .order_by(StasiunLawan.urutan)\
             .all()
+        
+        # Ambil informasi checker untuk status pemeriksaan
+        station.checked_by_user = None
+        if station.checked_by:
+            station.checked_by_user = User.query.get(station.checked_by)
         
         for lawan in station.stasiun_lawan_list:
             lawan.latest_status = StatusUpdate.query\
@@ -4220,12 +4287,27 @@ def admin_master_daftar_stasiun():
         station.uploads = UploadGambar.query\
             .filter_by(stasiun_id=station.id)\
             .all()
+        
+        # Ambil grup untuk stasiun
+        station.grup_list = GrupStasiun.query.filter_by(stasiun_id=station.id).all()
+    
+    # ===== PENTING: Ambil daftar kota dari database, bukan dari KOTA_LIST statis =====
+    kota_list_from_db = db.session.query(Stasiun.kota).distinct().order_by(Stasiun.kota).all()
+    kota_list = [k[0] for k in kota_list_from_db if k[0]]
+    
+    # Jika tidak ada data kota di database, gunakan KOTA_LIST sebagai fallback
+    if not kota_list:
+        kota_list = KOTA_LIST
+        print("⚠️ Tidak ada kota di database, menggunakan KOTA_LIST default")
+    
+    print(f"📋 Kota list available: {kota_list}")
+    print(f"📋 Selected kota: {kota}")
     
     return render_template('admin_master/daftar_stasiun.html',
                          stations=stations,
                          pagination=stations_pagination,
                          operators=OPERATORS,
-                         kota_list=KOTA_LIST,
+                         kota_list=kota_list,  # Gunakan kota_list dari database
                          selected_operator=operator,
                          selected_kota=kota,
                          status_options=STATUS_OPTIONS)
@@ -4236,17 +4318,22 @@ def admin_master_daftar_stasiun():
 def admin_master_detail_stasiun(station_id):
     station = Stasiun.query.get_or_404(station_id)
     
-    # Ambil semua lawan
+    # ===== AMBIL INFORMASI PEMERIKSA =====
+    station.checked_by_user = None
+    if station.checked_by:
+        station.checked_by_user = User.query.get(station.checked_by)
+    
+    # ===== AMBIL SEMUA LAWAN =====
     all_lawans = StasiunLawan.query\
         .filter_by(stasiun_id=station_id)\
         .order_by(StasiunLawan.urutan)\
         .all()
     
-    # Ambil semua grup dari tabel GrupStasiun
+    # ===== AMBIL SEMUA GRUP =====
     all_groups = GrupStasiun.query.filter_by(stasiun_id=station_id).all()
     groups_dict = {g.id: g.nama_grup for g in all_groups}
     
-    # Ambil semua upload UNIK (group by public_id dan group_id)
+    # ===== AMBIL SEMUA UPLOAD UNIK =====
     uploads_query = db.session.query(
         UploadGambar.group_id,
         UploadGambar.public_id,
@@ -4260,10 +4347,10 @@ def admin_master_detail_stasiun(station_id):
         .order_by(UploadGambar.uploaded_at.desc())\
         .all()
     
-    # Kelompokkan lawan dan upload berdasarkan grup
+    # ===== KELOMPOKKAN DATA PER GRUP =====
     groups = {}
     
-    # ===== PROSES LAWAN PER GRUP =====
+    # Proses lawan per grup
     for lawan in all_lawans:
         group_key = lawan.group_id if lawan.group_id is not None else 'ungrouped'
         
@@ -4272,8 +4359,8 @@ def admin_master_detail_stasiun(station_id):
                 'group_id': lawan.group_id,
                 'nama_grup': groups_dict.get(lawan.group_id) if lawan.group_id else None,
                 'opponents': [],
-                'uploads': [],  # PASTIKAN FIELD INI ADA
-                'status_summary': {'aktif': 0, 'tidak_aktif': 0, 'tidak_berizin': 0, 'tidak_sesuai': 0}
+                'uploads': [],
+                'status_summary': {'aktif': 0, 'tidak_aktif': 0, 'tidak_sesuai': 0}
             }
         
         # Ambil status terbaru
@@ -4282,14 +4369,30 @@ def admin_master_detail_stasiun(station_id):
             .order_by(StatusUpdate.updated_at.desc())\
             .first()
         
+        # Ambil status update sebelumnya untuk riwayat (opsional)
+        status_history = StatusUpdate.query\
+            .filter_by(stasiun_lawan_id=lawan.id)\
+            .order_by(StatusUpdate.updated_at.desc())\
+            .limit(5)\
+            .all()
+        
         lawan_data = {
             'id': lawan.id,
             'nama': lawan.nama_stasiun_lawan,
             'freq_tx': lawan.freq_tx,
             'freq_rx': lawan.freq_rx,
             'latest_status': latest_status.status if latest_status else None,
+            'status_display': STATUS_OPTIONS.get(latest_status.status, 'Belum Ada') if latest_status else 'Belum Ada',
             'catatan': latest_status.catatan if latest_status else '',
-            'status_updated_at': latest_status.updated_at if latest_status else None
+            'status_updated_at': latest_status.updated_at if latest_status else None,
+            'status_updated_by': latest_status.updated_by if latest_status else None,
+            'status_history': [{
+                'status': s.status,
+                'status_display': STATUS_OPTIONS.get(s.status, s.status),
+                'catatan': s.catatan,
+                'updated_at': s.updated_at,
+                'updated_by': s.updated_by
+            } for s in status_history]
         }
         
         groups[group_key]['opponents'].append(lawan_data)
@@ -4298,7 +4401,7 @@ def admin_master_detail_stasiun(station_id):
         if latest_status and latest_status.status in groups[group_key]['status_summary']:
             groups[group_key]['status_summary'][latest_status.status] += 1
     
-    # ===== PROSES UPLOAD PER GRUP - YANG INI PENTING! =====
+    # Proses upload per grup
     for upload in all_uploads:
         group_key = upload.group_id if upload.group_id is not None else 'ungrouped'
         
@@ -4308,26 +4411,44 @@ def admin_master_detail_stasiun(station_id):
                 'nama_grup': groups_dict.get(upload.group_id) if upload.group_id else None,
                 'opponents': [],
                 'uploads': [],
-                'status_summary': {'aktif': 0, 'tidak_aktif': 0, 'tidak_berizin': 0, 'tidak_sesuai': 0}
+                'status_summary': {'aktif': 0, 'tidak_aktif': 0, 'tidak_sesuai': 0}
             }
         
         # Cek duplikasi public_id dalam grup yang sama
-        existing_public_ids = [u['public_id'] for u in groups[group_key]['uploads']]
+        existing_public_ids = [u.get('public_id') for u in groups[group_key]['uploads']]
         if upload.public_id not in existing_public_ids:
+            # Dapatkan informasi uploader
+            uploader = User.query.get(upload.uploaded_by) if upload.uploaded_by else None
+            
+            # Dapatkan thumbnail URL
+            thumbnail_url = None
+            if upload.public_id:
+                thumbnail_url, _ = cloudinary_url(
+                    upload.public_id, 
+                    width=200, 
+                    height=200, 
+                    crop="fill", 
+                    quality="auto"
+                )
+            
             upload_data = {
                 'id': upload.id,
                 'public_id': upload.public_id,
                 'cloudinary_url': upload.cloudinary_url,
+                'thumbnail_url': thumbnail_url,
                 'original_filename': upload.original_filename,
                 'uploaded_at': upload.uploaded_at,
+                'uploaded_by': uploader.username if uploader else 'System',
+                'status': upload.status,
                 'format': upload.format,
                 'width': upload.width,
                 'height': upload.height,
-                'bytes_size': upload.bytes_size
+                'bytes_size': upload.bytes_size,
+                'size_mb': round(upload.bytes_size / (1024 * 1024), 2) if upload.bytes_size else None
             }
             groups[group_key]['uploads'].append(upload_data)
     
-    # Urutkan grup: ungrouped dulu, lalu grup numeric
+    # ===== URUTKAN GRUP =====
     sorted_groups = {}
     
     # Ungrouped dulu
@@ -4346,17 +4467,67 @@ def admin_master_detail_stasiun(station_id):
     for key in sorted(numeric_groups.keys()):
         sorted_groups[str(key)] = numeric_groups[key]
     
-    # Hitung total opponents
-    total_opponents = len(all_lawans)
+    # ===== HITUNG STATISTIK TOTAL =====
+    status_counts = {'aktif': 0, 'tidak_aktif': 0, 'tidak_sesuai': 0}
+    for lawan in all_lawans:
+        latest_status = StatusUpdate.query\
+            .filter_by(stasiun_lawan_id=lawan.id)\
+            .order_by(StatusUpdate.updated_at.desc())\
+            .first()
+        if latest_status and latest_status.status in status_counts:
+            status_counts[latest_status.status] += 1
     
-    # Tambahkan station.grup_list untuk digunakan di template
+    # ===== HITUNG STATISTIK UPLOAD =====
+    total_uploads = len(all_uploads)
+    total_upload_size = sum([u.bytes_size for u in all_uploads if u.bytes_size]) if all_uploads else 0
+    total_upload_size_mb = round(total_upload_size / (1024 * 1024), 2) if total_upload_size else 0
+    
+    # ===== STATISTIK PER BULAN (untuk grafik) =====
+    uploads_by_month = {}
+    status_updates_by_month = {}
+    
+    for upload in all_uploads:
+        month_key = upload.uploaded_at.strftime('%Y-%m')
+        uploads_by_month[month_key] = uploads_by_month.get(month_key, 0) + 1
+    
+    for lawan in all_lawans:
+        status_updates = StatusUpdate.query\
+            .filter_by(stasiun_lawan_id=lawan.id)\
+            .order_by(StatusUpdate.updated_at)\
+            .all()
+        
+        for status_update in status_updates:
+            month_key = status_update.updated_at.strftime('%Y-%m')
+            if month_key not in status_updates_by_month:
+                status_updates_by_month[month_key] = {'aktif': 0, 'tidak_aktif': 0, 'tidak_sesuai': 0}
+            if status_update.status in status_updates_by_month[month_key]:
+                status_updates_by_month[month_key][status_update.status] += 1
+    
+    # ===== HITUNG TOTAL OPPONENTS DENGAN STATUS =====
+    total_opponents = len(all_lawans)
+    opponents_with_status = sum(1 for lawan in all_lawans if StatusUpdate.query.filter_by(stasiun_lawan_id=lawan.id).first())
+    opponents_without_status = total_opponents - opponents_with_status
+    
+    # ===== AMBIL UPLOAD TERBARU UNTUK PREVIEW =====
+    recent_uploads = sorted(all_uploads, key=lambda x: x.uploaded_at, reverse=True)[:5]
+    
+    # ===== TAMBAHKAN station.grup_list UNTUK TEMPLATE =====
     station.grup_list = all_groups
     
     return render_template('admin_master/detail_stasiun.html',
                          station=station,
                          groups=sorted_groups,
                          all_uploads=all_uploads,
-                         total_opponents=total_opponents)
+                         recent_uploads=recent_uploads,
+                         total_opponents=total_opponents,
+                         status_counts=status_counts,
+                         uploads_by_month=uploads_by_month,
+                         status_updates_by_month=status_updates_by_month,
+                         total_uploads=total_uploads,
+                         total_upload_size_mb=total_upload_size_mb,
+                         opponents_with_status=opponents_with_status,
+                         opponents_without_status=opponents_without_status,
+                         checked_by_user=station.checked_by_user)
 
 @app.route('/admin-master/edit-stasiun/<int:station_id>', methods=['GET', 'POST'])
 @login_required
@@ -4364,12 +4535,47 @@ def admin_master_detail_stasiun(station_id):
 def admin_master_edit_stasiun(station_id):
     station = Stasiun.query.get_or_404(station_id)
     
+    # ===== DEBUG: TAMPILKAN NILAI KOTA UNTUK MEMASTIKAN =====
+    print(f"\n{'='*60}")
+    print(f"📝 EDIT STASIUN - ID: {station_id}")
+    print(f"   Nama Stasiun: {station.stasiun_name}")
+    print(f"   Operator: {station.operator}")
+    print(f"   Kota di Database: '{station.kota}'")
+    print(f"   Tipe Data: {type(station.kota)}")
+    print(f"{'='*60}\n")
+    
+    # ===== AMBIL DAFTAR KOTA DARI DATABASE UNTUK DROPDOWN =====
+    kota_list_from_db = db.session.query(Stasiun.kota).distinct().order_by(Stasiun.kota).all()
+    kota_list = [k[0] for k in kota_list_from_db if k[0]]
+    
+    # Jika tidak ada kota di database, gunakan KOTA_LIST sebagai fallback
+    if not kota_list:
+        kota_list = KOTA_LIST
+        print(f"⚠️ Tidak ada kota di database, menggunakan KOTA_LIST default")
+    
+    # ===== PASTIKAN station.kota ADA DI DALAM kota_list =====
+    if station.kota and station.kota not in kota_list:
+        print(f"⚠️ Peringatan: Kota '{station.kota}' tidak ada di kota_list!")
+        print(f"   Menambahkan kota '{station.kota}' ke dalam dropdown")
+        kota_list.append(station.kota)
+        kota_list.sort()
+    
+    print(f"📋 Daftar kota yang tersedia: {kota_list}")
+    print(f"📍 Kota yang dipilih: '{station.kota}'")
+    print(f"{'='*60}\n")
+    
     if request.method == 'POST':
         try:
-            # Validasi input
+            # ===== VALIDASI INPUT =====
             stasiun_name = request.form.get('stasiun_name', '').strip()
             operator = request.form.get('operator', '').strip()
             kota = request.form.get('kota', '').strip()
+            
+            print(f"\n📝 POST DATA:")
+            print(f"   Nama: {stasiun_name}")
+            print(f"   Operator: {operator}")
+            print(f"   Kota: '{kota}'")
+            print(f"{'-'*40}")
             
             if not stasiun_name:
                 flash('❌ Nama stasiun harus diisi!', 'error')
@@ -4379,14 +4585,34 @@ def admin_master_edit_stasiun(station_id):
                 flash('❌ Operator harus dipilih!', 'error')
                 return redirect(url_for('admin_master_edit_stasiun', station_id=station_id))
             
+            # ===== VALIDASI KOTA - PASTIKAN TIDAK KOSONG =====
             if not kota:
                 flash('❌ Kota/Kabupaten harus dipilih!', 'error')
                 return redirect(url_for('admin_master_edit_stasiun', station_id=station_id))
             
+            # ===== NORMALISASI KOTA =====
+            kota_normalized = None
+            for k in KOTA_LIST:
+                if k.lower() == kota.lower():
+                    kota_normalized = k
+                    break
+            
+            # Coba cari yang mirip (misal: "Samarinda" vs "Kota Samarinda")
+            if not kota_normalized:
+                for k in KOTA_LIST:
+                    if kota.lower() in k.lower() or k.lower() in kota.lower():
+                        kota_normalized = k
+                        break
+            
+            if not kota_normalized:
+                # Jika tidak ditemukan, gunakan nilai asli dengan peringatan
+                kota_normalized = kota
+                flash(f'⚠️ Kota "{kota}" tidak ada dalam daftar standar, menggunakan nilai asli', 'warning')
+            
             # Catat perubahan untuk pesan
             changes = []
             
-            # 1. Update data stasiun utama
+            # ===== 1. UPDATE DATA STASIUN UTAMA =====
             if station.stasiun_name != stasiun_name:
                 changes.append(f"📝 Nama stasiun: '{station.stasiun_name}' → '{stasiun_name}'")
                 station.stasiun_name = stasiun_name
@@ -4395,30 +4621,35 @@ def admin_master_edit_stasiun(station_id):
                 changes.append(f"🔄 Operator: '{station.operator}' → '{operator}'")
                 station.operator = operator
             
-            if station.kota != kota:
-                changes.append(f"📍 Kota/Kab: '{station.kota}' → '{kota}'")
-                station.kota = kota
+            if station.kota != kota_normalized:
+                changes.append(f"📍 Kota/Kab: '{station.kota}' → '{kota_normalized}'")
+                station.kota = kota_normalized
             
-            # 2. Ambil data dari form
+            # ===== 2. AMBIL DATA DARI FORM =====
             lawan_ids = request.form.getlist('lawan_id[]')
             stasiun_lawan_list = request.form.getlist('stasiun_lawan[]')
             freq_tx_list = request.form.getlist('freq_tx[]')
             freq_rx_list = request.form.getlist('freq_rx[]')
             deleted_lawan_ids = request.form.getlist('deleted_lawan_ids[]')
             
-            # Validasi minimal 1 stasiun lawan
+            print(f"   Jumlah lawan yang ada: {len(station.stasiun_lawan_list)}")
+            print(f"   Jumlah lawan dari form: {len(stasiun_lawan_list)}")
+            print(f"   Jumlah lawan yang dihapus: {len(deleted_lawan_ids)}")
+            
+            # ===== VALIDASI MINIMAL 1 STASIUN LAWAN =====
             valid_lawan = [n for n in stasiun_lawan_list if n.strip()]
             if not valid_lawan:
                 flash('❌ Minimal harus ada 1 stasiun lawan!', 'error')
                 return redirect(url_for('admin_master_edit_stasiun', station_id=station_id))
             
-            # 3. Hapus lawan yang ditandai untuk dihapus
+            # ===== 3. HAPUS LAWAN YANG DITANDAI =====
             deleted_count = 0
             if deleted_lawan_ids:
                 for lawan_id in deleted_lawan_ids:
                     if lawan_id:
                         lawan = StasiunLawan.query.get(int(lawan_id))
                         if lawan and lawan.stasiun_id == station_id:
+                            print(f"   🗑️ Menghapus lawan: {lawan.nama_stasiun_lawan} (ID: {lawan.id})")
                             
                             # Putuskan relasi upload, jangan hapus file
                             uploads = UploadGambar.query.filter_by(stasiun_lawan_id=lawan.id).all()
@@ -4433,7 +4664,7 @@ def admin_master_edit_stasiun(station_id):
                             db.session.delete(lawan)
                             deleted_count += 1
             
-            # 4. Proses data yang ada (UPDATE) dan data baru (TAMBAH)
+            # ===== 4. PROSES DATA YANG ADA (UPDATE) DAN DATA BARU (TAMBAH) =====
             updated_count = 0
             new_count = 0
             freq_tx_updated_count = 0
@@ -4510,10 +4741,18 @@ def admin_master_edit_stasiun(station_id):
                     freq_str = f" ({', '.join(freq_info)})" if freq_info else ""
                     changes.append(f"✅ TAMBAH: '{nama_lawan}'{freq_str}")
             
-            # 5. Commit semua perubahan
+            # ===== 5. COMMIT SEMUA PERUBAHAN =====
             db.session.commit()
             
-            # 6. Tampilkan ringkasan perubahan
+            print(f"\n📊 SUMMARY:")
+            print(f"   - Nama diubah: {updated_count}")
+            print(f"   - Lawan baru: {new_count}")
+            print(f"   - Freq Tx diubah: {freq_tx_updated_count}")
+            print(f"   - Freq Rx diubah: {freq_rx_updated_count}")
+            print(f"   - Lawan dihapus: {deleted_count}")
+            print(f"{'='*60}\n")
+            
+            # ===== 6. TAMPILKAN RINGKASAN PERUBAHAN =====
             if changes:
                 flash('📋 RINCIAN PERUBAHAN:', 'info')
                 for change in changes:
@@ -4543,14 +4782,16 @@ def admin_master_edit_stasiun(station_id):
             db.session.rollback()
             error_msg = str(e)
             flash(f'❌ ERROR: {error_msg}', 'error')
-            print(f"ERROR in admin_master_edit_stasiun: {error_msg}")
+            print(f"\n❌ ERROR in admin_master_edit_stasiun: {error_msg}")
             import traceback
             traceback.print_exc()
+            return redirect(url_for('admin_master_edit_stasiun', station_id=station_id))
     
+    # ===== GET REQUEST - TAMPILKAN FORM EDIT =====
     return render_template('admin_master/edit_stasiun.html',
                          station=station,
                          operators=OPERATORS,
-                         kota_list=KOTA_LIST)
+                         kota_list=kota_list) 
 
 @app.route('/admin-master/hapus-stasiun/<int:station_id>')
 @login_required
@@ -4841,8 +5082,8 @@ def admin_operator_daftar_stasiun():
     
     query = Stasiun.query.filter_by(operator=operator)
     
-    if kota != 'all':
-        query = query.filter_by(kota=kota)
+    if kota != 'all' and kota:
+        query = query.filter(Stasiun.kota.ilike(f'%{kota}%'))
     
     if search_stasiun:
         query = query.filter(Stasiun.stasiun_name.ilike(f'%{search_stasiun}%'))
@@ -4855,11 +5096,17 @@ def admin_operator_daftar_stasiun():
     stations_pagination = query.order_by(Stasiun.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
     
     stations = stations_pagination.items
+    
     for station in stations:
         station.stasiun_lawan_list = StasiunLawan.query\
             .filter_by(stasiun_id=station.id)\
             .order_by(StasiunLawan.urutan)\
             .all()
+        
+        # ===== AMBIL INFORMASI CHECKER =====
+        station.checked_by_user = None
+        if station.checked_by:
+            station.checked_by_user = User.query.get(station.checked_by)
         
         station.grup_list = GrupStasiun.query.filter_by(stasiun_id=station.id).all()
         
@@ -4873,11 +5120,17 @@ def admin_operator_daftar_stasiun():
             .filter_by(stasiun_id=station.id)\
             .all()
     
-    kota_for_operator = db.session.query(Stasiun.kota)\
+    # Ambil daftar kota dari database untuk filter
+    kota_list_from_db = db.session.query(Stasiun.kota)\
         .filter_by(operator=operator)\
         .distinct()\
+        .order_by(Stasiun.kota)\
         .all()
-    kota_list_operator = [k[0] for k in kota_for_operator]
+    kota_list_operator = [k[0] for k in kota_list_from_db if k[0]]
+    
+    # Jika tidak ada kota, gunakan KOTA_LIST sebagai fallback
+    if not kota_list_operator:
+        kota_list_operator = KOTA_LIST
     
     return render_template('admin_operator/daftar_stasiun.html',
                          stations=stations,
@@ -4887,28 +5140,35 @@ def admin_operator_daftar_stasiun():
                          kota_list=kota_list_operator,
                          selected_kota=kota,
                          status_options=STATUS_OPTIONS)
-
+                         
 @app.route('/admin-operator/stasiun/<int:station_id>')
 @login_required
 @admin_operator_required
 def admin_operator_detail_stasiun(station_id):
+    """Detail stasiun untuk Admin Operator dengan tampilan per grup"""
     station = Stasiun.query.get_or_404(station_id)
     
+    # Validasi kepemilikan stasiun
     if station.operator != current_user.operator_type:
         flash('Stasiun ini bukan milik operator Anda!', 'error')
         return redirect(url_for('admin_operator_dashboard'))
     
-    # Ambil semua lawan
+    # ===== AMBIL INFORMASI PEMERIKSA =====
+    station.checked_by_user = None
+    if station.checked_by:
+        station.checked_by_user = User.query.get(station.checked_by)
+    
+    # ===== AMBIL SEMUA LAWAN =====
     all_lawans = StasiunLawan.query\
         .filter_by(stasiun_id=station_id)\
         .order_by(StasiunLawan.urutan)\
         .all()
     
-    # Ambil semua grup dari tabel GrupStasiun
+    # ===== AMBIL SEMUA GRUP =====
     all_groups = GrupStasiun.query.filter_by(stasiun_id=station_id).all()
     groups_dict = {g.id: g.nama_grup for g in all_groups}
     
-    # Ambil semua upload UNIK (group by public_id dan group_id)
+    # ===== AMBIL SEMUA UPLOAD UNIK (group by public_id) =====
     uploads_query = db.session.query(
         UploadGambar.group_id,
         UploadGambar.public_id,
@@ -4922,7 +5182,7 @@ def admin_operator_detail_stasiun(station_id):
         .order_by(UploadGambar.uploaded_at.desc())\
         .all()
     
-    # Kelompokkan lawan dan upload berdasarkan grup
+    # ===== KELOMPOKKAN DATA PER GRUP =====
     groups = {}
     
     # ===== PROSES LAWAN PER GRUP =====
@@ -4934,8 +5194,12 @@ def admin_operator_detail_stasiun(station_id):
                 'group_id': lawan.group_id,
                 'nama_grup': groups_dict.get(lawan.group_id) if lawan.group_id else None,
                 'opponents': [],
-                'uploads': [],  # PASTIKAN FIELD INI ADA
-                'status_summary': {'aktif': 0, 'tidak_aktif': 0, 'tidak_berizin': 0, 'tidak_sesuai': 0}
+                'uploads': [],
+                'status_summary': {
+                    'aktif': 0,
+                    'tidak_aktif': 0,
+                    'tidak_sesuai': 0
+                }
             }
         
         # Ambil status terbaru
@@ -4944,23 +5208,45 @@ def admin_operator_detail_stasiun(station_id):
             .order_by(StatusUpdate.updated_at.desc())\
             .first()
         
+        # Ambil riwayat status (5 terakhir)
+        status_history = StatusUpdate.query\
+            .filter_by(stasiun_lawan_id=lawan.id)\
+            .order_by(StatusUpdate.updated_at.desc())\
+            .limit(5)\
+            .all()
+        
+        # Ambil informasi updater
+        updater_info = None
+        if latest_status and latest_status.updated_by:
+            updater = User.query.get(latest_status.updated_by)
+            updater_info = updater.username if updater else None
+        
         lawan_data = {
             'id': lawan.id,
             'nama': lawan.nama_stasiun_lawan,
             'freq_tx': lawan.freq_tx,
             'freq_rx': lawan.freq_rx,
             'latest_status': latest_status.status if latest_status else None,
+            'status_display': STATUS_OPTIONS.get(latest_status.status, 'Belum Ada') if latest_status else 'Belum Ada',
             'catatan': latest_status.catatan if latest_status else '',
-            'status_updated_at': latest_status.updated_at if latest_status else None
+            'status_updated_at': latest_status.updated_at if latest_status else None,
+            'status_updated_by': updater_info,
+            'status_history': [{
+                'status': s.status,
+                'status_display': STATUS_OPTIONS.get(s.status, s.status),
+                'catatan': s.catatan,
+                'updated_at': s.updated_at,
+                'updated_by': User.query.get(s.updated_by).username if s.updated_by else None
+            } for s in status_history]
         }
         
         groups[group_key]['opponents'].append(lawan_data)
         
-        # Hitung statistik
+        # Hitung statistik status per grup
         if latest_status and latest_status.status in groups[group_key]['status_summary']:
             groups[group_key]['status_summary'][latest_status.status] += 1
     
-    # ===== PROSES UPLOAD PER GRUP - INI PENTING! =====
+    # ===== PROSES UPLOAD PER GRUP =====
     for upload in all_uploads:
         group_key = upload.group_id if upload.group_id is not None else 'ungrouped'
         
@@ -4970,26 +5256,49 @@ def admin_operator_detail_stasiun(station_id):
                 'nama_grup': groups_dict.get(upload.group_id) if upload.group_id else None,
                 'opponents': [],
                 'uploads': [],
-                'status_summary': {'aktif': 0, 'tidak_aktif': 0, 'tidak_berizin': 0, 'tidak_sesuai': 0}
+                'status_summary': {
+                    'aktif': 0,
+                    'tidak_aktif': 0,
+                    'tidak_sesuai': 0
+                }
             }
         
         # Cek duplikasi public_id dalam grup yang sama
-        existing_public_ids = [u['public_id'] for u in groups[group_key]['uploads']]
+        existing_public_ids = [u.get('public_id') for u in groups[group_key]['uploads']]
         if upload.public_id not in existing_public_ids:
+            # Dapatkan informasi uploader
+            uploader = User.query.get(upload.uploaded_by) if upload.uploaded_by else None
+            
+            # Dapatkan thumbnail URL
+            thumbnail_url = None
+            if upload.public_id:
+                thumbnail_url, _ = cloudinary_url(
+                    upload.public_id, 
+                    width=200, 
+                    height=200, 
+                    crop="fill", 
+                    quality="auto"
+                )
+            
             upload_data = {
                 'id': upload.id,
                 'public_id': upload.public_id,
                 'cloudinary_url': upload.cloudinary_url,
+                'thumbnail_url': thumbnail_url,
                 'original_filename': upload.original_filename,
                 'uploaded_at': upload.uploaded_at,
+                'uploaded_by': uploader.username if uploader else 'System',
+                'uploaded_by_id': upload.uploaded_by,
+                'status': upload.status,
                 'format': upload.format,
                 'width': upload.width,
                 'height': upload.height,
-                'bytes_size': upload.bytes_size
+                'bytes_size': upload.bytes_size,
+                'size_mb': round(upload.bytes_size / (1024 * 1024), 2) if upload.bytes_size else None
             }
             groups[group_key]['uploads'].append(upload_data)
     
-    # Urutkan grup: ungrouped dulu, lalu grup numeric
+    # ===== URUTKAN GRUP =====
     sorted_groups = {}
     
     # Ungrouped dulu
@@ -5008,14 +5317,128 @@ def admin_operator_detail_stasiun(station_id):
     for key in sorted(numeric_groups.keys()):
         sorted_groups[str(key)] = numeric_groups[key]
     
-    # Tambahkan station.grup_list untuk digunakan di template
+    # ===== HITUNG STATISTIK TOTAL =====
+    status_counts = {'aktif': 0, 'tidak_aktif': 0, 'tidak_sesuai': 0}
+    for lawan in all_lawans:
+        latest_status = StatusUpdate.query\
+            .filter_by(stasiun_lawan_id=lawan.id)\
+            .order_by(StatusUpdate.updated_at.desc())\
+            .first()
+        if latest_status and latest_status.status in status_counts:
+            status_counts[latest_status.status] += 1
+    
+    # ===== HITUNG STATISTIK UPLOAD =====
+    total_uploads = len(all_uploads)
+    total_upload_size = sum([u.bytes_size for u in all_uploads if u.bytes_size]) if all_uploads else 0
+    total_upload_size_mb = round(total_upload_size / (1024 * 1024), 2) if total_upload_size else 0
+    
+    # ===== STATISTIK PER BULAN (untuk grafik) =====
+    uploads_by_month = {}
+    status_updates_by_month = {}
+    
+    for upload in all_uploads:
+        month_key = upload.uploaded_at.strftime('%Y-%m')
+        uploads_by_month[month_key] = uploads_by_month.get(month_key, 0) + 1
+    
+    for lawan in all_lawans:
+        status_updates = StatusUpdate.query\
+            .filter_by(stasiun_lawan_id=lawan.id)\
+            .order_by(StatusUpdate.updated_at)\
+            .all()
+        
+        for status_update in status_updates:
+            month_key = status_update.updated_at.strftime('%Y-%m')
+            if month_key not in status_updates_by_month:
+                status_updates_by_month[month_key] = {
+                    'aktif': 0,
+                    'tidak_aktif': 0,
+                    'tidak_sesuai': 0
+                }
+            if status_update.status in status_updates_by_month[month_key]:
+                status_updates_by_month[month_key][status_update.status] += 1
+    
+    # ===== HITUNG TOTAL OPPONENTS DENGAN STATUS =====
+    total_opponents = len(all_lawans)
+    opponents_with_status = sum(1 for lawan in all_lawans if StatusUpdate.query.filter_by(stasiun_lawan_id=lawan.id).first())
+    opponents_without_status = total_opponents - opponents_with_status
+    
+    # ===== AMBIL UPLOAD TERBARU UNTUK PREVIEW =====
+    recent_uploads = sorted(all_uploads, key=lambda x: x.uploaded_at, reverse=True)[:5]
+    
+    # ===== TAMBAHKAN station.grup_list UNTUK TEMPLATE =====
     station.grup_list = all_groups
+    
+    # ===== HITUNG STATISTIK GRUP =====
+    total_groups = len(sorted_groups)
+    groups_with_uploads = sum(1 for g in sorted_groups.values() if g['uploads'])
+    groups_without_uploads = total_groups - groups_with_uploads
     
     return render_template('admin_operator/detail_stasiun.html',
                          station=station,
                          groups=sorted_groups,
                          all_uploads=all_uploads,
-                         total_opponents=len(all_lawans))
+                         recent_uploads=recent_uploads,
+                         total_opponents=total_opponents,
+                         status_counts=status_counts,
+                         uploads_by_month=uploads_by_month,
+                         status_updates_by_month=status_updates_by_month,
+                         total_uploads=total_uploads,
+                         total_upload_size_mb=total_upload_size_mb,
+                         opponents_with_status=opponents_with_status,
+                         opponents_without_status=opponents_without_status,
+                         checked_by_user=station.checked_by_user,
+                         total_groups=total_groups,
+                         groups_with_uploads=groups_with_uploads,
+                         groups_without_uploads=groups_without_uploads)
+
+@app.route('/admin-operator/update-status-pemeriksaan/<int:station_id>', methods=['POST'])
+@login_required
+@admin_operator_required
+def admin_operator_update_status_pemeriksaan(station_id):
+    """Update status pemeriksaan stasiun untuk Admin Operator"""
+    try:
+        station = Stasiun.query.get_or_404(station_id)
+        
+        # Validasi kepemilikan
+        if station.operator != current_user.operator_type:
+            return jsonify({'success': False, 'message': 'Stasiun ini bukan milik operator Anda!'})
+        
+        data = request.get_json()
+        status = data.get('status')
+        
+        if status not in ['sudah_diperiksa', 'belum_diperiksa']:
+            return jsonify({'success': False, 'message': 'Status tidak valid'})
+        
+        # Update status
+        old_status = station.status_pemeriksaan
+        station.status_pemeriksaan = status
+        
+        if status == 'sudah_diperiksa':
+            station.checked_at = datetime.utcnow()
+            station.checked_by = current_user.id
+            print(f"✅ Status diubah: {old_status} → {status} oleh {current_user.username}")
+        else:
+            station.checked_at = None
+            station.checked_by = None
+            print(f"✅ Status diubah: {old_status} → {status} (reset)")
+        
+        db.session.commit()
+        
+        # Ambil informasi checker untuk response
+        checker_name = current_user.username if status == 'sudah_diperiksa' else None
+        checked_at_str = station.checked_at.strftime('%d/%m/%Y') if station.checked_at else None
+        
+        return jsonify({
+            'success': True,
+            'message': f'Status pemeriksaan berhasil diupdate menjadi "{status}"',
+            'checked_at': checked_at_str,
+            'checked_by': checker_name
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ ERROR: {str(e)}")
+        return jsonify({'success': False, 'message': str(e)})                        
 
 @app.route('/admin-operator/edit-stasiun/<int:station_id>', methods=['GET', 'POST'])
 @login_required
@@ -5027,52 +5450,115 @@ def admin_operator_edit_stasiun(station_id):
         flash('❌ Akses ditolak! Stasiun ini bukan milik operator Anda.', 'error')
         return redirect(url_for('admin_operator_dashboard'))
     
+    # ===== DEBUG: TAMPILKAN NILAI KOTA =====
+    print(f"\n{'='*60}")
+    print(f"📝 EDIT STASIUN (ADMIN OPERATOR) - ID: {station_id}")
+    print(f"   Nama Stasiun: {station.stasiun_name}")
+    print(f"   Operator: {station.operator}")
+    print(f"   Kota di Database: '{station.kota}'")
+    print(f"   Tipe Data: {type(station.kota)}")
+    print(f"{'='*60}\n")
+    
+    # ===== AMBIL DAFTAR KOTA DARI DATABASE UNTUK OPERATOR INI =====
+    kota_list_from_db = db.session.query(Stasiun.kota)\
+        .filter_by(operator=station.operator)\
+        .distinct()\
+        .order_by(Stasiun.kota)\
+        .all()
+    kota_list = [k[0] for k in kota_list_from_db if k[0]]
+    
+    # Jika tidak ada kota di database, gunakan KOTA_LIST sebagai fallback
+    if not kota_list:
+        kota_list = KOTA_LIST
+        print(f"⚠️ Tidak ada kota untuk operator {station.operator}, menggunakan KOTA_LIST default")
+    
+    # ===== PASTIKAN station.kota ADA DI DALAM kota_list =====
+    if station.kota and station.kota not in kota_list:
+        print(f"⚠️ Peringatan: Kota '{station.kota}' tidak ada di kota_list!")
+        print(f"   Menambahkan kota '{station.kota}' ke dalam dropdown")
+        kota_list.append(station.kota)
+        kota_list.sort()
+    
+    print(f"📋 Daftar kota yang tersedia: {kota_list}")
+    print(f"📍 Kota yang dipilih: '{station.kota}'")
+    print(f"{'='*60}\n")
+    
     if request.method == 'POST':
         try:
-            # Validasi input
+            # ===== VALIDASI INPUT =====
             stasiun_name = request.form.get('stasiun_name', '').strip()
             kota = request.form.get('kota', '').strip()
+            
+            print(f"\n📝 POST DATA:")
+            print(f"   Nama: {stasiun_name}")
+            print(f"   Kota: '{kota}'")
+            print(f"{'-'*40}")
             
             if not stasiun_name:
                 flash('❌ Nama stasiun harus diisi!', 'error')
                 return redirect(url_for('admin_operator_edit_stasiun', station_id=station_id))
             
+            # ===== VALIDASI KOTA - PASTIKAN TIDAK KOSONG =====
             if not kota:
                 flash('❌ Kota/Kabupaten harus dipilih!', 'error')
                 return redirect(url_for('admin_operator_edit_stasiun', station_id=station_id))
             
+            # ===== NORMALISASI KOTA =====
+            kota_normalized = None
+            for k in KOTA_LIST:
+                if k.lower() == kota.lower():
+                    kota_normalized = k
+                    break
+            
+            # Coba cari yang mirip
+            if not kota_normalized:
+                for k in KOTA_LIST:
+                    if kota.lower() in k.lower() or k.lower() in kota.lower():
+                        kota_normalized = k
+                        break
+            
+            if not kota_normalized:
+                # Jika tidak ditemukan, gunakan nilai asli dengan peringatan
+                kota_normalized = kota
+                flash(f'⚠️ Kota "{kota}" tidak ada dalam daftar standar, menggunakan nilai asli', 'warning')
+            
             # Catat perubahan untuk pesan
             changes = []
             
-            # 1. Update data stasiun utama
+            # ===== 1. UPDATE DATA STASIUN UTAMA =====
             if station.stasiun_name != stasiun_name:
                 changes.append(f"📝 Nama stasiun: '{station.stasiun_name}' → '{stasiun_name}'")
                 station.stasiun_name = stasiun_name
             
-            if station.kota != kota:
-                changes.append(f"📍 Kota/Kab: '{station.kota}' → '{kota}'")
-                station.kota = kota
+            if station.kota != kota_normalized:
+                changes.append(f"📍 Kota/Kab: '{station.kota}' → '{kota_normalized}'")
+                station.kota = kota_normalized
             
-            # 2. Ambil data dari form
+            # ===== 2. AMBIL DATA DARI FORM =====
             lawan_ids = request.form.getlist('lawan_id[]')
             stasiun_lawan_list = request.form.getlist('stasiun_lawan[]')
             freq_tx_list = request.form.getlist('freq_tx[]')
             freq_rx_list = request.form.getlist('freq_rx[]')
             deleted_lawan_ids = request.form.getlist('deleted_lawan_ids[]')
             
-            # Validasi minimal 1 stasiun lawan
+            print(f"   Jumlah lawan yang ada: {len(station.stasiun_lawan_list)}")
+            print(f"   Jumlah lawan dari form: {len(stasiun_lawan_list)}")
+            print(f"   Jumlah lawan yang dihapus: {len(deleted_lawan_ids)}")
+            
+            # ===== VALIDASI MINIMAL 1 STASIUN LAWAN =====
             valid_lawan = [n for n in stasiun_lawan_list if n.strip()]
             if not valid_lawan:
                 flash('❌ Minimal harus ada 1 stasiun lawan!', 'error')
                 return redirect(url_for('admin_operator_edit_stasiun', station_id=station_id))
             
-            # 3. Hapus lawan yang ditandai untuk dihapus
+            # ===== 3. HAPUS LAWAN YANG DITANDAI =====
             deleted_count = 0
             if deleted_lawan_ids:
                 for lawan_id in deleted_lawan_ids:
                     if lawan_id:
                         lawan = StasiunLawan.query.get(int(lawan_id))
                         if lawan and lawan.stasiun_id == station_id:
+                            print(f"   🗑️ Menghapus lawan: {lawan.nama_stasiun_lawan} (ID: {lawan.id})")
                             
                             # Putuskan relasi upload, jangan hapus file
                             uploads = UploadGambar.query.filter_by(stasiun_lawan_id=lawan.id).all()
@@ -5087,7 +5573,7 @@ def admin_operator_edit_stasiun(station_id):
                             db.session.delete(lawan)
                             deleted_count += 1
             
-            # 4. Proses data yang ada (UPDATE) dan data baru (TAMBAH)
+            # ===== 4. PROSES DATA YANG ADA (UPDATE) DAN DATA BARU (TAMBAH) =====
             updated_count = 0
             new_count = 0
             freq_tx_updated_count = 0
@@ -5164,10 +5650,18 @@ def admin_operator_edit_stasiun(station_id):
                     freq_str = f" ({', '.join(freq_info)})" if freq_info else ""
                     changes.append(f"✅ TAMBAH: '{nama_lawan}'{freq_str}")
             
-            # 5. Commit semua perubahan
+            # ===== 5. COMMIT SEMUA PERUBAHAN =====
             db.session.commit()
             
-            # 6. Tampilkan ringkasan perubahan
+            print(f"\n📊 SUMMARY:")
+            print(f"   - Nama diubah: {updated_count}")
+            print(f"   - Lawan baru: {new_count}")
+            print(f"   - Freq Tx diubah: {freq_tx_updated_count}")
+            print(f"   - Freq Rx diubah: {freq_rx_updated_count}")
+            print(f"   - Lawan dihapus: {deleted_count}")
+            print(f"{'='*60}\n")
+            
+            # ===== 6. TAMPILKAN RINGKASAN PERUBAHAN =====
             if changes:
                 flash('📋 RINCIAN PERUBAHAN:', 'info')
                 for change in changes:
@@ -5197,13 +5691,15 @@ def admin_operator_edit_stasiun(station_id):
             db.session.rollback()
             error_msg = str(e)
             flash(f'❌ ERROR: {error_msg}', 'error')
-            print(f"ERROR in admin_operator_edit_stasiun: {error_msg}")
+            print(f"\n❌ ERROR in admin_operator_edit_stasiun: {error_msg}")
             import traceback
             traceback.print_exc()
+            return redirect(url_for('admin_operator_edit_stasiun', station_id=station_id))
     
+    # ===== GET REQUEST - TAMPILKAN FORM EDIT =====
     return render_template('admin_operator/edit_stasiun.html',
                          station=station,
-                         kota_list=KOTA_LIST)
+                         kota_list=kota_list)  
 
 @app.route('/admin-operator/hapus-stasiun/<int:station_id>')
 @login_required
@@ -5450,12 +5946,21 @@ def admin_master_rekap_bulanan():
         bulan_nama = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
                      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
         
+        # ===== TAMBAHKAN: Validasi kota yang dipilih ada di KOTA_LIST =====
+        if kota != 'all' and kota not in KOTA_LIST:
+            print(f"⚠️ Kota '{kota}' tidak ada di KOTA_LIST, reset ke 'all'")
+            kota = 'all'
+        
+        # ===== TAMBAHKAN: Validasi operator yang dipilih =====
+        if operator != 'all' and operator not in OPERATORS:
+            print(f"⚠️ Operator '{operator}' tidak valid, reset ke 'all'")
+            operator = 'all'
+        
         print(f"\n{'='*60}")
         print(f"📅 HALAMAN REKAP BULANAN")
         print(f"   Tahun: {tahun}, Bulan: {bulan_nama[bulan-1]}, Operator: {operator}, Kota/Kab: {kota}")
         print('='*60)
         
-        # Tidak perlu query data di sini, hanya render template dengan parameter filter
         return render_template('admin_master/rekap_bulanan.html',
                              tahun=tahun,
                              bulan=bulan,
@@ -5463,7 +5968,7 @@ def admin_master_rekap_bulanan():
                              operator=operator,
                              kota=kota,
                              operators=OPERATORS,
-                             kota_list=KOTA_LIST)
+                             kota_list=KOTA_LIST)  # Gunakan KOTA_LIST lengkap
     except Exception as e:
         flash(f'Error: {str(e)}', 'error')
         print(f"❌ ERROR in rekap bulanan: {str(e)}")
@@ -5477,31 +5982,74 @@ def admin_master_rekap_bulanan():
 def admin_master_rekap_bulanan_word_gambar():
     """Export rekap bulanan ke Word dengan gambar besar per grup"""
     try:
+        # ===== 1. AMBIL DAN VALIDASI PARAMETER =====
         tahun = request.args.get('tahun', datetime.now().year, type=int)
         bulan = request.args.get('bulan', datetime.now().month, type=int)
         operator = request.args.get('operator', 'all')
         kota = request.args.get('kota', 'all')
         
+        # Validasi bulan (1-12)
+        if bulan < 1 or bulan > 12:
+            bulan = datetime.now().month
+            print(f"⚠️ Bulan tidak valid, menggunakan default: {bulan}")
+        
+        # Validasi operator
+        if operator != 'all' and operator not in OPERATORS:
+            print(f"⚠️ Operator '{operator}' tidak valid, reset ke 'all'")
+            operator = 'all'
+        
+        # Validasi kota
+        if kota != 'all' and kota not in KOTA_LIST:
+            print(f"⚠️ Kota '{kota}' tidak ada di KOTA_LIST, reset ke 'all'")
+            kota = 'all'
+        
+        # Daftar bulan untuk nama file
+        bulan_nama = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
+        
         print(f"\n{'='*80}")
-        print(f"📄 EXPORT REKAP BULANAN WORD - Tahun: {tahun}, Bulan: {bulan}, Operator: {operator}, Kota/Kab: {kota}")
+        print(f"📄 EXPORT REKAP BULANAN WORD")
+        print(f"   Tahun: {tahun}")
+        print(f"   Bulan: {bulan_nama[bulan-1]}")
+        print(f"   Operator: {operator if operator != 'all' else 'SEMUA'}")
+        print(f"   Kota/Kab: {kota if kota != 'all' else 'SEMUA'}")
         print('='*80)
         
-        # Query stasiun dengan filter
+        # ===== 2. QUERY STASIUN DENGAN FILTER =====
         query = Stasiun.query
         
+        # Filter operator
         if operator != 'all':
             query = query.filter(Stasiun.operator == operator)
             print(f"✅ Filter operator: {operator}")
         
-        if kota != 'all':
-            query = query.filter(Stasiun.kota == kota)
-            print(f"✅ Filter kota: {kota}")
+        # Filter kota dengan penanganan yang lebih baik
+        if kota != 'all' and kota:
+            # Coba exact match
+            exact_count = query.filter(Stasiun.kota == kota).count()
+            print(f"   Exact match '{kota}': {exact_count} stasiun")
+            
+            if exact_count > 0:
+                query = query.filter(Stasiun.kota == kota)
+                print(f"✅ Filter kota (exact): {kota}")
+            else:
+                # Coba case-insensitive LIKE
+                like_count = query.filter(Stasiun.kota.ilike(f'%{kota}%')).count()
+                print(f"   LIKE match '%{kota}%': {like_count} stasiun")
+                
+                if like_count > 0:
+                    query = query.filter(Stasiun.kota.ilike(f'%{kota}%'))
+                    print(f"✅ Filter kota (LIKE): {kota}")
+                else:
+                    # Jika tidak ada yang cocok, gunakan exact match (akan kosong)
+                    query = query.filter(Stasiun.kota == kota)
+                    print(f"⚠️ Tidak ada stasiun dengan kota '{kota}', filter akan kosong")
         
         # Ambil semua stasiun yang memenuhi filter
         all_stations = query.order_by(Stasiun.operator, Stasiun.kota, Stasiun.stasiun_name).all()
-        print(f"📊 Total stasiun: {len(all_stations)}")
+        print(f"📊 Total stasiun setelah filter: {len(all_stations)}")
         
-        # Filter stasiun yang memiliki data di bulan ini
+        # ===== 3. FILTER STASIUN YANG MEMILIKI DATA DI BULAN INI =====
         stations_with_data = []
         for station in all_stations:
             # Cek apakah stasiun ini punya status update di bulan ini
@@ -5512,16 +6060,29 @@ def admin_master_rekap_bulanan_word_gambar():
                 .filter(extract('month', StatusUpdate.updated_at) == bulan)\
                 .first()
             
-            if has_data:
+            # Cek apakah ada upload di bulan ini
+            has_upload = UploadGambar.query\
+                .filter_by(stasiun_id=station.id)\
+                .filter(extract('year', UploadGambar.uploaded_at) == tahun)\
+                .filter(extract('month', UploadGambar.uploaded_at) == bulan)\
+                .first()
+            
+            if has_data or has_upload:
                 stations_with_data.append(station)
         
-        print(f"📊 Stasiun dengan data di bulan {bulan}: {len(stations_with_data)}")
+        print(f"📊 Stasiun dengan data di bulan {bulan_nama[bulan-1]}: {len(stations_with_data)}")
         
         if not stations_with_data:
-            flash(f'Tidak ada data untuk periode yang dipilih', 'warning')
+            # Buat pesan error yang informatif
+            error_msg = f"Tidak ada data untuk periode yang dipilih: {bulan_nama[bulan-1]} {tahun}"
+            if operator != 'all':
+                error_msg += f" (Operator: {operator.upper()})"
+            if kota != 'all':
+                error_msg += f" (Kota: {kota})"
+            flash(error_msg, 'warning')
             return redirect(url_for('admin_master_rekap_bulanan', tahun=tahun, bulan=bulan, operator=operator, kota=kota))
         
-        # ===== BUAT DOKUMEN WORD =====
+        # ===== 4. BUAT DOKUMEN WORD =====
         from docx import Document
         from docx.shared import Inches, Pt, RGBColor, Cm
         from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -5535,11 +6096,9 @@ def admin_master_rekap_bulanan_word_gambar():
         # ===== HALAMAN 1: LANDSCAPE UNTUK RINGKASAN =====
         # Ubah orientasi halaman pertama menjadi landscape
         section = doc.sections[0]
-        # Simpan ukuran asli untuk referensi
         original_width = section.page_width
         original_height = section.page_height
         
-        # Ubah ke landscape (tukar width dan height)
         section.orientation = WD_ORIENT.LANDSCAPE
         section.page_width = original_height
         section.page_height = original_width
@@ -5556,9 +6115,6 @@ def admin_master_rekap_bulanan_word_gambar():
         title.runs[0].font.color.rgb = RGBColor(0, 51, 102)
         
         doc.add_paragraph('\n' * 2)
-        
-        bulan_nama = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-                     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
         
         periode = doc.add_heading(f'{bulan_nama[bulan-1]} {tahun}', level=1)
         periode.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -5590,6 +6146,7 @@ def admin_master_rekap_bulanan_word_gambar():
         # Kumpulkan data untuk tabel
         all_rows = []
         row_counter = 0
+        status_summary = {'aktif': 0, 'tidak_aktif': 0, 'tidak_sesuai': 0, 'belum_ada': 0}
         
         for station in stations_with_data:
             opponents = StasiunLawan.query.filter_by(stasiun_id=station.id).order_by(StasiunLawan.urutan).all()
@@ -5612,38 +6169,54 @@ def admin_master_rekap_bulanan_word_gambar():
                         'lawan': opp.nama_stasiun_lawan,
                         'freq_tx': opp.freq_tx if opp.freq_tx else '-',
                         'freq_rx': opp.freq_rx if opp.freq_rx else '-',
-                        'kota': station.kota
+                        'kota': station.kota,
+                        'status': latest_status.status
                     })
+                    
+                    # Update statistik status
+                    if latest_status.status in status_summary:
+                        status_summary[latest_status.status] += 1
+                    else:
+                        status_summary['belum_ada'] += 1
+                else:
+                    # Jika tidak ada status di bulan ini, tetap tampilkan data
+                    row_counter += 1
+                    all_rows.append({
+                        'no': row_counter,
+                        'operator': station.operator.upper(),
+                        'stasiun_name': station.stasiun_name,
+                        'lawan': opp.nama_stasiun_lawan,
+                        'freq_tx': opp.freq_tx if opp.freq_tx else '-',
+                        'freq_rx': opp.freq_rx if opp.freq_rx else '-',
+                        'kota': station.kota,
+                        'status': 'belum_ada'
+                    })
+                    status_summary['belum_ada'] += 1
         
         if all_rows:
-            # Hitung perkiraan baris per halaman (estimasi: 35 baris per halaman landscape)
             rows_per_page = 35
             total_rows = len(all_rows)
             total_pages = (total_rows + rows_per_page - 1) // rows_per_page
             
-            # Buat tabel untuk setiap halaman
             for page in range(total_pages):
                 if page > 0:
                     doc.add_page_break()
                 
-                # Hitung indeks awal dan akhir untuk halaman ini
                 start_idx = page * rows_per_page
                 end_idx = min(start_idx + rows_per_page, total_rows)
                 page_data = all_rows[start_idx:end_idx]
                 
-                # Info halaman
                 if total_pages > 1:
                     page_info = doc.add_paragraph()
                     page_info.alignment = WD_ALIGN_PARAGRAPH.RIGHT
                     page_info.add_run(f'Halaman {page+1} dari {total_pages} (Ringkasan)').italic = True
                     page_info.runs[0].font.size = Pt(9)
                 
-                # Tabel ringkasan - 7 KOLOM untuk landscape
+                # Tabel ringkasan - 7 KOLOM
                 table = doc.add_table(rows=1, cols=7)
                 table.style = 'Table Grid'
                 table.autofit = False
                 
-                # Set lebar kolom untuk landscape
                 table.columns[0].width = Cm(1.0)   # No
                 table.columns[1].width = Cm(2.0)   # Operator
                 table.columns[2].width = Cm(3.0)   # Stasiun
@@ -5652,7 +6225,6 @@ def admin_master_rekap_bulanan_word_gambar():
                 table.columns[5].width = Cm(2.0)   # Freq Rx
                 table.columns[6].width = Cm(2.5)   # Kota
                 
-                # Header
                 header_cells = table.rows[0].cells
                 headers = ['No', 'Operator', 'Stasiun', 'Stasiun Lawan', 'Freq Tx', 'Freq Rx', 'Kota']
                 for i, header in enumerate(headers):
@@ -5660,7 +6232,6 @@ def admin_master_rekap_bulanan_word_gambar():
                     header_cells[i].paragraphs[0].runs[0].font.bold = True
                     header_cells[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
                 
-                # Isi tabel
                 for row in page_data:
                     row_cells = table.add_row().cells
                     
@@ -5685,10 +6256,18 @@ def admin_master_rekap_bulanan_word_gambar():
                     row_cells[6].text = row['kota']
                     row_cells[6].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.LEFT
         
+        # Tambahkan ringkasan status
+        doc.add_paragraph()
+        summary_para = doc.add_paragraph()
+        summary_para.add_run("REKAPITULASI STATUS:\n").bold = True
+        summary_para.add_run(f"Aktif: {status_summary['aktif']} | ")
+        summary_para.add_run(f"Tidak Aktif: {status_summary['tidak_aktif']} | ")
+        summary_para.add_run(f"Tidak Sesuai: {status_summary['tidak_sesuai']} | ")
+        summary_para.add_run(f"Belum Ada Status: {status_summary['belum_ada']}")
+        
         doc.add_page_break()
         
         # ===== HALAMAN DOKUMENTASI GAMBAR (PORTRAIT) =====
-        # Buat section baru dengan orientasi portrait
         new_section = doc.add_section()
         new_section.orientation = WD_ORIENT.PORTRAIT
         new_section.page_width = original_width
@@ -5721,7 +6300,6 @@ def admin_master_rekap_bulanan_word_gambar():
                 if group_key not in opponents_by_group:
                     opponents_by_group[group_key] = []
                 
-                # Dapatkan status terbaru untuk bulan ini
                 latest_status = StatusUpdate.query\
                     .filter_by(stasiun_lawan_id=opp.id)\
                     .filter(extract('year', StatusUpdate.updated_at) == tahun)\
@@ -5738,7 +6316,7 @@ def admin_master_rekap_bulanan_word_gambar():
                     'catatan': latest_status.catatan if latest_status and latest_status.catatan else '-'
                 })
             
-            # Ambil upload untuk bulan ini
+            # Ambil upload untuk bulan ini (UNIK berdasarkan public_id)
             uploads_in_bulan = UploadGambar.query\
                 .filter_by(stasiun_id=station.id)\
                 .filter(extract('year', UploadGambar.uploaded_at) == tahun)\
@@ -5785,7 +6363,7 @@ def admin_master_rekap_bulanan_word_gambar():
                 
                 doc.add_heading(f'  Grup {group_counter}: {group_display}', level=3)
                 
-                # ===== GAMBAR UNTUK GRUP INI =====
+                # GAMBAR UNTUK GRUP INI
                 group_uploads = uploads_by_group.get(group_key, [])
                 
                 if group_uploads:
@@ -5813,11 +6391,11 @@ def admin_master_rekap_bulanan_word_gambar():
                                 doc.add_paragraph()
                         except Exception as e:
                             print(f"Error download: {e}")
-                            doc.add_paragraph(f"    Gambar tidak tersedia")
+                            doc.add_paragraph(f"    Gambar tidak tersedia: {upload.original_filename}")
                 else:
                     doc.add_paragraph("    Tidak ada gambar untuk grup ini")
                 
-                # ===== TABEL STASIUN LAWAN =====
+                # TABEL STASIUN LAWAN
                 group_opponents = opponents_by_group.get(group_key, [])
                 if group_opponents:
                     doc.add_heading('    DAFTAR STASIUN LAWAN:', level=4)
@@ -5866,7 +6444,7 @@ def admin_master_rekap_bulanan_word_gambar():
         doc.save(file_stream)
         file_stream.seek(0)
         
-        # Nama file
+        # Nama file dengan format yang rapi
         filename = f"Rekap_Bulanan_{bulan_nama[bulan-1]}_{tahun}"
         if operator != 'all':
             filename += f"_{operator.upper()}"
@@ -5876,6 +6454,8 @@ def admin_master_rekap_bulanan_word_gambar():
         
         print(f"\n✅ File berhasil dibuat: {filename}")
         print(f"   Total data: {len(all_rows)}")
+        print(f"   Status summary: Aktif={status_summary['aktif']}, Tidak Aktif={status_summary['tidak_aktif']}, "
+              f"Belum Ada={status_summary['belum_ada']}")
         print('='*80)
         
         return send_file(
@@ -5887,11 +6467,15 @@ def admin_master_rekap_bulanan_word_gambar():
         
     except Exception as e:
         flash(f'Error: {str(e)}', 'error')
-        print(f"\n❌ ERROR: {str(e)}")
+        print(f"\n❌ ERROR in admin_master_rekap_bulanan_word_gambar: {str(e)}")
         import traceback
         traceback.print_exc()
-        return redirect(url_for('admin_master_rekap_bulanan', tahun=tahun, bulan=bulan, operator=operator, kota=kota))
-    
+        return redirect(url_for('admin_master_rekap_bulanan', 
+                               tahun=request.args.get('tahun', datetime.now().year, type=int),
+                               bulan=request.args.get('bulan', datetime.now().month, type=int),
+                               operator=request.args.get('operator', 'all'),
+                               kota=request.args.get('kota', 'all')))
+
 @app.route('/admin-master/rekap-tahunan')
 @login_required
 @admin_master_required
@@ -5903,24 +6487,33 @@ def admin_master_rekap_tahunan():
         operator = request.args.get('operator', 'all')
         kota = request.args.get('kota', 'all')
         
+        # ===== TAMBAHKAN: Validasi kota yang dipilih ada di KOTA_LIST =====
+        if kota != 'all' and kota not in KOTA_LIST:
+            print(f"⚠️ Kota '{kota}' tidak ada di KOTA_LIST, reset ke 'all'")
+            kota = 'all'
+        
+        # ===== TAMBAHKAN: Validasi operator yang dipilih =====
+        if operator != 'all' and operator not in OPERATORS:
+            print(f"⚠️ Operator '{operator}' tidak valid, reset ke 'all'")
+            operator = 'all'
+        
         print(f"\n{'='*60}")
         print(f"📅 HALAMAN REKAP TAHUNAN")
         print(f"   Tahun: {tahun}, Operator: {operator}, Kota/Kab: {kota}")
         print('='*60)
         
-        # Tidak perlu query data di sini, hanya render template dengan parameter filter
         return render_template('admin_master/rekap_tahunan.html',
                              tahun=tahun,
                              operator=operator,
                              kota=kota,
                              operators=OPERATORS,
-                             kota_list=KOTA_LIST)
+                             kota_list=KOTA_LIST)  # Gunakan KOTA_LIST lengkap
     except Exception as e:
         flash(f'Error: {str(e)}', 'error')
         print(f"❌ ERROR in rekap tahunan: {str(e)}")
         import traceback
         traceback.print_exc()
-        return redirect(url_for('admin_master_dashboard'))
+        return redirect(url_for('admin_master_dashboard'))                               
     
 @app.route('/admin-master/rekap-tahunan-word-gambar')
 @login_required
@@ -5928,68 +6521,102 @@ def admin_master_rekap_tahunan():
 def admin_master_rekap_tahunan_word_gambar():
     """Export rekap tahunan ke Word dengan gambar per grup - HANYA bulan dengan data"""
     try:
-        # Ambil tahun dari parameter URL, default ke tahun sekarang
+        # ===== 1. AMBIL DAN VALIDASI PARAMETER =====
         tahun = request.args.get('tahun', datetime.now().year, type=int)
         operator = request.args.get('operator', 'all')
         kota = request.args.get('kota', 'all')
         
+        # Validasi operator
+        if operator != 'all' and operator not in OPERATORS:
+            print(f"⚠️ Operator '{operator}' tidak valid, reset ke 'all'")
+            operator = 'all'
+        
+        # Validasi kota
+        if kota != 'all' and kota not in KOTA_LIST:
+            print(f"⚠️ Kota '{kota}' tidak ada di KOTA_LIST, reset ke 'all'")
+            kota = 'all'
+        
+        bulan_nama = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
+        
         print(f"\n{'='*80}")
-        print(f"📄 EXPORT REKAP TAHUNAN WORD - Tahun: {tahun}, Operator: {operator}, Kota/Kab: {kota}")
+        print(f"📄 EXPORT REKAP TAHUNAN WORD")
+        print(f"   Tahun: {tahun}")
+        print(f"   Operator: {operator if operator != 'all' else 'SEMUA'}")
+        print(f"   Kota/Kab: {kota if kota != 'all' else 'SEMUA'}")
         print('='*80)
         
-        # ===== 1. QUERY STASIUN DENGAN FILTER =====
+        # ===== 2. QUERY STASIUN DENGAN FILTER =====
         query = Stasiun.query
         
         if operator != 'all':
             query = query.filter(Stasiun.operator == operator)
             print(f"✅ Filter operator: {operator}")
         
-        if kota != 'all':
-            query = query.filter(Stasiun.kota == kota)
-            print(f"✅ Filter kota: {kota}")
+        if kota != 'all' and kota:
+            exact_count = query.filter(Stasiun.kota == kota).count()
+            print(f"   Exact match '{kota}': {exact_count} stasiun")
+            
+            if exact_count > 0:
+                query = query.filter(Stasiun.kota == kota)
+                print(f"✅ Filter kota (exact): {kota}")
+            else:
+                like_count = query.filter(Stasiun.kota.ilike(f'%{kota}%')).count()
+                print(f"   LIKE match '%{kota}%': {like_count} stasiun")
+                
+                if like_count > 0:
+                    query = query.filter(Stasiun.kota.ilike(f'%{kota}%'))
+                    print(f"✅ Filter kota (LIKE): {kota}")
+                else:
+                    query = query.filter(Stasiun.kota == kota)
+                    print(f"⚠️ Tidak ada stasiun dengan kota '{kota}', filter akan kosong")
         
         # Ambil semua stasiun (urutkan untuk konsistensi)
         all_stations = query.order_by(Stasiun.operator, Stasiun.kota, Stasiun.stasiun_name).all()
-        print(f"📊 Total stasiun dalam database (dengan filter): {len(all_stations)}")
+        print(f"📊 Total stasiun setelah filter: {len(all_stations)}")
         
-        # ===== 2. FILTER STASIUN YANG MEMILIKI DATA DI TAHUN TERSEBUT =====
+        # ===== 3. FILTER STASIUN YANG MEMILIKI DATA DI TAHUN TERSEBUT =====
         stations_with_data = []
         for station in all_stations:
-            # Cek apakah stasiun ini punya status update di tahun tersebut
             has_data = db.session.query(StatusUpdate)\
                 .join(StasiunLawan)\
                 .filter(StasiunLawan.stasiun_id == station.id)\
                 .filter(extract('year', StatusUpdate.updated_at) == tahun)\
                 .first()
             
-            if has_data:
+            has_upload = UploadGambar.query\
+                .filter_by(stasiun_id=station.id)\
+                .filter(extract('year', UploadGambar.uploaded_at) == tahun)\
+                .first()
+            
+            if has_data or has_upload:
                 stations_with_data.append(station)
         
         print(f"📊 Stasiun dengan data di tahun {tahun}: {len(stations_with_data)}")
         
         if not stations_with_data:
-            flash(f'Tidak ada data untuk tahun {tahun}', 'warning')
+            error_msg = f"Tidak ada data untuk tahun {tahun}"
+            if operator != 'all':
+                error_msg += f" (Operator: {operator.upper()})"
+            if kota != 'all':
+                error_msg += f" (Kota: {kota})"
+            flash(error_msg, 'warning')
             return redirect(url_for('admin_master_rekap_tahunan', tahun=tahun, operator=operator, kota=kota))
         
-        # ===== 3. KUMPULKAN DATA PER BULAN =====
-        bulan_nama = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-                     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
-        
-        # Dictionary untuk menyimpan data per bulan
+        # ===== 4. KUMPULKAN DATA PER BULAN =====
         bulan_data = {}
         bulan_dengan_data = []
         
-        # Loop untuk setiap bulan (1-12)
         for bulan in range(1, 13):
             bulan_key = f"{tahun}-{bulan:02d}"
             bulan_data[bulan_key] = {
                 'nama': bulan_nama[bulan-1],
                 'stations': [],
                 'total_uploads': 0,
-                'has_data': False
+                'has_data': False,
+                'status_summary': {'aktif': 0, 'tidak_aktif': 0, 'tidak_sesuai': 0, 'belum_ada': 0}
             }
             
-            # Cek apakah ada data di bulan ini
             for station in stations_with_data:
                 # Cek status updates di bulan ini
                 status_count = db.session.query(StatusUpdate)\
@@ -6010,16 +6637,32 @@ def admin_master_rekap_tahunan_word_gambar():
                     bulan_data[bulan_key]['has_data'] = True
                     bulan_data[bulan_key]['stations'].append(station)
                     bulan_data[bulan_key]['total_uploads'] += upload_count
+                    
+                    # Hitung status summary untuk bulan ini
+                    opponents = StasiunLawan.query.filter_by(stasiun_id=station.id).all()
+                    for opp in opponents:
+                        latest_status = StatusUpdate.query\
+                            .filter_by(stasiun_lawan_id=opp.id)\
+                            .filter(extract('year', StatusUpdate.updated_at) == tahun)\
+                            .filter(extract('month', StatusUpdate.updated_at) == bulan)\
+                            .order_by(StatusUpdate.updated_at.desc())\
+                            .first()
+                        
+                        if latest_status and latest_status.status in bulan_data[bulan_key]['status_summary']:
+                            bulan_data[bulan_key]['status_summary'][latest_status.status] += 1
+                        else:
+                            bulan_data[bulan_key]['status_summary']['belum_ada'] += 1
             
             if bulan_data[bulan_key]['has_data']:
                 bulan_dengan_data.append(bulan)
-                print(f"  ✅ {bulan_nama[bulan-1]}: {len(bulan_data[bulan_key]['stations'])} stasiun, {bulan_data[bulan_key]['total_uploads']} uploads")
+                print(f"  ✅ {bulan_nama[bulan-1]}: {len(bulan_data[bulan_key]['stations'])} stasiun, "
+                      f"{bulan_data[bulan_key]['total_uploads']} uploads")
             else:
                 print(f"  ❌ {bulan_nama[bulan-1]}: TIDAK ADA DATA")
         
         print(f"\n📅 Total bulan dengan data di tahun {tahun}: {len(bulan_dengan_data)}")
         
-        # ===== 4. BUAT DOKUMEN WORD =====
+        # ===== 5. BUAT DOKUMEN WORD =====
         from docx import Document
         from docx.shared import Inches, Pt, RGBColor, Cm
         from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -6031,13 +6674,10 @@ def admin_master_rekap_tahunan_word_gambar():
         doc = Document()
         
         # ===== HALAMAN 1: LANDSCAPE UNTUK RINGKASAN =====
-        # Ubah orientasi halaman pertama menjadi landscape
         section = doc.sections[0]
-        # Simpan ukuran asli untuk referensi
         original_width = section.page_width
         original_height = section.page_height
         
-        # Ubah ke landscape (tukar width dan height)
         section.orientation = WD_ORIENT.LANDSCAPE
         section.page_width = original_height
         section.page_height = original_width
@@ -6107,43 +6747,36 @@ def admin_master_rekap_tahunan_word_gambar():
                 })
         
         if all_rows_data:
-            # Hitung perkiraan baris per halaman (estimasi: 35 baris per halaman landscape)
             rows_per_page = 35
             total_rows = len(all_rows_data)
             total_pages = (total_rows + rows_per_page - 1) // rows_per_page
             
-            # Buat tabel untuk setiap halaman
             for page in range(total_pages):
                 if page > 0:
                     doc.add_page_break()
                 
-                # Hitung indeks awal dan akhir untuk halaman ini
                 start_idx = page * rows_per_page
                 end_idx = min(start_idx + rows_per_page, total_rows)
                 page_data = all_rows_data[start_idx:end_idx]
                 
-                # Info halaman
                 if total_pages > 1:
                     page_info = doc.add_paragraph()
                     page_info.alignment = WD_ALIGN_PARAGRAPH.RIGHT
                     page_info.add_run(f'Halaman {page+1} dari {total_pages} (Ringkasan)').italic = True
                     page_info.runs[0].font.size = Pt(9)
                 
-                # Tabel ringkasan - 7 KOLOM untuk landscape
                 main_table = doc.add_table(rows=1, cols=7)
                 main_table.style = 'Table Grid'
                 main_table.autofit = False
                 
-                # Set lebar kolom untuk landscape
-                main_table.columns[0].width = Cm(1.0)   # No
-                main_table.columns[1].width = Cm(2.0)   # Operator
-                main_table.columns[2].width = Cm(3.0)   # Stasiun Name
-                main_table.columns[3].width = Cm(4.0)   # Stasiun Lawan
-                main_table.columns[4].width = Cm(2.0)   # Freq Tx
-                main_table.columns[5].width = Cm(2.0)   # Freq Rx
-                main_table.columns[6].width = Cm(2.5)   # Kota/Kab
+                main_table.columns[0].width = Cm(1.0)
+                main_table.columns[1].width = Cm(2.0)
+                main_table.columns[2].width = Cm(3.0)
+                main_table.columns[3].width = Cm(4.0)
+                main_table.columns[4].width = Cm(2.0)
+                main_table.columns[5].width = Cm(2.0)
+                main_table.columns[6].width = Cm(2.5)
                 
-                # Header tabel
                 header_cells = main_table.rows[0].cells
                 headers = ['No', 'Operator', 'Stasiun Name', 'Stasiun Lawan', 'Freq Tx', 'Freq Rx', 'Kota/Kab']
                 for i, header in enumerate(headers):
@@ -6151,7 +6784,6 @@ def admin_master_rekap_tahunan_word_gambar():
                     header_cells[i].paragraphs[0].runs[0].font.bold = True
                     header_cells[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
                 
-                # Isi tabel dengan data
                 for data in page_data:
                     row_cells = main_table.add_row().cells
                     
@@ -6181,7 +6813,6 @@ def admin_master_rekap_tahunan_word_gambar():
         doc.add_page_break()
         
         # ===== HALAMAN DOKUMENTASI GAMBAR (PORTRAIT) =====
-        # Buat section baru dengan orientasi portrait
         new_section = doc.add_section()
         new_section.orientation = WD_ORIENT.PORTRAIT
         new_section.page_width = original_width
@@ -6193,26 +6824,34 @@ def admin_master_rekap_tahunan_word_gambar():
         
         doc.add_heading('DOKUMENTASI GAMBAR PER BULAN', level=1).alignment = WD_ALIGN_PARAGRAPH.CENTER
         
-        # Jika tidak ada bulan dengan data, tampilkan pesan
         if not bulan_dengan_data:
             doc.add_paragraph(f"Tidak ada data untuk tahun {tahun}")
         else:
-            # Urutkan bulan dengan data
             for bulan in sorted(bulan_dengan_data):
                 bulan_key = f"{tahun}-{bulan:02d}"
                 bulan_info = bulan_data[bulan_key]
                 
                 print(f"\n📷 Memproses bulan: {bulan_info['nama']} {tahun}")
                 
-                # Header Bulan
+                # Header Bulan dengan ringkasan status
                 doc.add_heading(f'{bulan_info["nama"].upper()} {tahun}', level=2)
+                
+                # Ringkasan status bulan
+                status = bulan_info['status_summary']
+                summary_text = (f"Rekapitulasi Status: Aktif: {status['aktif']} | "
+                               f"Tidak Aktif: {status['tidak_aktif']} | "
+                               f"Tidak Sesuai: {status['tidak_sesuai']} | "
+                               f"Belum Ada Status: {status['belum_ada']}")
+                summary_para = doc.add_paragraph(summary_text)
+                summary_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                summary_para.runs[0].italic = True
+                
                 doc.add_paragraph()
                 
                 # Proses setiap stasiun di bulan ini
                 for station in bulan_info['stations']:
                     print(f"  🏢 Stasiun: {station.stasiun_name}")
                     
-                    # Header Stasiun
                     station_heading = doc.add_heading(f'STASIUN: {station.stasiun_name}', level=3)
                     station_heading.runs[0].font.color.rgb = RGBColor(67, 97, 238)
                     
@@ -6220,21 +6859,17 @@ def admin_master_rekap_tahunan_word_gambar():
                     info_para.add_run(f'Operator: {station.operator.upper()}').bold = True
                     info_para.add_run(f' | Kota/Kab: {station.kota}').bold = True
                     
-                    # Ambil semua grup
                     groups = GrupStasiun.query.filter_by(stasiun_id=station.id).all()
                     groups_dict = {g.id: g.nama_grup for g in groups}
                     
-                    # Ambil semua lawan untuk stasiun ini
                     all_opponents = StasiunLawan.query.filter_by(stasiun_id=station.id).order_by(StasiunLawan.urutan).all()
                     
-                    # Kelompokkan lawan berdasarkan grup
                     opponents_by_group = {}
                     for opp in all_opponents:
                         group_key = opp.group_id if opp.group_id is not None else 'ungrouped'
                         if group_key not in opponents_by_group:
                             opponents_by_group[group_key] = []
                         
-                        # Dapatkan status terbaru untuk bulan ini
                         latest_status = StatusUpdate.query\
                             .filter_by(stasiun_lawan_id=opp.id)\
                             .filter(extract('year', StatusUpdate.updated_at) == tahun)\
@@ -6251,7 +6886,6 @@ def admin_master_rekap_tahunan_word_gambar():
                             'catatan': latest_status.catatan if latest_status and latest_status.catatan else '-'
                         })
                     
-                    # Ambil upload untuk bulan ini
                     uploads_in_bulan = UploadGambar.query\
                         .filter_by(stasiun_id=station.id)\
                         .filter(extract('year', UploadGambar.uploaded_at) == tahun)\
@@ -6261,7 +6895,6 @@ def admin_master_rekap_tahunan_word_gambar():
                     
                     print(f"    📸 Upload ditemukan: {len(uploads_in_bulan)}")
                     
-                    # Kelompokkan upload per grup (berdasarkan public_id unik)
                     uploads_by_group = {}
                     seen_uploads = set()
                     
@@ -6277,10 +6910,8 @@ def admin_master_rekap_tahunan_word_gambar():
                             
                             uploads_by_group[group_key].append(upload)
                     
-                    # Gabungkan semua grup (dari lawan dan upload)
                     all_group_keys = set(list(opponents_by_group.keys()) + list(uploads_by_group.keys()))
                     
-                    # Urutkan grup: ungrouped dulu, lalu berdasarkan ID
                     sorted_group_keys = []
                     if 'ungrouped' in all_group_keys:
                         sorted_group_keys.append('ungrouped')
@@ -6293,7 +6924,6 @@ def admin_master_rekap_tahunan_word_gambar():
                     for group_key in sorted_group_keys:
                         group_counter += 1
                         
-                        # Tentukan nama grup
                         if group_key == 'ungrouped':
                             group_display = 'Tanpa Grup'
                         else:
@@ -6301,10 +6931,8 @@ def admin_master_rekap_tahunan_word_gambar():
                         
                         print(f"    📁 Grup {group_counter}: {group_display}")
                         
-                        # Group header
                         doc.add_heading(f'  Grup {group_counter}: {group_display}', level=4)
                         
-                        # ===== GAMBAR UNTUK GRUP INI =====
                         group_uploads = uploads_by_group.get(group_key, [])
                         
                         if group_uploads:
@@ -6316,13 +6944,11 @@ def admin_master_rekap_tahunan_word_gambar():
                                     if response.status_code == 200:
                                         img_data = BytesIO(response.content)
                                         
-                                        # Gambar besar
                                         paragraph = doc.add_paragraph()
                                         paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
                                         run = paragraph.add_run()
                                         run.add_picture(img_data, width=Inches(5.0))
                                         
-                                        # Info gambar
                                         info_para = doc.add_paragraph()
                                         info_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
                                         info_text = f"File: {upload.original_filename} | "
@@ -6338,7 +6964,6 @@ def admin_master_rekap_tahunan_word_gambar():
                         else:
                             doc.add_paragraph("    Tidak ada gambar untuk grup ini")
                         
-                        # ===== TABEL STASIUN LAWAN =====
                         group_opponents = opponents_by_group.get(group_key, [])
                         if group_opponents:
                             doc.add_heading('    DAFTAR STASIUN LAWAN:', level=5)
@@ -6347,14 +6972,12 @@ def admin_master_rekap_tahunan_word_gambar():
                             opp_table.style = 'Table Grid'
                             opp_table.autofit = True
                             
-                            # Header tabel stasiun lawan
                             opp_headers = ['No', 'Nama Stasiun Lawan', 'Freq Tx', 'Freq Rx', 'Status', 'Catatan']
                             for i, header in enumerate(opp_headers):
                                 opp_table.rows[0].cells[i].text = header
                                 opp_table.rows[0].cells[i].paragraphs[0].runs[0].font.bold = True
                                 opp_table.rows[0].cells[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
                             
-                            # Isi tabel stasiun lawan
                             for opp_idx, opponent in enumerate(group_opponents, 1):
                                 row_cells = opp_table.add_row().cells
                                 
@@ -6384,7 +7007,6 @@ def admin_master_rekap_tahunan_word_gambar():
                     
                     doc.add_paragraph()
                 
-                # Page break setelah setiap bulan (kecuali bulan terakhir)
                 if bulan != bulan_dengan_data[-1]:
                     doc.add_page_break()
         
@@ -6393,7 +7015,6 @@ def admin_master_rekap_tahunan_word_gambar():
         doc.save(file_stream)
         file_stream.seek(0)
         
-        # Nama file
         filename = f"Rekap_Tahunan_{tahun}"
         if operator != 'all':
             filename += f"_{operator.upper()}"
@@ -6415,10 +7036,13 @@ def admin_master_rekap_tahunan_word_gambar():
         
     except Exception as e:
         flash(f'Error: {str(e)}', 'error')
-        print(f"\n❌ ERROR: {str(e)}")
+        print(f"\n❌ ERROR in admin_master_rekap_tahunan_word_gambar: {str(e)}")
         import traceback
         traceback.print_exc()
-        return redirect(url_for('admin_master_rekap_tahunan', tahun=tahun, operator=operator, kota=kota))
+        return redirect(url_for('admin_master_rekap_tahunan', 
+                               tahun=request.args.get('tahun', datetime.now().year, type=int),
+                               operator=request.args.get('operator', 'all'),
+                               kota=request.args.get('kota', 'all')))
 
 # ============================================================================
 # USER OPERATOR ROUTES 
@@ -6582,7 +7206,7 @@ def user_operator_detail_stasiun(station_id):
                 'label': label,
                 'lawans': [],
                 'uploads': [],  # PASTIKAN FIELD INI ADA
-                'status_summary': {'aktif': 0, 'tidak_aktif': 0, 'tidak_berizin': 0, 'tidak_sesuai': 0}
+                'status_summary': {'aktif': 0, 'tidak_aktif': 0, 'tidak_sesuai': 0}
             }
         
         latest_status = StatusUpdate.query\
@@ -6621,7 +7245,7 @@ def user_operator_detail_stasiun(station_id):
                 'label': label,
                 'lawans': [],
                 'uploads': [],
-                'status_summary': {'aktif': 0, 'tidak_aktif': 0, 'tidak_berizin': 0, 'tidak_sesuai': 0}
+                'status_summary': {'aktif': 0, 'tidak_aktif': 0, 'tidak_sesuai': 0}
             }
         
         # Cek duplikasi public_id dalam grup yang sama
@@ -6651,7 +7275,7 @@ def user_operator_detail_stasiun(station_id):
         sorted_groups[group_key] = numeric_groups[group_key]
     
     # Hitung status counts total
-    status_counts = {'aktif': 0, 'tidak_aktif': 0, 'tidak_berizin': 0, 'tidak_sesuai': 0}
+    status_counts = {'aktif': 0, 'tidak_aktif': 0, 'tidak_sesuai': 0}
     for lawan in all_lawans:
         latest_status = StatusUpdate.query\
             .filter_by(stasiun_lawan_id=lawan.id)\

@@ -3,6 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    
+    <!-- ===== FAVICON ===== -->
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo1.png') }}">
+    <link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='logo1.png') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='logo1.png') }}">
+    
     <title>{% block title %}SiPaMeL - {{ current_user.operator_type|upper }}{% endblock %}</title>
     
     <!-- Bootstrap 5 CSS -->
@@ -392,7 +398,6 @@
         /* ===== BADGES ===== */
         .badge-aktif { background-color: #10b981; color: white; padding: 0.4rem 0.8rem; border-radius: 30px; font-weight: 500; }
         .badge-tidak_aktif { background-color: #ef4444; color: white; padding: 0.4rem 0.8rem; border-radius: 30px; font-weight: 500; }
-        .badge-tidak_berizin { background-color: #f59e0b; color: white; padding: 0.4rem 0.8rem; border-radius: 30px; font-weight: 500; }
         .badge-tidak_sesuai { background-color: #3b82f6; color: white; padding: 0.4rem 0.8rem; border-radius: 30px; font-weight: 500; }
         .badge-belum_ada { background-color: #94a3b8; color: white; padding: 0.4rem 0.8rem; border-radius: 30px; font-weight: 500; }
         
@@ -909,6 +914,7 @@
         });
     </script>
     
-    {% block extra_js %}{% endblock %}
+    {% block extra_js %}
+    {% endblock %}
 </body>
 </html>

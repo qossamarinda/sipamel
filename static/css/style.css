@@ -166,11 +166,6 @@ body {
     color: white;
 }
 
-.badge-tidak_berizin {
-    background-color: var(--warning-color);
-    color: #212529;
-}
-
 .badge-tidak_sesuai {
     background-color: var(--info-color);
     color: white;

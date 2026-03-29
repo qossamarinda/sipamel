@@ -12,7 +12,7 @@
         <p class="lead text-muted">Download laporan rekap bulanan dengan gambar dokumentasi</p>
     </div>
 
-    <!-- FILTER CARD - PENTING UNTUK MEMILIH BULAN DAN TAHUN -->
+    <!-- FILTER CARD -->
     <div class="row justify-content-center mb-4">
         <div class="col-md-10">
             <div class="card border-0 shadow">
@@ -20,8 +20,8 @@
                     <h5 class="mb-0"><i class="bi bi-funnel-fill me-2"></i> Pilih Periode Laporan</h5>
                 </div>
                 <div class="card-body p-4">
-                    <form method="GET" action="{{ url_for('admin_master_rekap_bulanan') }}" class="row g-3">
-                        <div class="col-md-4">
+                    <form method="GET" action="{{ url_for('admin_master_rekap_bulanan') }}" class="row g-3" id="filterForm">
+                        <div class="col-md-3">
                             <label class="form-label fw-semibold">Tahun</label>
                             <select class="form-select form-select-lg" name="tahun" id="tahun">
                                 {% for y in range(2020, 2031) %}
@@ -30,18 +30,18 @@
                             </select>
                         </div>
                         
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="form-label fw-semibold">Bulan</label>
                             <select class="form-select form-select-lg" name="bulan" id="bulan">
-                                {% for b in range(1, 13) %}
                                 {% set bulan_list = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 
                                                      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'] %}
+                                {% for b in range(1, 13) %}
                                 <option value="{{ b }}" {% if bulan == b %}selected{% endif %}>{{ bulan_list[b-1] }}</option>
                                 {% endfor %}
                             </select>
                         </div>
                         
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="form-label fw-semibold">Operator</label>
                             <select class="form-select form-select-lg" name="operator" id="operator">
                                 <option value="all" {% if operator == 'all' %}selected{% endif %}>Semua Operator</option>
@@ -51,7 +51,7 @@
                             </select>
                         </div>
                         
-                        <div class="col-md-6">
+                        <div class="col-md-3">
                             <label class="form-label fw-semibold">Kota/Kabupaten</label>
                             <select class="form-select form-select-lg" name="kota" id="kota">
                                 <option value="all" {% if kota == 'all' %}selected{% endif %}>Semua Kota/kab</option>
@@ -61,10 +61,13 @@
                             </select>
                         </div>
                         
-                        <div class="col-md-6 d-flex align-items-end">
-                            <button type="submit" class="btn btn-primary btn-lg w-100">
+                        <div class="col-12 d-flex justify-content-end gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg" id="btnTampilkan">
                                 <i class="bi bi-search me-2"></i> Tampilkan
                             </button>
+                            <a href="{{ url_for('admin_master_rekap_bulanan') }}" class="btn btn-outline-secondary btn-lg" id="btnReset">
+                                <i class="bi bi-arrow-clockwise me-2"></i> Reset
+                            </a>
                         </div>
                     </form>
                 </div>
@@ -72,13 +75,13 @@
         </div>
     </div>
 
-    <!-- Card Info Periode (Menampilkan pilihan yang aktif) -->
+    <!-- Card Info Periode -->
     <div class="row justify-content-center mb-4">
         <div class="col-md-10">
             <div class="card border-0 shadow-sm bg-info bg-opacity-10">
                 <div class="card-body py-3">
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-info-circle-fill text-info fs-3 me-3"></i>
+                    <div class="d-flex align-items-center flex-wrap gap-3">
+                        <i class="bi bi-info-circle-fill text-info fs-3"></i>
                         <div class="flex-grow-1">
                             <strong>Periode Terpilih:</strong>
                             <span class="badge bg-primary ms-2 py-2 px-3 fs-6">{{ bulan_nama }} {{ tahun }}</span>
@@ -100,7 +103,6 @@
         <div class="col-md-8">
             <div class="card border-0 shadow-lg text-center">
                 <div class="card-body p-5">
-                    <!-- Icon -->
                     <div class="mb-4">
                         <div class="display-1 text-success">
                             <i class="bi bi-file-earmark-word-fill"></i>
@@ -111,10 +113,14 @@
                     <p class="text-muted mb-4">
                         Klik tombol di bawah untuk mendownload laporan bulan 
                         <strong class="text-primary">{{ bulan_nama }} {{ tahun }}</strong>
+                        {% if operator != 'all' %}untuk operator <strong>{{ operator|upper }}</strong>{% endif %}
+                        {% if kota != 'all' %}di kota/kab <strong>{{ kota }}</strong>{% endif %}
                     </p>
 
                     <a href="{{ url_for('admin_master_rekap_bulanan_word_gambar', tahun=tahun, bulan=bulan, operator=operator, kota=kota) }}" 
-                       class="btn btn-success btn-lg px-5 py-3 shadow" target="_blank">
+                       id="downloadLink"
+                       class="btn btn-success btn-lg px-5 py-3 shadow" 
+                       target="_blank">
                         <i class="bi bi-file-word-fill me-2 fs-4"></i>
                         <span class="fs-5">Export Word dengan Gambar</span>
                     </a>
@@ -128,33 +134,23 @@
             </div>
         </div>
     </div>
-</div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Auto submit ketika tahun/bulan berubah (opsional)
-    const tahun = document.getElementById('tahun');
-    const bulan = document.getElementById('bulan');
-    const operator = document.getElementById('operator');
-    const kota = document.getElementById('kota');
-    
-    function submitForm() {
-        const params = new URLSearchParams({
-            tahun: tahun.value,
-            bulan: bulan.value,
-            operator: operator.value,
-            kota: kota.value
-        });
-        window.location.href = "{{ url_for('admin_master_rekap_bulanan') }}?" + params.toString();
-    }
-    
-    // Jika ingin auto submit saat berubah, aktifkan kode di bawah
-    // tahun.addEventListener('change', submitForm);
-    // bulan.addEventListener('change', submitForm);
-    // operator.addEventListener('change', submitForm);
-    // kota.addEventListener('change', submitForm);
-});
-</script>
+    <!-- Info Tambahan -->
+    <div class="row justify-content-center mt-4">
+        <div class="col-md-8">
+            <div class="card border-0 bg-light">
+                <div class="card-body py-3 text-center text-muted">
+                    <small>
+                        <i class="bi bi-info-circle me-1"></i>
+                        Laporan akan menampilkan data untuk bulan {{ bulan_nama }} {{ tahun }}.
+                        {% if operator != 'all' %}Hanya menampilkan data operator {{ operator|upper }}.{% endif %}
+                        {% if kota != 'all' %}Hanya menampilkan data kota/kab {{ kota }}.{% endif %}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <style>
     .btn-success {
@@ -174,4 +170,71 @@ document.addEventListener('DOMContentLoaded', function() {
         padding: 0.75rem 1rem;
     }
 </style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Elemen-elemen DOM
+    const tahunSelect = document.getElementById('tahun');
+    const bulanSelect = document.getElementById('bulan');
+    const operatorSelect = document.getElementById('operator');
+    const kotaSelect = document.getElementById('kota');
+    const btnTampilkan = document.getElementById('btnTampilkan');
+    const btnReset = document.getElementById('btnReset');
+    
+    // Fungsi untuk submit form filter
+    function submitFilterForm() {
+        const tahun = tahunSelect.value;
+        const bulan = bulanSelect.value;
+        const operator = operatorSelect.value;
+        const kota = kotaSelect.value;
+        
+        const redirectUrl = "{{ url_for('admin_master_rekap_bulanan') }}?" + 
+            'tahun=' + encodeURIComponent(tahun) + 
+            '&bulan=' + encodeURIComponent(bulan) + 
+            '&operator=' + encodeURIComponent(operator) + 
+            '&kota=' + encodeURIComponent(kota);
+        
+        window.location.href = redirectUrl;
+    }
+    
+    // Fungsi untuk reset filter
+    function resetFilters() {
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth() + 1;
+        
+        tahunSelect.value = currentYear;
+        bulanSelect.value = currentMonth;
+        operatorSelect.value = 'all';
+        kotaSelect.value = 'all';
+        
+        submitFilterForm();
+    }
+    
+    // Event listeners
+    if (btnTampilkan) {
+        btnTampilkan.addEventListener('click', function(e) {
+            e.preventDefault();
+            submitFilterForm();
+        });
+    }
+    
+    if (btnReset) {
+        btnReset.addEventListener('click', function(e) {
+            e.preventDefault();
+            resetFilters();
+        });
+    }
+    
+    const filterForm = document.getElementById('filterForm');
+    if (filterForm) {
+        filterForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitFilterForm();
+        });
+    }
+});
+</script>
 {% endblock %}

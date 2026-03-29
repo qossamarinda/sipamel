@@ -1,15 +1,34 @@
 {% extends "admin_master/base.html" %}
 
-{% block title %}Edit Stasiun{% endblock %}
+{% block title %}Edit Stasiun - {{ station.stasiun_name }}{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h3 class="mb-0">
-        <i class="bi bi-pencil-square"></i> Edit Stasiun: {{ station.stasiun_name }}
-    </h3>
-    <a href="{{ url_for('admin_master_detail_stasiun', station_id=station.id) }}" class="btn btn-outline-info">
-        <i class="bi bi-eye"></i> Lihat Detail
-    </a>
+    <div>
+        <h3 class="mb-0">
+            <i class="bi bi-pencil-square"></i> Edit Stasiun: {{ station.stasiun_name }}
+        </h3>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('admin_master_dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('admin_master_daftar_stasiun') }}">Daftar Stasiun</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('admin_master_detail_stasiun', station_id=station.id) }}">Detail</a></li>
+                <li class="breadcrumb-item active">Edit</li>
+            </ol>
+        </nav>
+    </div>
+    <div>
+        <a href="{{ url_for('admin_master_detail_stasiun', station_id=station.id) }}" class="btn btn-outline-info">
+            <i class="bi bi-eye"></i> Lihat Detail
+        </a>
+    </div>
+</div>
+
+<!-- DEBUG INFO (HAPUS SETELAH TESTING) -->
+<div class="alert alert-warning small" style="display: none;">
+    <strong>Debug Info:</strong><br>
+    Station kota: "{{ station.kota }}"<br>
+    Kota list: {{ kota_list|join(', ') }}
 </div>
 
 <div class="card">
@@ -26,7 +45,8 @@
                 <li>✅ <strong>Menambahkan stasiun lawan baru</strong> - Aman dilakukan, tidak mempengaruhi data existing.</li>
                 <li>📸 <strong>Gambar yang sudah diupload</strong> - Akan tetap tersimpan di sistem meskipun stasiun lawan tertentu dihapus.</li>
                 <li>📝 <strong>Pengelompokan grup</strong> - Tidak akan terpengaruh dengan perubahan di halaman ini.</li>
-                <li>📡 <strong>Frekuensi Tx dan Rx</strong> - Kini dipisah untuk memudahkan identifikasi.</li>
+                <li>📡 <strong>Frekuensi Tx dan Rx</strong> - Bersifat OPSIONAL, boleh dikosongkan jika belum ada data.</li>
+                <li>📍 <strong>Kota/Kabupaten</strong> - WAJIB dipilih.</li>
             </ul>
         </div>
     </div>
@@ -37,7 +57,7 @@
         <h5 class="mb-0"><i class="bi bi-wifi"></i> Form Edit Stasiun</h5>
     </div>
     <div class="card-body">
-        <form method="POST" action="{{ url_for('admin_master_edit_stasiun', station_id=station.id) }}" id="stasiunForm">
+        <form method="POST" action="{{ url_for('admin_master_edit_stasiun', station_id=station.id) }}" id="stasiunForm" onsubmit="return validateForm()">
             <div class="row mb-4">
                 <div class="col-md-6">
                     <div class="mb-3">
@@ -64,12 +84,17 @@
                     <div class="mb-3">
                         <label for="kota" class="form-label">Kota/Kabupaten <span class="text-danger">*</span></label>
                         <select class="form-select" id="kota" name="kota" required>
+                            <option value="">-- Pilih Kota/Kabupaten --</option>
                             {% for k in kota_list %}
-                            <option value="{{ k }}" {% if station.kota == k %}selected{% endif %}>
+                            <option value="{{ k }}" 
+                                    {% if station.kota == k %}selected{% endif %}>
                                 {{ k|title }}
                             </option>
                             {% endfor %}
                         </select>
+                        <div class="invalid-feedback" id="kotaFeedback">
+                            Silakan pilih Kota/Kabupaten
+                        </div>
                     </div>
                 </div>
             </div>
@@ -83,18 +108,17 @@
                     </button>
                 </div>
                 
-                <!-- Header kolom - SEKARANG 3 KOLOM -->
+                <!-- Header kolom - 3 KOLOM -->
                 <div class="row mb-2 fw-bold">
-                    <div class="col-md-4">Nama Stasiun Lawan</div>
-                    <div class="col-md-3">Freq Tx</div>
-                    <div class="col-md-3">Freq Rx</div>
+                    <div class="col-md-4">Nama Stasiun Lawan <span class="text-danger">*</span></div>
+                    <div class="col-md-3">Freq Tx <span class="text-muted">(opsional)</span></div>
+                    <div class="col-md-3">Freq Rx <span class="text-muted">(opsional)</span></div>
                     <div class="col-md-2">Aksi</div>
                 </div>
                 
                 <div id="opponent-container">
                     {% for lawan in station.stasiun_lawan_list %}
                     <div class="row mb-2 opponent-row" data-lawan-id="{{ lawan.id }}">
-                        <!-- Hidden input untuk menyimpan ID lawan yang sudah ada -->
                         <input type="hidden" name="lawan_id[]" value="{{ lawan.id }}">
                         
                         <div class="col-md-4">
@@ -122,7 +146,11 @@
                     {% endfor %}
                 </div>
                 
-                <!-- Checkbox untuk konfirmasi hapus -->
+                <div class="alert alert-info mt-3">
+                    <i class="bi bi-info-circle"></i> 
+                    <strong>Info:</strong> Frekuensi Tx dan Rx bersifat OPSIONAL. Biarkan kosong jika belum ada data.
+                </div>
+                
                 <div class="form-check mb-2 mt-3">
                     <input class="form-check-input" type="checkbox" id="confirmDelete" onchange="toggleDeleteButtons()">
                     <label class="form-check-label text-danger" for="confirmDelete">
@@ -153,10 +181,9 @@
         const div = document.createElement('div');
         div.className = 'row mb-2 opponent-row';
         div.innerHTML = `
-            <!-- Baris baru tidak punya hidden input lawan_id -->
             <div class="col-md-4">
                 <input type="text" class="form-control" name="stasiun_lawan[]" 
-                       placeholder="Nama Stasiun Lawan">
+                       placeholder="Nama Stasiun Lawan" required>
             </div>
             <div class="col-md-3">
                 <input type="text" class="form-control" name="freq_tx[]" 
@@ -174,7 +201,6 @@
         `;
         container.appendChild(div);
         
-        // Aktifkan tombol hapus di baris pertama jika sudah lebih dari 1
         if (opponentCounter > 1) {
             const firstDeleteBtn = container.querySelector('.opponent-row:first-child .btn-outline-danger');
             if (firstDeleteBtn) {
@@ -185,21 +211,16 @@
 
     function removeField(button) {
         const row = button.closest('.opponent-row');
-        
-        // Cek apakah baris ini memiliki hidden input lawan_id (berarti data existing)
         const lawanIdInput = row.querySelector('input[name="lawan_id[]"]');
         
         if (lawanIdInput && lawanIdInput.value) {
-            // Jika checkbox confirmDelete tidak dicentang, tampilkan pesan
             if (!document.getElementById('confirmDelete').checked) {
                 alert('Untuk menghapus stasiun lawan yang sudah ada, centang kotak konfirmasi terlebih dahulu!');
                 return;
             }
             
-            // Simpan ID lawan yang akan dihapus
             deletedLawanIds.push(lawanIdInput.value);
             
-            // Tambahkan hidden input untuk mengirimkan data lawan yang dihapus
             const deletedInput = document.createElement('input');
             deletedInput.type = 'hidden';
             deletedInput.name = 'deleted_lawan_ids[]';
@@ -225,8 +246,24 @@
         });
     }
 
+    function validateForm() {
+        // Validasi kota
+        const kota = document.getElementById('kota').value;
+        if (!kota || kota === '') {
+            const kotaSelect = document.getElementById('kota');
+            kotaSelect.classList.add('is-invalid');
+            document.getElementById('kotaFeedback').style.display = 'block';
+            alert('❌ Kota/Kabupaten harus dipilih!');
+            return false;
+        }
+        return true;
+    }
+
     function confirmSubmit() {
-        // Validasi minimal 1 stasiun lawan
+        if (!validateForm()) {
+            return false;
+        }
+        
         const opponentInputs = document.querySelectorAll('input[name="stasiun_lawan[]"]');
         let hasValue = false;
         opponentInputs.forEach(input => {
@@ -236,7 +273,7 @@
         });
         
         if (!hasValue) {
-            alert('Minimal harus ada 1 stasiun lawan!');
+            alert('❌ Minimal harus ada 1 stasiun lawan!');
             return false;
         }
         
@@ -249,11 +286,34 @@
         
         return confirm('Apakah Anda yakin ingin menyimpan perubahan?');
     }
+    
+    document.getElementById('kota').addEventListener('change', function() {
+        if (this.value && this.value !== '') {
+            this.classList.remove('is-invalid');
+            document.getElementById('kotaFeedback').style.display = 'none';
+        }
+    });
+    
+    // Debug: Tampilkan nilai yang dipilih
+    console.log('Current kota select value:', document.getElementById('kota').value);
+    console.log('Station kota from database:', '{{ station.kota }}');
+    console.log('Available kota options:', {{ kota_list|tojson }});
 </script>
 
 <style>
 .table-danger {
     background-color: #f8d7da !important;
+}
+.text-muted {
+    font-size: 0.8rem;
+}
+.invalid-feedback {
+    display: none;
+    font-size: 0.875rem;
+    color: #dc3545;
+}
+.is-invalid {
+    border-color: #dc3545;
 }
 </style>
 {% endblock %}

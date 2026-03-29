@@ -19,6 +19,22 @@
     --box-shadow-hover: 0 10px 25px rgba(0,0,0,0.1);
 }
 
+/* Perbaikan warna teks tab agar lebih jelas saat aktif */
+.nav-tabs .nav-link.active {
+    color: #2a5298 !important;
+    font-weight: 700 !important;
+    background-color: #e8f0fe !important;
+    border-bottom: 3px solid #2a5298 !important;
+}
+
+.nav-tabs .nav-link.active i {
+    color: #2a5298 !important;
+}
+
+.nav-tabs .nav-link.active .badge {
+    background-color: #2a5298 !important;
+    color: white !important;
+}
 /* ===== FIX SCROLL ISSUE ===== */
 html, body {
     overflow: auto !important;
@@ -52,7 +68,7 @@ body {
 
 .station-meta {
     display: flex;
-    gap: 1.5rem;
+    gap: 1rem;
     margin-top: 1rem;
     flex-wrap: wrap;
 }
@@ -335,7 +351,7 @@ body {
     z-index: 15;
 }
 
-/* ===== MODAL ZOOM FULL SCREEN - MENUTUPI SIDEBAR ===== */
+/* ===== MODAL ZOOM FULL SCREEN ===== */
 .modal {
     z-index: 999999 !important;
 }
@@ -564,9 +580,29 @@ body.modal-open {
 
 .status-aktif { background: rgba(25, 135, 84, 0.1); color: #198754; border: 1px solid rgba(25, 135, 84, 0.2); }
 .status-tidak_aktif { background: rgba(220, 53, 69, 0.1); color: #dc3545; border: 1px solid rgba(220, 53, 69, 0.2); }
-.status-tidak_berizin { background: rgba(255, 193, 7, 0.1); color: #856404; border: 1px solid rgba(255, 193, 7, 0.2); }
 .status-tidak_sesuai { background: rgba(13, 110, 253, 0.1); color: #0d6efd; border: 1px solid rgba(13, 110, 253, 0.2); }
 .status-belum_ada { background: rgba(108, 117, 125, 0.1); color: #6c757d; border: 1px solid rgba(108, 117, 125, 0.2); }
+
+/* ===== INSPECTION BADGE (STATUS PEMERIKSAAN) ===== */
+.inspection-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.8rem;
+    border-radius: 100px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.inspection-badge.sudah_diperiksa {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+}
+
+.inspection-badge.belum_diperiksa {
+    background: #ffc107;
+    color: #212529;
+}
 
 /* ===== OPPONENTS LIST ===== */
 .opponents-list {
@@ -773,6 +809,27 @@ body.modal-open {
             <i class="bi bi-images"></i>
             <span>{{ all_uploads|length }} Gambar</span>
         </div>
+        <!-- STATUS PEMERIKSAAN (READ ONLY) -->
+        <div class="meta-item">
+            <i class="bi bi-clipboard-check"></i>
+            <span>
+                {% if station.status_pemeriksaan == 'sudah_diperiksa' %}
+                    <span class="inspection-badge sudah_diperiksa">
+                        <i class="bi bi-check-circle-fill"></i> Sudah Diperiksa
+                    </span>
+                    {% if station.checked_at %}
+                        <small class="ms-1">({{ station.checked_at.strftime('%d/%m/%Y') }})</small>
+                    {% endif %}
+                    {% if station.checked_by_user %}
+                        <br><small class="ms-1">Oleh: {{ station.checked_by_user.username }}</small>
+                    {% endif %}
+                {% else %}
+                    <span class="inspection-badge belum_diperiksa">
+                        <i class="bi bi-question-circle"></i> Belum Diperiksa
+                    </span>
+                {% endif %}
+            </span>
+        </div>
     </div>
 </div>
 
@@ -942,7 +999,6 @@ body.modal-open {
                                     {% set counts = {
                                         'aktif': group_info.lawans|selectattr('latest_status', 'equalto', 'aktif')|list|length,
                                         'tidak_aktif': group_info.lawans|selectattr('latest_status', 'equalto', 'tidak_aktif')|list|length,
-                                        'tidak_berizin': group_info.lawans|selectattr('latest_status', 'equalto', 'tidak_berizin')|list|length,
                                         'tidak_sesuai': group_info.lawans|selectattr('latest_status', 'equalto', 'tidak_sesuai')|list|length
                                     } %}
                                     
@@ -953,10 +1009,6 @@ body.modal-open {
                                     <div class="status-stat-item status-tidak_aktif">
                                         <span><i class="bi bi-x-circle"></i> Tidak Aktif</span>
                                         <span class="status-stat-count">{{ counts.tidak_aktif }}</span>
-                                    </div>
-                                    <div class="status-stat-item status-tidak_berizin">
-                                        <span><i class="bi bi-exclamation-circle"></i> Tidak Berizin</span>
-                                        <span class="status-stat-count">{{ counts.tidak_berizin }}</span>
                                     </div>
                                     <div class="status-stat-item status-tidak_sesuai">
                                         <span><i class="bi bi-arrow-repeat"></i> Tidak Sesuai</span>
@@ -1009,10 +1061,9 @@ body.modal-open {
                                                 <div style="margin-bottom: 6px;">
                                                     {% set status = lawan.latest_status if lawan.latest_status else 'belum_ada' %}
                                                     <span class="status-badge status-{{ status }}" 
-                                                          title="Status: {% if status == 'aktif' %}Aktif{% elif status == 'tidak_aktif' %}Tidak Aktif{% elif status == 'tidak_berizin' %}Tidak Berizin{% elif status == 'tidak_sesuai' %}Tidak Sesuai{% else %}Belum Ada{% endif %}">
+                                                          title="Status: {% if status == 'aktif' %}Aktif{% elif status == 'tidak_aktif' %}Tidak Aktif{% elif status == 'tidak_sesuai' %}Tidak Sesuai{% else %}Belum Ada{% endif %}">
                                                         {% if status == 'aktif' %}Aktif
                                                         {% elif status == 'tidak_aktif' %}Tidak Aktif
-                                                        {% elif status == 'tidak_berizin' %}Tidak Berizin
                                                         {% elif status == 'tidak_sesuai' %}Tidak Sesuai
                                                         {% else %}Belum Ada{% endif %}
                                                     </span>

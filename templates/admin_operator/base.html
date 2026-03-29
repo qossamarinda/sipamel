@@ -3,6 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    
+    <!-- ===== FAVICON ===== -->
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo1.png') }}">
+    <link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='logo1.png') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='logo1.png') }}">
+    
     <title>{% block title %}Admin Operator{% endblock %} - {{ current_user.operator_type|upper }}</title>
     
     <!-- Bootstrap 5 CSS -->

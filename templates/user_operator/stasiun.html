@@ -154,7 +154,6 @@
     
     .lawan-row.aktif { border-left-color: #28a745; }
     .lawan-row.tidak_aktif { border-left-color: #dc3545; }
-    .lawan-row.tidak_berizin { border-left-color: #ffc107; }
     .lawan-row.tidak_sesuai { border-left-color: #17a2b8; }
     .lawan-row.belum_ada { border-left-color: #6c757d; }
     
@@ -178,7 +177,6 @@
     
     .status-aktif { background: #28a745; color: white; }
     .status-tidak_aktif { background: #dc3545; color: white; }
-    .status-tidak_berizin { background: #ffc107; color: #212529; }
     .status-tidak_sesuai { background: #17a2b8; color: white; }
     .status-belum_ada { background: #6c757d; color: white; }
     
@@ -240,6 +238,33 @@
         font-size: 0.7rem;
         margin-bottom: 8px;
         display: inline-block;
+    }
+    
+    /* Status Pemeriksaan Badge */
+    .inspection-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    
+    .inspection-badge.sudah_diperiksa {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+    }
+    
+    .inspection-badge.belum_diperiksa {
+        background: #ffc107;
+        color: #212529;
+    }
+    
+    .inspection-info {
+        font-size: 0.7rem;
+        color: #6c757d;
+        margin-top: 4px;
     }
     
     /* Action buttons */
@@ -338,7 +363,7 @@
     /* Responsive */
     @media (max-width: 1200px) {
         .stations-table {
-            min-width: 1200px;
+            min-width: 1400px;
         }
     }
 </style>
@@ -481,6 +506,7 @@
                     <th>Stasiun Lawan & Status</th>
                     <th>Freq Tx</th>
                     <th>Freq Rx</th>
+                    <th>Status Pemeriksaan</th>
                     <th class="text-center">Aksi</th>
                 </tr>
             </thead>
@@ -497,7 +523,7 @@
                         {{ station.kota|truncate(15) }}
                     </td>
                     
-                    <!-- KOLOM STASIUN LAWAN & STATUS (SESUAI ADMIN OPERATOR) -->
+                    <!-- KOLOM STASIUN LAWAN & STATUS -->
                     <td class="align-middle">
                         {% if station.stasiun_lawan_list %}
                             <div class="mb-2">
@@ -551,14 +577,12 @@
                                                         <span class="badge bg-{{ 
                                                             'success' if latest_status.status == 'aktif' else
                                                             'danger' if latest_status.status == 'tidak_aktif' else
-                                                            'warning' if latest_status.status == 'tidak_berizin' else
                                                             'info' if latest_status.status == 'tidak_sesuai' else
                                                             'secondary'
                                                         }}" style="padding: 2px 5px; font-size: 10px;">
                                                             {{ 
                                                                 'Aktif' if latest_status.status == 'aktif' else
                                                                 'Tidak Aktif' if latest_status.status == 'tidak_aktif' else
-                                                                'Tidak Berizin' if latest_status.status == 'tidak_berizin' else
                                                                 'Tidak Sesuai' if latest_status.status == 'tidak_sesuai' else
                                                                 latest_status.status
                                                             }}
@@ -584,7 +608,6 @@
                     <!-- KOLOM FREKUENSI TX -->
                     <td class="align-middle">
                         {% if station.stasiun_lawan_list %}
-                            <!-- Spacer untuk badge jumlah -->
                             <div class="mb-2">
                                 <span class="badge bg-secondary mb-2" style="visibility: hidden; opacity: 0;">
                                     {{ station.stasiun_lawan_list|length }} placeholder
@@ -605,7 +628,6 @@
                                 {% for group_key, lawan_list in stasiun_lawan_grouped.items() %}
                                     {% if group_key != 'no_group' %}
                                         <div class="border-start border-3 border-info ps-2 mb-2" style="border-color: transparent !important;">
-                                            <!-- Spacer untuk judul grup -->
                                             <div class="mb-1" style="height: 20px;"></div>
                                     {% endif %}
                                     
@@ -632,7 +654,6 @@
                     <!-- KOLOM FREKUENSI RX -->
                     <td class="align-middle">
                         {% if station.stasiun_lawan_list %}
-                            <!-- Spacer untuk badge jumlah -->
                             <div class="mb-2">
                                 <span class="badge bg-secondary mb-2" style="visibility: hidden; opacity: 0;">
                                     {{ station.stasiun_lawan_list|length }} placeholder
@@ -653,7 +674,6 @@
                                 {% for group_key, lawan_list in stasiun_lawan_grouped.items() %}
                                     {% if group_key != 'no_group' %}
                                         <div class="border-start border-3 border-info ps-2 mb-2" style="border-color: transparent !important;">
-                                            <!-- Spacer untuk judul grup -->
                                             <div class="mb-1" style="height: 20px;"></div>
                                     {% endif %}
                                     
@@ -675,6 +695,31 @@
                         {% else %}
                             <span class="badge bg-light text-dark">-</span>
                         {% endif %}
+                    </td>
+                    
+                    <!-- KOLOM STATUS PEMERIKSAAN (READ ONLY) -->
+                    <td class="align-middle">
+                        <div class="text-center">
+                            {% if station.status_pemeriksaan == 'sudah_diperiksa' %}
+                                <span class="inspection-badge sudah_diperiksa">
+                                    <i class="bi bi-check-circle-fill me-1"></i> Sudah Diperiksa
+                                </span>
+                                {% if station.checked_at %}
+                                <div class="inspection-info">
+                                    <i class="bi bi-calendar-check"></i> {{ station.checked_at.strftime('%d/%m/%Y') }}
+                                </div>
+                                {% endif %}
+                                {% if station.checked_by_user %}
+                                <div class="inspection-info">
+                                    <i class="bi bi-person-check"></i> {{ station.checked_by_user.username }}
+                                </div>
+                                {% endif %}
+                            {% else %}
+                                <span class="inspection-badge belum_diperiksa">
+                                    <i class="bi bi-question-circle me-1"></i> Belum Diperiksa
+                                </span>
+                            {% endif %}
+                        </div>
                     </td>
                     
                     <!-- KOLOM AKSI -->

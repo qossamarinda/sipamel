@@ -12,7 +12,7 @@
         <p class="lead text-muted">Download laporan rekap tahunan dengan gambar dokumentasi per bulan</p>
     </div>
 
-    <!-- FILTER CARD - PENTING UNTUK MEMILIH TAHUN -->
+    <!-- FILTER CARD -->
     <div class="row justify-content-center mb-4">
         <div class="col-md-10">
             <div class="card border-0 shadow">
@@ -20,7 +20,7 @@
                     <h5 class="mb-0"><i class="bi bi-funnel-fill me-2"></i> Pilih Periode Laporan</h5>
                 </div>
                 <div class="card-body p-4">
-                    <form method="GET" action="{{ url_for('admin_master_rekap_tahunan') }}" class="row g-3">
+                    <form method="GET" action="{{ url_for('admin_master_rekap_tahunan') }}" class="row g-3" id="filterForm">
                         <div class="col-md-3">
                             <label class="form-label fw-semibold">Tahun</label>
                             <select class="form-select form-select-lg" name="tahun" id="tahun">
@@ -50,10 +50,13 @@
                             </select>
                         </div>
                         
-                        <div class="col-md-2 d-flex align-items-end">
-                            <button type="submit" class="btn btn-primary btn-lg w-100">
+                        <div class="col-md-2 d-flex align-items-end gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg w-100" id="btnTampilkan">
                                 <i class="bi bi-search"></i>
                             </button>
+                            <a href="{{ url_for('admin_master_rekap_tahunan') }}" class="btn btn-outline-secondary btn-lg" id="btnReset">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </a>
                         </div>
                     </form>
                 </div>
@@ -66,8 +69,8 @@
         <div class="col-md-10">
             <div class="card border-0 shadow-sm bg-info bg-opacity-10">
                 <div class="card-body py-3">
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-info-circle-fill text-info fs-3 me-3"></i>
+                    <div class="d-flex align-items-center flex-wrap gap-3">
+                        <i class="bi bi-info-circle-fill text-info fs-3"></i>
                         <div class="flex-grow-1">
                             <strong>Tahun Terpilih:</strong>
                             <span class="badge bg-primary ms-2 py-2 px-3 fs-6">{{ tahun }}</span>
@@ -89,7 +92,6 @@
         <div class="col-md-8">
             <div class="card border-0 shadow-lg text-center">
                 <div class="card-body p-5">
-                    <!-- Icon -->
                     <div class="mb-4">
                         <div class="display-1 text-success">
                             <i class="bi bi-file-earmark-word-fill"></i>
@@ -100,10 +102,14 @@
                     <p class="text-muted mb-4">
                         Klik tombol di bawah untuk mendownload laporan tahun 
                         <strong class="text-primary">{{ tahun }}</strong>
+                        {% if operator != 'all' %}untuk operator <strong>{{ operator|upper }}</strong>{% endif %}
+                        {% if kota != 'all' %}di kota/kab <strong>{{ kota }}</strong>{% endif %}
                     </p>
 
                     <a href="{{ url_for('admin_master_rekap_tahunan_word_gambar', tahun=tahun, operator=operator, kota=kota) }}" 
-                       class="btn btn-success btn-lg px-5 py-3 shadow" target="_blank">
+                       id="downloadLink"
+                       class="btn btn-success btn-lg px-5 py-3 shadow" 
+                       target="_blank">
                         <i class="bi bi-file-word-fill me-2 fs-4"></i>
                         <span class="fs-5">Export Word dengan Gambar</span>
                     </a>
@@ -126,6 +132,8 @@
                     <small>
                         <i class="bi bi-info-circle me-1"></i>
                         Laporan akan menampilkan data untuk tahun {{ tahun }}. 
+                        {% if operator != 'all' %}Hanya menampilkan data operator {{ operator|upper }}.{% endif %}
+                        {% if kota != 'all' %}Hanya menampilkan data kota/kab {{ kota }}.{% endif %}
                         Bulan yang tidak memiliki data tidak akan muncul di dokumen.
                     </small>
                 </div>
@@ -133,31 +141,6 @@
         </div>
     </div>
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Auto submit ketika tahun berubah
-    const tahun = document.getElementById('tahun');
-    const operator = document.getElementById('operator');
-    const kota = document.getElementById('kota');
-    
-    function submitForm() {
-        const params = new URLSearchParams({
-            tahun: tahun.value,
-            operator: operator.value,
-            kota: kota.value
-        });
-        window.location.href = "{{ url_for('admin_master_rekap_tahunan') }}?" + params.toString();
-    }
-    
-    // Auto submit ketika tahun berubah
-    tahun.addEventListener('change', submitForm);
-    
-    // Untuk operator dan kota, submit saat berubah (opsional)
-    operator.addEventListener('change', submitForm);
-    kota.addEventListener('change', submitForm);
-});
-</script>
 
 <style>
     .btn-success {
@@ -177,4 +160,66 @@ document.addEventListener('DOMContentLoaded', function() {
         padding: 0.75rem 1rem;
     }
 </style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Elemen-elemen DOM
+    const tahunSelect = document.getElementById('tahun');
+    const operatorSelect = document.getElementById('operator');
+    const kotaSelect = document.getElementById('kota');
+    const btnTampilkan = document.getElementById('btnTampilkan');
+    const btnReset = document.getElementById('btnReset');
+    
+    // Fungsi untuk submit form filter
+    function submitFilterForm() {
+        const tahun = tahunSelect.value;
+        const operator = operatorSelect.value;
+        const kota = kotaSelect.value;
+        
+        const redirectUrl = "{{ url_for('admin_master_rekap_tahunan') }}?" + 
+            'tahun=' + encodeURIComponent(tahun) + 
+            '&operator=' + encodeURIComponent(operator) + 
+            '&kota=' + encodeURIComponent(kota);
+        
+        window.location.href = redirectUrl;
+    }
+    
+    // Fungsi untuk reset filter
+    function resetFilters() {
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        
+        tahunSelect.value = currentYear;
+        operatorSelect.value = 'all';
+        kotaSelect.value = 'all';
+        
+        submitFilterForm();
+    }
+    
+    // Event listeners
+    if (btnTampilkan) {
+        btnTampilkan.addEventListener('click', function(e) {
+            e.preventDefault();
+            submitFilterForm();
+        });
+    }
+    
+    if (btnReset) {
+        btnReset.addEventListener('click', function(e) {
+            e.preventDefault();
+            resetFilters();
+        });
+    }
+    
+    const filterForm = document.getElementById('filterForm');
+    if (filterForm) {
+        filterForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitFilterForm();
+        });
+    }
+});
+</script>
 {% endblock %}

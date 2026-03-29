@@ -58,7 +58,7 @@
                     <i class="bi bi-geo-alt"></i> Kota/Kabupaten
                 </label>
                 <select class="form-select" id="kota" name="kota">
-                    <option value="all" {% if selected_kota == 'all' %}selected{% endif %}>Semua Kota/kab/Kab</option>
+                    <option value="all" {% if selected_kota == 'all' %}selected{% endif %}>Semua Kota/Kab</option>
                     {% for kota in kota_list %}
                     <option value="{{ kota }}" {% if selected_kota == kota %}selected{% endif %}>
                         {{ kota|title }}
@@ -126,25 +126,26 @@
             <table class="table table-hover" id="stasiunTable">
                 <thead>
                     <tr>
-                        <th>No</th>
-                        <th>Nama Stasiun</th>
-                        <th>Operator</th>
-                        <th>Kota/Kab</th>
-                        <th>Stasiun Lawan & Status</th>
-                        <th>Freq Tx</th>
-                        <th>Freq Rx</th>
-                        <th>Tanggal</th>
-                        <th class="text-center">Aksi</th>
+                        <th style="width: 5%;">No</th>
+                        <th style="width: 12%;">Nama Stasiun</th>
+                        <th style="width: 8%;">Operator</th>
+                        <th style="width: 10%;">Kota/Kab</th>
+                        <th style="width: 20%;">Stasiun Lawan & Status</th>
+                        <th style="width: 8%;">Freq Tx</th>
+                        <th style="width: 8%;">Freq Rx</th>
+                        <th style="width: 12%;">Status Pemeriksaan</th>
+                        <th style="width: 8%;">Tanggal</th>
+                        <th style="width: 9%;" class="text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for station in stations %}
                     <tr>
-                        <td>{{ loop.index + (pagination.page - 1) * pagination.per_page }}</td>
-                        <td>
+                        <td class="align-middle text-center">{{ loop.index + (pagination.page - 1) * pagination.per_page }}</td>
+                        <td class="align-middle">
                             <strong>{{ station.stasiun_name }}</strong>
                         </td>
-                        <td>
+                        <td class="align-middle">
                             {% if station.operator == 'telkom' %}
                             <span class="badge" style="background-color: #E1251B; color: white;">
                                 <i class="bi bi-telephone"></i> Telkom
@@ -163,10 +164,10 @@
                             </span>
                             {% endif %}
                         </td>
-                        <td>{{ station.kota|title }}</td>
+                        <td class="align-middle">{{ station.kota|title }}</td>
                         
                         <!-- KOLOM 5: STASIUN LAWAN & STATUS -->
-                        <td>
+                        <td class="align-middle">
                             {% if station.stasiun_lawan_list %}
                                 <div class="mb-2">
                                     <span class="badge bg-secondary mb-2">
@@ -220,8 +221,6 @@
                                                                 <span class="badge bg-success" style="padding: 2px 5px; font-size: 10px;">Aktif</span>
                                                             {% elif latest_status.status == 'tidak_aktif' %}
                                                                 <span class="badge bg-danger" style="padding: 2px 5px; font-size: 10px;">Tidak Aktif</span>
-                                                            {% elif latest_status.status == 'tidak_berizin' %}
-                                                                <span class="badge bg-warning" style="padding: 2px 5px; font-size: 10px;">Tidak Berizin</span>
                                                             {% elif latest_status.status == 'tidak_sesuai' %}
                                                                 <span class="badge bg-info" style="padding: 2px 5px; font-size: 10px;">Tidak Sesuai</span>
                                                             {% else %}
@@ -246,9 +245,8 @@
                         </td>
                         
                         <!-- KOLOM 6: FREKUENSI TX -->
-                        <td>
+                        <td class="align-middle">
                             {% if station.stasiun_lawan_list %}
-                                <!-- Spacer untuk badge jumlah -->
                                 <div class="mb-2">
                                     <span class="badge bg-secondary mb-2" style="visibility: hidden; opacity: 0;">
                                         {{ station.stasiun_lawan_list|length }} placeholder
@@ -269,11 +267,9 @@
                                     {% for group_key, lawan_list in stasiun_lawan_grouped.items() %}
                                         {% if group_key != 'no_group' %}
                                             <div class="border-start border-3 border-info ps-2 mb-2" style="border-color: transparent !important;">
-                                                <!-- Spacer untuk judul grup -->
                                                 <div class="mb-1" style="height: 20px;"></div>
                                         {% endif %}
                                                         
-                                        <!-- List frekuensi Tx untuk setiap stasiun lawan -->
                                         {% for lawan in lawan_list %}
                                             <div class="d-flex align-items-center border-bottom pb-1 mb-1" style="min-height: 28px;">
                                                 {% if lawan.freq_tx and lawan.freq_tx|trim %}
@@ -295,9 +291,8 @@
                         </td>
                         
                         <!-- KOLOM 7: FREKUENSI RX -->
-                        <td>
+                        <td class="align-middle">
                             {% if station.stasiun_lawan_list %}
-                                <!-- Spacer untuk badge jumlah -->
                                 <div class="mb-2">
                                     <span class="badge bg-secondary mb-2" style="visibility: hidden; opacity: 0;">
                                         {{ station.stasiun_lawan_list|length }} placeholder
@@ -318,11 +313,9 @@
                                     {% for group_key, lawan_list in stasiun_lawan_grouped.items() %}
                                         {% if group_key != 'no_group' %}
                                             <div class="border-start border-3 border-info ps-2 mb-2" style="border-color: transparent !important;">
-                                                <!-- Spacer untuk judul grup -->
                                                 <div class="mb-1" style="height: 20px;"></div>
                                         {% endif %}
                                                         
-                                        <!-- List frekuensi Rx untuk setiap stasiun lawan -->
                                         {% for lawan in lawan_list %}
                                             <div class="d-flex align-items-center border-bottom pb-1 mb-1" style="min-height: 28px;">
                                                 {% if lawan.freq_rx and lawan.freq_rx|trim %}
@@ -343,12 +336,48 @@
                             {% endif %}
                         </td>
                         
-                        <td>
+                        <!-- KOLOM 8: STATUS PEMERIKSAAN (BARU) -->
+                        <td class="align-middle">
+                            <div class="status-check-container" data-station-id="{{ station.id }}">
+                                {% if station.status_pemeriksaan == 'sudah_diperiksa' %}
+                                    <div class="d-flex flex-column align-items-center">
+                                        <span class="badge bg-success px-3 py-2" style="font-size: 0.85rem;">
+                                            <i class="bi bi-check-circle-fill me-1"></i> Sudah Diperiksa
+                                        </span>
+                                        {% if station.checked_at %}
+                                            <small class="text-muted mt-1" style="font-size: 10px;">
+                                                <i class="bi bi-calendar-check"></i> {{ station.checked_at.strftime('%d/%m/%Y') }}
+                                                {% if station.checked_by_user %}
+                                                    <br><i class="bi bi-person-check"></i> {{ station.checked_by_user.username }}
+                                                {% endif %}
+                                            </small>
+                                        {% endif %}
+                                    </div>
+                                {% else %}
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-warning dropdown-toggle px-3 py-2" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="border-radius: 20px;">
+                                            <i class="bi bi-question-circle me-1"></i> Belum Diperiksa
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li>
+                                                <button class="dropdown-item" onclick="updateStatusPemeriksaan({{ station.id }}, 'sudah_diperiksa')">
+                                                    <i class="bi bi-check-circle-fill text-success me-2"></i> 
+                                                    <span>Tandai Sudah Diperiksa</span>
+                                                </button>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </td>
+                        
+                        <td class="align-middle">
                             <small class="text-muted">
-                                {{ station.created_at.strftime('%d/%m/%Y') }}
+                                <i class="bi bi-calendar3"></i> {{ station.created_at.strftime('%d/%m/%Y') }}
                             </small>
                         </td>
-                        <td class="text-center">
+                        
+                        <td class="text-center align-middle">
                             <div class="btn-group btn-group-sm" role="group">
                                 <a href="{{ url_for('admin_master_detail_stasiun', station_id=station.id) }}"
                                     class="btn btn-outline-info" title="Detail">
@@ -528,7 +557,7 @@
                         </div>
                     </div>
                     
-                    <!-- STATISTIK YANG AKAN DIHAPUS - VERSI AMAN -->
+                    <!-- STATISTIK YANG AKAN DIHAPUS -->
                     <div class="card border-danger mb-4">
                         <div class="card-header bg-danger text-white">
                             <i class="bi bi-bar-chart"></i> Data yang Akan Dihapus
@@ -667,6 +696,11 @@
 .table th {
     background-color: #f8f9fa;
     font-weight: 600;
+    vertical-align: middle;
+}
+
+.table td {
+    vertical-align: middle;
 }
 
 .border-info {
@@ -729,6 +763,51 @@
 .page-item.disabled .page-link {
     background-color: #f8fafc;
     color: #94a3b8;
+}
+
+/* Style untuk status pemeriksaan */
+.status-check-container {
+    text-align: center;
+}
+
+.status-check-container .badge.bg-success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
+}
+
+.status-check-container .btn-outline-warning {
+    border-radius: 20px;
+    padding: 4px 12px;
+    transition: all 0.3s ease;
+}
+
+.status-check-container .btn-outline-warning:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);
+}
+
+.status-check-container .dropdown-menu {
+    min-width: 180px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.status-check-container .dropdown-item {
+    padding: 8px 16px;
+    transition: all 0.2s ease;
+}
+
+.status-check-container .dropdown-item:hover {
+    background-color: #f8f9fa;
+    padding-left: 20px;
+}
+
+.status-check-container .text-muted {
+    font-size: 10px;
+    margin-top: 4px;
 }
 
 /* Style untuk modal hapus semua */
@@ -821,7 +900,7 @@
 
             for (let j = 0; j < cols.length; j++) {
                 // Skip action column
-                if (j === 8) continue;
+                if (j === 9) continue;
 
                 // Clean text
                 let text = cols[j].innerText.replace(/\n/g, " ").replace(/\s+/g, " ").trim();
@@ -840,6 +919,48 @@
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+    }
+
+    // Fungsi untuk update status pemeriksaan
+    function updateStatusPemeriksaan(stationId, status) {
+        const statusText = status === 'sudah_diperiksa' ? 'Sudah Diperiksa' : 'Belum Diperiksa';
+        
+        if (!confirm(`Apakah Anda yakin ingin menandai stasiun ini sebagai "${statusText}"?`)) {
+            return;
+        }
+        
+        // Tampilkan loading indicator
+        const container = document.querySelector(`.status-check-container[data-station-id="${stationId}"]`);
+        if (container) {
+            const originalHtml = container.innerHTML;
+            container.innerHTML = '<div class="spinner-border spinner-border-sm text-primary" role="status"><span class="visually-hidden">Loading...</span></div>';
+            
+            fetch(`/admin-master/update-status-pemeriksaan/${stationId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    status: status
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Reload halaman untuk menampilkan perubahan
+                    location.reload();
+                } else {
+                    // Restore original HTML
+                    container.innerHTML = originalHtml;
+                    alert('Gagal update status: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                container.innerHTML = originalHtml;
+                alert('Terjadi kesalahan saat mengupdate status');
+            });
+        }
     }
 
     // Auto submit form ketika per_page berubah
