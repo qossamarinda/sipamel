@@ -1,6 +1,6 @@
 {% extends "user_operator/base.html" %}
 
-{% block title %} Buat Grup IDU Stasiun Lawan - {{ station.stasiun_name }}{% endblock %}
+{% block title %}Buat Grup IDU Stasiun Lawan - {{ station.stasiun_name }}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -361,7 +361,7 @@
         background: #f8fafd;
     }
 
-    /* Frekuensi badges - HANYA TAMPILAN */
+    /* Frekuensi badges */
     .freq-tx-badge {
         display: inline-flex;
         align-items: center;
@@ -733,8 +733,8 @@
             </div>
         </div>
         <div class="mt-2 mt-md-0">
-            <a href="{{ url_for('user_operator_stasiun', station_id=station.id) }}" class="btn btn-light btn-sm rounded-pill px-4">
-                <i class="bi bi-arrow-left me-1"></i> Kembali
+            <a href="{{ next_url or url_for('user_operator_stasiun') }}" class="btn btn-light btn-sm rounded-pill px-4">
+                <i class="bi bi-arrow-left me-1"></i> Kembali ke Daftar Stasiun
             </a>
         </div>
     </div>
@@ -780,7 +780,7 @@
                 </h6>
             </div>
             <div class="form-body">
-                <form method="POST" action="{{ url_for('user_operator_grup_stasiun', station_id=station.id) }}" id="createGroupForm">
+                <form method="POST" action="{{ url_for('user_operator_grup_stasiun', station_id=station.id, next=next_url) }}" id="createGroupForm">
                     <input type="hidden" name="action" value="create_group">
                     
                     <div class="mb-3">
@@ -857,7 +857,7 @@
                             </div>
                         </div>
                         <div class="action-buttons-mini">
-                            <form method="POST" action="{{ url_for('user_operator_grup_stasiun', station_id=station.id) }}" 
+                            <form method="POST" action="{{ url_for('user_operator_grup_stasiun', station_id=station.id, next=next_url) }}" 
                                   class="d-inline" onsubmit="return confirm('Hapus grup ini? Semua anggota akan dipindahkan ke Tanpa Grup.')">
                                 <input type="hidden" name="action" value="delete_group">
                                 <input type="hidden" name="group_id" value="{{ group_key }}">
@@ -900,7 +900,7 @@
                                 </button>
                                 
                                 <!-- Tombol Keluarkan dari Grup -->
-                                <form method="POST" action="{{ url_for('user_operator_grup_stasiun', station_id=station.id) }}" 
+                                <form method="POST" action="{{ url_for('user_operator_grup_stasiun', station_id=station.id, next=next_url) }}" 
                                       class="d-inline" onsubmit="return confirm('Keluarkan {{ lawan.nama_stasiun_lawan }} dari grup?')">
                                     <input type="hidden" name="action" value="remove_from_group">
                                     <input type="hidden" name="opponent_id" value="{{ lawan.id }}">
@@ -1035,7 +1035,7 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
-                    <form method="POST" action="{{ url_for('user_operator_grup_stasiun', station_id=station.id) }}">
+                    <form method="POST" action="{{ url_for('user_operator_grup_stasiun', station_id=station.id, next=next_url) }}">
                         <input type="hidden" name="action" value="edit_lawan">
                         <input type="hidden" name="lawan_id" value="{{ lawan.id }}">
                         
@@ -1047,7 +1047,7 @@
                                 </h6>
                                 
                                 <div class="mb-2 row">
-                                    <div class="col-4 text-muted small">stasiun Lawan:</div>
+                                    <div class="col-4 text-muted small">Stasiun Lawan:</div>
                                     <div class="col-8 fw-bold">{{ lawan.nama_stasiun_lawan }}</div>
                                 </div>
                                 

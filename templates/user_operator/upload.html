@@ -2,10 +2,269 @@
 
 {% block title %}Upload Gambar - {{ station.stasiun_name }}{% endblock %}
 
+{% block extra_css %}
+<style>
+/* ===== UPLOAD PAGE STYLES ===== */
+.upload-box {
+    transition: all 0.3s ease;
+    min-height: 150px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.upload-box:hover {
+    background: #e3f2fd !important;
+    border-color: #0d6efd !important;
+}
+
+.upload-box i {
+    transition: transform 0.3s ease;
+}
+
+.upload-box:hover i {
+    transform: scale(1.1);
+    color: #0d6efd !important;
+}
+
+.object-fit-cover {
+    object-fit: cover;
+}
+
+.is-invalid {
+    border-color: #dc3545 !important;
+}
+
+/* Upload Status Card */
+.upload-status-card {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-left: 4px solid;
+}
+
+.upload-status-card.has-upload {
+    border-left-color: #28a745;
+    background: #f0fdf4;
+}
+
+.upload-status-card.no-upload {
+    border-left-color: #ffc107;
+    background: #fffbeb;
+}
+
+.upload-status-icon {
+    font-size: 2rem;
+}
+
+.upload-status-text {
+    font-size: 0.9rem;
+}
+
+.btn-edit-group {
+    border-radius: 30px;
+    padding: 0.5rem 1.25rem;
+}
+
+/* Collapse styling untuk banyak grup */
+.group-header-collapse {
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.group-header-collapse:hover {
+    opacity: 0.9;
+}
+
+.collapse-icon {
+    transition: transform 0.3s ease;
+}
+
+.collapse-icon.rotated {
+    transform: rotate(180deg);
+}
+
+/* Grid layout untuk banyak grup */
+.groups-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
+    gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .groups-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Quick stats bar */
+.quick-stats-bar {
+    background: white;
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.9rem;
+}
+
+.stat-badge {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: white;
+}
+
+.stat-badge.uploaded { background: #28a745; }
+.stat-badge.pending { background: #ffc107; color: #212529; }
+.stat-badge.total { background: #6c757d; }
+
+/* ===== NEW IMAGES PREVIEW - GRID 3 KOLOM HORIZONTAL ===== */
+.new-images-preview {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.new-image-preview {
+    border: 1px solid #eef2f6;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    background: white;
+    aspect-ratio: 1 / 1;
+    transition: all 0.2s ease;
+}
+
+.new-image-preview:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-color: #0d6efd;
+}
+
+.new-image-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    cursor: pointer;
+}
+
+/* Tombol Hapus - Lebih Besar dan Jelas */
+.remove-new-image {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(220, 53, 69, 0.95);
+    color: white;
+    border: 2px solid white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    transition: all 0.2s;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.remove-new-image:hover {
+    background: #dc3545;
+    transform: scale(1.1);
+}
+
+/* Informasi gambar di bagian bawah */
+.new-image-preview .preview-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+    padding: 8px 6px;
+    color: white;
+    font-size: 0.7rem;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.new-image-preview .preview-info i {
+    font-size: 0.65rem;
+    margin-right: 3px;
+}
+
+/* Responsif untuk grid gambar */
+@media (max-width: 768px) {
+    .new-images-preview {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.6rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .new-images-preview {
+        grid-template-columns: 1fr;
+        gap: 0.6rem;
+    }
+}
+
+/* Table styling ringkas */
+.table-opponents-sm {
+    font-size: 0.85rem;
+}
+
+.table-opponents-sm td {
+    padding: 0.5rem;
+    vertical-align: middle;
+}
+
+/* Card hover effect */
+.group-card-wrapper .card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    height: 100%;
+}
+
+.group-card-wrapper .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+/* Badge status */
+.badge-status {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid py-4">
     <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
             <h4 class="mb-1">
                 <i class="bi bi-upload text-primary"></i> Upload Gambar - {{ station.stasiun_name }}
@@ -29,189 +288,258 @@
         </div>
     </div>
 
-    <!-- Form Upload -->
-    <form method="POST" action="{{ url_for('user_operator_upload', station_id=station.id) }}" 
-          enctype="multipart/form-data" id="uploadForm">
-        
+    <!-- Info: Jika tidak ada grup -->
+    {% if not groups %}
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <strong>Belum ada grup!</strong> Silakan buat grup terlebih dahulu di halaman 
+        <a href="{{ url_for('user_operator_grup_stasiun', station_id=station.id) }}" class="alert-link">Grup IDU</a>.
+    </div>
+    {% else %}
+
+
+    <!-- Tombol Expand/Collapse All (jika grup > 3) -->
+    {% if groups|length > 3 %}
+    <div class="mb-3 text-end">
+        <button type="button" class="btn btn-sm btn-outline-secondary me-2" id="expandAllBtn">
+            <i class="bi bi-arrows-expand"></i> Buka Semua
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="collapseAllBtn">
+            <i class="bi bi-arrows-collapse"></i> Tutup Semua
+        </button>
+    </div>
+    {% endif %}
+
+    <!-- Grid Layout untuk grup -->
+    <div class="groups-grid">
         {% for group_key, lawan_list in groups.items() %}
-        <div class="card mb-4">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">
-                    {% if group_key == 'ungrouped' %}
-                        <i class="bi bi-circle"></i> Tanpa Grup
-                    {% else %}
-                        <i class="bi bi-collection"></i> 
-                        {% set grup_nama = namespace(name=None) %}
-                        {% for g in station.grup_list %}
-                            {% if g.id == group_key|int %}
-                                {% set grup_nama.name = g.nama_grup %}
+        {% set group_has_upload = group_uploads_status.get(group_key, {}).get('has_upload', false) %}
+        {% set upload_count = group_uploads_status.get(group_key, {}).get('upload_count', 0) %}
+        
+        <div class="group-card-wrapper" data-group-key="{{ group_key }}">
+            <div class="card h-100">
+                <!-- Card Header - Click to Collapse -->
+                <div class="card-header {% if group_has_upload %}bg-success{% else %}bg-primary{% endif %} text-white group-header-collapse"
+                     onclick="toggleGroup('{{ group_key }}')">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi {% if group_has_upload %}bi-check-circle-fill{% else %}bi-cloud-upload{% endif %} fs-5"></i>
+                            <h5 class="mb-0 fs-6">
+                                {% if group_key == 'ungrouped' %}
+                                    <i class="bi bi-circle"></i> Tanpa Grup
+                                {% else %}
+                                    <i class="bi bi-collection"></i> 
+                                    {% set grup_nama = namespace(name=None) %}
+                                    {% for g in station.grup_list %}
+                                        {% if g.id == group_key|int %}
+                                            {% set grup_nama.name = g.nama_grup %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    {% if grup_nama.name %}
+                                        {{ grup_nama.name|truncate(25) }}
+                                    {% else %}
+                                        Grup {{ group_key }}
+                                    {% endif %}
+                                {% endif %}
+                                <span class="badge bg-light text-dark ms-2">{{ lawan_list|length }}</span>
+                            </h5>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            {% if group_has_upload %}
+                            <span class="badge bg-white text-success">
+                                <i class="bi bi-check-circle-fill me-1"></i> {{ upload_count }} gambar
+                            </span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark">
+                                <i class="bi bi-exclamation-triangle me-1"></i> Belum upload
+                            </span>
                             {% endif %}
-                        {% endfor %}
-                        {% if grup_nama.name %}
-                            {{ grup_nama.name }}
-                        {% else %}
-                            Grup {{ group_key }}
-                        {% endif %}
-                    {% endif %}
-                    <span class="badge bg-light text-dark ms-2">{{ lawan_list|length }} lawan</span>
-                </h5>
-            </div>
-            
-            <div class="card-body">
-                <!-- Upload Area dengan Preview - DENGAN DRAG & DROP DAN PASTE -->
-                <div class="mb-4">
-                    <h6>Upload Gambar untuk Grup Ini</h6>
-                    
-                    <!-- Upload Box dengan Drag & Drop -->
-                    <div class="upload-box border rounded p-4 text-center mb-3" 
-                         id="dropZone_{{ group_key }}"
-                         ondragover="handleDragOver(event)"
-                         ondragleave="handleDragLeave(event)"
-                         ondrop="handleDrop(event, '{{ group_key }}')"
-                         onclick="document.getElementById('fileInput_{{ group_key }}').click()"
-                         style="cursor: pointer; border: 2px dashed #ccc; background: #f8f9fa; transition: all 0.3s;">
-                        <i class="bi bi-cloud-arrow-up display-4 text-muted mb-3"></i>
-                        <h5 class="text-muted">Klik untuk Pilih Gambar</h5>
-                        <p class="text-muted small mb-2">Atau drag & drop file di sini</p>
-                        <p class="text-muted small mb-0">
-                            <i class="bi bi-files me-1"></i> Bisa copy paste dari folder
-                        </p>
-                        <p class="text-muted small">Format: JPG, PNG, GIF, WEBP • Max 5MB per file</p>
-                    </div>
-                    
-                    <!-- Hidden File Input -->
-                    <input type="file" 
-                           class="d-none" 
-                           id="fileInput_{{ group_key }}"
-                           accept=".png,.jpg,.jpeg,.gif,.webp"
-                           multiple
-                           onchange="handleFileSelect('{{ group_key }}', this)">
-                    
-                    <!-- Paste Area (hidden) -->
-                    <textarea id="pasteArea_{{ group_key }}" 
-                              class="d-none" 
-                              onpaste="handlePaste(event, '{{ group_key }}')"></textarea>
-                    
-                    <!-- Quick Paste Button -->
-                    <div class="text-center mb-2">
-                        <button type="button" class="btn btn-sm btn-outline-secondary" 
-                                onclick="focusPasteArea('{{ group_key }}')">
-                            <i class="bi bi-clipboard me-1"></i> Klik di sini lalu Ctrl+V untuk paste
-                        </button>
-                    </div>
-                    
-                    <!-- File List Container -->
-                    <div id="fileList_{{ group_key }}" class="mt-3">
-                        <!-- File list akan muncul di sini -->
-                    </div>
-                    
-                    <!-- Info -->
-                    <div class="mt-2 text-end">
-                        <small class="text-muted">
-                            <span id="fileCount_{{ group_key }}">0</span> file dipilih • 
-                            <span id="totalSize_{{ group_key }}">0 KB</span>
-                        </small>
-                    </div>
-                    
-                    <!-- Clear All Button -->
-                    <div class="mt-2 text-end" id="clearAllBtn_{{ group_key }}" style="display: none;">
-                        <button type="button" class="btn btn-sm btn-outline-danger" 
-                                onclick="clearAllFiles('{{ group_key }}')">
-                            <i class="bi bi-trash me-1"></i> Hapus Semua
-                        </button>
+                            <i class="bi bi-chevron-down collapse-icon" id="icon_{{ group_key }}"></i>
+                        </div>
                     </div>
                 </div>
+                
+                <!-- Collapse Body -->
+                <div class="collapse {% if not group_has_upload or groups|length <= 3 %}show{% endif %}" id="collapse_{{ group_key }}">
+                    <div class="card-body">
+                        <!-- Status Upload Card -->
+                        <div class="upload-status-card {% if group_has_upload %}has-upload{% else %}no-upload{% endif %} mb-3">
+                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="upload-status-icon">
+                                        {% if group_has_upload %}
+                                            <i class="bi bi-check-circle-fill text-success fs-2"></i>
+                                        {% else %}
+                                            <i class="bi bi-cloud-upload text-warning fs-2"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div class="upload-status-text">
+                                        {% if group_has_upload %}
+                                            <strong class="text-success">✓ Sudah Upload Gambar</strong>
+                                            <p class="mb-0 small text-muted">
+                                                Grup ini sudah memiliki {{ upload_count }} gambar.
+                                            </p>
+                                        {% else %}
+                                            <strong class="text-warning">⚠️ Belum Upload Gambar</strong>
+                                            <p class="mb-0 small text-muted">
+                                                Upload gambar sekarang untuk grup ini.
+                                            </p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                {% if group_has_upload %}
+                                    <a href="{{ url_for('user_operator_edit_grup', station_id=station.id, group_key=group_key) }}" 
+                                       class="btn btn-outline-primary btn-edit-group">
+                                        <i class="bi bi-pencil-square me-1"></i> Edit Grup
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- FORM UPLOAD - HANYA TAMPIL JIKA BELUM UPLOAD -->
+                        {% if not group_has_upload %}
+                        <form method="POST" action="{{ url_for('user_operator_upload', station_id=station.id) }}" 
+                              enctype="multipart/form-data" class="upload-group-form" data-group-key="{{ group_key }}">
+                            <input type="hidden" name="group_key" value="{{ group_key }}">
+                            
+                            <!-- Upload Area -->
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-muted">📸 Upload Gambar</label>
+                                <div class="upload-box border rounded p-3 text-center mb-2" 
+                                     id="dropZone_{{ group_key }}"
+                                     ondragover="handleDragOver(event)"
+                                     ondragleave="handleDragLeave(event)"
+                                     ondrop="handleDrop(event, '{{ group_key }}')"
+                                     onclick="document.getElementById('fileInput_{{ group_key }}').click()"
+                                     style="cursor: pointer; border: 2px dashed #ccc; background: #f8f9fa;">
+                                    <i class="bi bi-cloud-arrow-up display-6 text-muted mb-2 d-block"></i>
+                                    <p class="text-muted small mb-0">Klik atau drag & drop file</p>
+                                    <p class="text-muted small mb-0">Max 5MB • JPG, PNG, GIF, WEBP</p>
+                                </div>
+                                
+                                <input type="file" 
+                                       class="d-none" 
+                                       id="fileInput_{{ group_key }}"
+                                       name="gambar_{{ group_key }}"
+                                       accept=".png,.jpg,.jpeg,.gif,.webp"
+                                       multiple
+                                       onchange="handleFileSelect('{{ group_key }}', this)">
+                                
+                                <div class="text-center mb-2">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" 
+                                            onclick="focusPasteArea('{{ group_key }}')">
+                                        <i class="bi bi-clipboard me-1"></i> Ctrl+V untuk paste dari clipboard
+                                    </button>
+                                </div>
+                                
+                                <textarea id="pasteArea_{{ group_key }}" class="d-none" onpaste="handlePaste(event, '{{ group_key }}')"></textarea>
+                                
+                                <!-- File Preview List - GRID 3 KOLOM -->
+                                <div id="fileList_{{ group_key }}" class="new-images-preview"></div>
+                                
+                                <div class="mt-2 d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        <span id="fileCount_{{ group_key }}">0</span> file • 
+                                        <span id="totalSize_{{ group_key }}">0 KB</span>
+                                    </small>
+                                    <div id="clearAllBtn_{{ group_key }}" style="display: none;">
+                                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                onclick="clearAllFiles('{{ group_key }}')">
+                                            <i class="bi bi-trash me-1"></i> Hapus Semua
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
 
-                <!-- Status Lawan - dengan Frekuensi -->
-                <div class="mb-4">
-                    <h6>Atur Status untuk Setiap Lawan</h6>
-                    
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th width="35%">Nama Stasiun Lawan</th>
-                                    <th width="15%">Frekuensi Tx</th>
-                                    <th width="15%">Frekuensi Rx</th>
-                                    <th width="20%">Status <span class="text-danger">*</span></th>
-                                    <th width="15%">Catatan</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for lawan in lawan_list %}
-                                <tr>
-                                    <td>
-                                        <strong>{{ lawan.nama }}</strong>
-                                        {% if lawan.latest_status %}
-                                        <div class="small text-muted">
-                                            Status saat ini: 
-                                            <span class="badge {{ lawan.latest_status.status|status_badge_class }}">
-                                                {{ lawan.latest_status.status|status_display }}
-                                            </span>
-                                        </div>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if lawan.freq_tx %}
-                                            <span class="badge bg-primary">{{ lawan.freq_tx }}</span>
-                                        {% else %}
-                                            <span class="badge bg-light text-muted">-</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if lawan.freq_rx %}
-                                            <span class="badge bg-success">{{ lawan.freq_rx }}</span>
-                                        {% else %}
-                                            <span class="badge bg-light text-muted">-</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <select class="form-select form-select-sm status-select" 
-                                                name="status_{{ group_key }}_{{ lawan.id }}"
-                                                data-lawan="{{ lawan.nama }}"
-                                                data-group="{{ group_key }}"
-                                                required>
-                                            <option value="">Pilih...</option>
-                                            {% for status_key, status_display in status_options.items() %}
-                                            <option value="{{ status_key }}" 
-                                                    {% if lawan.latest_status and lawan.latest_status.status == status_key %}selected{% endif %}>
-                                                {{ status_display }}
-                                            </option>
+                            <!-- Status Lawan -->
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-muted">📋 Atur Status Stasiun Lawan</label>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-opponents-sm">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th width="40%">Nama Stasiun Lawan</th>
+                                                <th width="35%">Status <span class="text-danger">*</span></th>
+                                                <th width="25%">Catatan</th>
+                                            </thead>
+                                        <tbody>
+                                            {% for lawan in lawan_list %}
+                                            <tr>
+                                                <td>
+                                                    <strong class="small">{{ lawan.nama }}</strong>
+                                                    <div class="small text-muted">
+                                                        {% if lawan.freq_tx or lawan.freq_rx %}
+                                                            {% if lawan.freq_tx %}Tx: {{ lawan.freq_tx }}{% endif %}
+                                                            {% if lawan.freq_rx %}{% if lawan.freq_tx %} | {% endif %}Rx: {{ lawan.freq_rx }}{% endif %}
+                                                        {% else %}
+                                                            <span class="text-muted">-</span>
+                                                        {% endif %}
+                                                    </div>
+                                                    {% if lawan.latest_status %}
+                                                    <div class="small mt-1">
+                                                        <span class="badge-status bg-light text-muted">
+                                                            Sebelumnya: {{ lawan.latest_status.status|status_display }}
+                                                        </span>
+                                                    </div>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <select class="form-select form-select-sm status-select" 
+                                                            name="status_{{ group_key }}_{{ lawan.id }}"
+                                                            data-lawan="{{ lawan.nama }}"
+                                                            required>
+                                                        <option value="">-- Pilih Status --</option>
+                                                        {% for status_key, status_display in status_options.items() %}
+                                                        <option value="{{ status_key }}" 
+                                                                {% if lawan.latest_status and lawan.latest_status.status == status_key %}selected{% endif %}>
+                                                            {{ status_display }}
+                                                        </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </td>
+                                                <td>
+                                                    <input type="text" 
+                                                           class="form-control form-control-sm" 
+                                                           name="catatan_{{ group_key }}_{{ lawan.id }}"
+                                                           placeholder="Catatan (opsional)"
+                                                           value="{{ lawan.catatan if lawan.catatan else '' }}">
+                                                </td>
+                                            </tr>
                                             {% endfor %}
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <input type="text" 
-                                               class="form-control form-control-sm" 
-                                               name="catatan_{{ group_key }}_{{ lawan.id }}"
-                                               placeholder="Catatan..."
-                                               value="{{ lawan.catatan if lawan.catatan else '' }}">
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <!-- Submit Button -->
+                            <div class="d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary btn-upload-group" data-group="{{ group_key }}">
+                                    <i class="bi bi-cloud-upload me-1"></i> Upload untuk Grup Ini
+                                </button>
+                            </div>
+                        </form>
+                        {% else %}
+                        <!-- Pesan jika sudah upload -->
+                        <div class="text-center py-4">
+                            <i class="bi bi-info-circle-fill text-info fs-1 mb-3 d-block"></i>
+                            <h6 class="text-muted">Grup ini sudah memiliki dokumentasi gambar</h6>
+                            <p class="text-muted small mb-3">
+                                Klik tombol <strong>Edit Grup</strong> di atas untuk:<br>
+                                • Menambah gambar baru<br>
+                                • Menghapus gambar yang ada<br>
+                                • Mengubah status stasiun lawan<br>
+                                • Memperbarui catatan
+                            </p>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
         </div>
         {% endfor %}
-
-        <!-- Submit Button -->
-        <div class="row">
-            <div class="col-12">
-                <div class="d-flex justify-content-between">
-                    <a href="{{ url_for('user_operator_detail_stasiun', station_id=station.id) }}" 
-                       class="btn btn-outline-secondary">
-                        <i class="bi bi-x-circle"></i> Batal
-                    </a>
-                    <button type="submit" class="btn btn-primary" id="submitBtn">
-                        <i class="bi bi-cloud-upload"></i> Upload
-                    </button>
-                </div>
-            </div>
-        </div>
-    </form>
+    </div>
+    {% endif %}
 </div>
 
 <!-- Loading Modal -->
@@ -245,7 +573,109 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+    
+    // Handle form submission per group
+    document.querySelectorAll('.upload-group-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const groupKey = this.dataset.groupKey;
+            
+            // Validate status selections for this group
+            let hasErrors = false;
+            let errorMessage = '';
+            
+            this.querySelectorAll('.status-select').forEach(select => {
+                if (!select.value) {
+                    hasErrors = true;
+                    select.classList.add('is-invalid');
+                    const lawanName = select.dataset.lawan;
+                    errorMessage += `• ${lawanName}\n`;
+                } else {
+                    select.classList.remove('is-invalid');
+                }
+            });
+            
+            if (hasErrors) {
+                e.preventDefault();
+                alert('Harap pilih status untuk semua lawan di grup ini:\n\n' + errorMessage);
+                return false;
+            }
+            
+            // Check if at least one file is selected for this group
+            const files = groupFiles[groupKey] || [];
+            if (files.length === 0) {
+                e.preventDefault();
+                alert('Pilih minimal satu file gambar untuk diupload di grup ini!');
+                return false;
+            }
+            
+            // Transfer files to hidden input
+            const fileInput = document.getElementById(`fileInput_${groupKey}`);
+            const dataTransfer = new DataTransfer();
+            
+            files.forEach(fileData => {
+                dataTransfer.items.add(fileData.file);
+            });
+            
+            fileInput.files = dataTransfer.files;
+            
+            // Show loading modal
+            const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+            loadingModal.show();
+            
+            // Disable submit button
+            const submitBtn = this.querySelector('.btn-upload-group');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Mengupload...';
+            
+            return true;
+        });
+    });
 });
+
+// ========== COLLAPSE FUNCTIONS ==========
+function toggleGroup(groupKey) {
+    const collapseEl = document.getElementById(`collapse_${groupKey}`);
+    const icon = document.getElementById(`icon_${groupKey}`);
+    
+    if (!collapseEl) return;
+    
+    const bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseEl);
+    bsCollapse.toggle();
+    
+    collapseEl.addEventListener('shown.bs.collapse', function() {
+        icon.classList.add('rotated');
+    }, { once: true });
+    
+    collapseEl.addEventListener('hidden.bs.collapse', function() {
+        icon.classList.remove('rotated');
+    }, { once: true });
+}
+
+// Expand/Collapse All
+const expandBtn = document.getElementById('expandAllBtn');
+const collapseBtn = document.getElementById('collapseAllBtn');
+
+if (expandBtn) {
+    expandBtn.addEventListener('click', function() {
+        document.querySelectorAll('.collapse').forEach(el => {
+            bootstrap.Collapse.getOrCreateInstance(el).show();
+        });
+        document.querySelectorAll('.collapse-icon').forEach(icon => {
+            icon.classList.add('rotated');
+        });
+    });
+}
+
+if (collapseBtn) {
+    collapseBtn.addEventListener('click', function() {
+        document.querySelectorAll('.collapse').forEach(el => {
+            bootstrap.Collapse.getOrCreateInstance(el).hide();
+        });
+        document.querySelectorAll('.collapse-icon').forEach(icon => {
+            icon.classList.remove('rotated');
+        });
+    });
+}
 
 // ========== DRAG & DROP FUNCTIONS ==========
 function handleDragOver(e) {
@@ -282,21 +712,22 @@ function handleFileSelect(groupKey, input) {
     if (files.length > 0) {
         processFiles(files, groupKey);
     }
-    input.value = ''; // Reset input
+    input.value = '';
 }
 
 // ========== PASTE FUNCTIONS ==========
 function focusPasteArea(groupKey) {
     const pasteArea = document.getElementById(`pasteArea_${groupKey}`);
+    pasteArea.classList.remove('d-none');
     pasteArea.focus();
     pasteArea.select();
     
-    // Show temporary message
     const dropZone = document.getElementById(`dropZone_${groupKey}`);
     const originalText = dropZone.innerHTML;
-    dropZone.innerHTML = '<i class="bi bi-clipboard-check display-4 text-success mb-3"></i><h5 class="text-success">Siap untuk paste!</h5><p class="text-muted small">Tekan Ctrl+V untuk paste gambar</p>';
+    dropZone.innerHTML = '<i class="bi bi-clipboard-check display-6 text-success mb-2 d-block"></i><h5 class="text-success fs-6">Siap untuk paste!</h5><p class="text-muted small">Tekan Ctrl+V untuk paste gambar</p>';
     setTimeout(() => {
         dropZone.innerHTML = originalText;
+        pasteArea.classList.add('d-none');
     }, 2000);
 }
 
@@ -319,46 +750,39 @@ function handlePaste(e, groupKey) {
     if (files.length > 0) {
         processFiles(files, groupKey);
         
-        // Show success message
         const dropZone = document.getElementById(`dropZone_${groupKey}`);
         const originalText = dropZone.innerHTML;
-        dropZone.innerHTML = `<i class="bi bi-check-circle-fill text-success display-4 mb-3"></i><h5 class="text-success">${files.length} file berhasil di-paste!</h5>`;
+        dropZone.innerHTML = `<i class="bi bi-check-circle-fill text-success display-6 mb-2 d-block"></i><h5 class="text-success fs-6">${files.length} file berhasil di-paste!</h5>`;
         setTimeout(() => {
             dropZone.innerHTML = originalText;
         }, 2000);
     } else {
-        alert('Tidak ada gambar yang ditemukan di clipboard');
+        alert('Tidak ada gambar yang ditemukan di clipboard. Pastikan Anda sudah meng-copy gambar (Ctrl+C) terlebih dahulu.');
     }
     
-    // Clear paste area
     e.target.value = '';
 }
 
 // ========== FILE PROCESSING ==========
 function processFiles(files, groupKey) {
     const fileArray = Array.from(files);
+    let addedCount = 0;
     
     fileArray.forEach(file => {
-        // Check file size (5MB)
         if (file.size > 5 * 1024 * 1024) {
             alert(`File ${file.name} terlalu besar (max 5MB)`);
             return;
         }
         
-        // Check file type
         const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'];
         if (!validTypes.includes(file.type)) {
             alert(`File ${file.name} format tidak didukung`);
             return;
         }
         
-        // Check if file already exists
-        const exists = groupFiles[groupKey].some(f => 
-            f.name === file.name && f.size === file.size
-        );
+        const exists = groupFiles[groupKey].some(f => f.name === file.name && f.size === file.size);
         
         if (!exists) {
-            // Create preview URL
             const previewUrl = URL.createObjectURL(file);
             
             groupFiles[groupKey].push({
@@ -369,14 +793,16 @@ function processFiles(files, groupKey) {
                 previewUrl: previewUrl,
                 id: Date.now() + Math.random()
             });
+            addedCount++;
         }
     });
     
-    // Update display
-    updateFileList(groupKey);
+    if (addedCount > 0) {
+        updateFileList(groupKey);
+    }
 }
 
-// Update file list display
+// Update file list display - GRID 3 KOLOM HORIZONTAL
 function updateFileList(groupKey) {
     const files = groupFiles[groupKey] || [];
     const fileListDiv = document.getElementById(`fileList_${groupKey}`);
@@ -384,93 +810,88 @@ function updateFileList(groupKey) {
     const totalSizeSpan = document.getElementById(`totalSize_${groupKey}`);
     const clearAllBtn = document.getElementById(`clearAllBtn_${groupKey}`);
     
-    // Update counters
     const totalSize = files.reduce((sum, f) => sum + f.size, 0);
     fileCountSpan.textContent = files.length;
     totalSizeSpan.textContent = formatBytes(totalSize);
     
-    // Show/hide clear all button
     if (files.length > 0) {
         clearAllBtn.style.display = 'block';
     } else {
         clearAllBtn.style.display = 'none';
     }
     
-    // Update file list
     if (files.length === 0) {
-        fileListDiv.innerHTML = '<p class="text-muted small text-center">Belum ada file dipilih</p>';
+        fileListDiv.innerHTML = '<p class="text-muted small text-center py-2">Belum ada file dipilih</p>';
         return;
     }
     
-    let html = '<div class="row g-2">';
-    
+    // GRID 3 KOLOM - 3 gambar per baris
+    let html = '<div class="new-images-preview">';
     files.forEach((fileData, index) => {
         html += `
-            <div class="col-lg-3 col-md-4 col-sm-6">
-                <div class="card border position-relative">
-                    <div class="card-img-top" style="height: 120px; overflow: hidden;">
-                        <img src="${fileData.previewUrl}" 
-                             class="w-100 h-100 object-fit-cover"
-                             alt="${fileData.name}">
-                    </div>
-                    <div class="card-body p-2">
-                        <small class="d-block text-truncate" title="${fileData.name}">
-                            ${fileData.name}
-                        </small>
-                        <small class="d-block text-muted">
-                            ${formatBytes(fileData.size)}
-                        </small>
-                    </div>
-                    <button type="button" 
-                            class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1 rounded-circle"
-                            onclick="removeFile('${groupKey}', ${index})"
-                            style="width: 28px; height: 28px; padding: 0;">
-                        <i class="bi bi-x"></i>
-                    </button>
+            <div class="new-image-preview" id="preview_${groupKey}_${index}">
+                <img src="${fileData.previewUrl}" alt="${fileData.name}" onclick="showPreview('${groupKey}', ${index})">
+                <button type="button" class="remove-new-image" onclick="event.stopPropagation(); removeFile('${groupKey}', ${index})">
+                    <i class="bi bi-x"></i>
+                </button>
+                <div class="preview-info">
+                    <i class="bi bi-file-image"></i> ${fileData.name.length > 18 ? fileData.name.substring(0, 15) + '...' : fileData.name}
                 </div>
             </div>
         `;
     });
-    
     html += '</div>';
     fileListDiv.innerHTML = html;
+}
+
+// Fungsi preview gambar - klik gambar untuk zoom
+function showPreview(groupKey, index) {
+    const files = groupFiles[groupKey];
+    if (!files || !files[index]) return;
+    
+    const modalHtml = `
+        <div id="previewModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 999999; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+            <div style="position: relative; max-width: 90%; max-height: 90%;">
+                <img src="${files[index].previewUrl}" style="max-width: 100%; max-height: 90vh; object-fit: contain; border-radius: 8px;">
+                <button onclick="this.parentElement.parentElement.remove()" style="position: absolute; top: -40px; right: 0; background: none; border: none; color: white; font-size: 32px; cursor: pointer;">&times;</button>
+            </div>
+        </div>
+    `;
+    
+    const modalDiv = document.createElement('div');
+    modalDiv.innerHTML = modalHtml;
+    document.body.appendChild(modalDiv.firstElementChild);
+    
+    document.querySelector('#previewModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.remove();
+        }
+    });
 }
 
 // Remove a file
 function removeFile(groupKey, index) {
     if (groupFiles[groupKey] && groupFiles[groupKey][index]) {
-        // Revoke object URL
         URL.revokeObjectURL(groupFiles[groupKey][index].previewUrl);
-        
-        // Remove from array
         groupFiles[groupKey].splice(index, 1);
-        
-        // Update display
         updateFileList(groupKey);
     }
 }
 
-// Clear all files in a group
+// Clear all files
 function clearAllFiles(groupKey) {
-    if (confirm('Hapus semua file di grup ini?')) {
-        // Revoke all object URLs
+    if (confirm('Hapus semua file yang dipilih?')) {
         groupFiles[groupKey].forEach(file => {
-            if (file.previewUrl) {
-                URL.revokeObjectURL(file.previewUrl);
-            }
+            if (file.previewUrl) URL.revokeObjectURL(file.previewUrl);
         });
-        
-        // Clear array
         groupFiles[groupKey] = [];
-        
-        // Update display
         updateFileList(groupKey);
     }
 }
 
 // Format bytes
 function formatBytes(bytes, decimals = 1) {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return '0 KB';
     const k = 1024;
     const dm = decimals < 0 ? 0 : decimals;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
@@ -478,248 +899,13 @@ function formatBytes(bytes, decimals = 1) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
-// Form submission
-document.getElementById('uploadForm').addEventListener('submit', function(e) {
-    // 1. Validate status selections
-    let hasErrors = false;
-    let errorMessage = '';
-    
-    {% for group_key, lawan_list in groups.items() %}
-    {% for lawan in lawan_list %}
-    const statusSelect_{{ group_key }}_{{ lawan.id }} = document.querySelector('[name="status_{{ group_key }}_{{ lawan.id }}"]');
-    if (statusSelect_{{ group_key }}_{{ lawan.id }} && !statusSelect_{{ group_key }}_{{ lawan.id }}.value) {
-        hasErrors = true;
-        statusSelect_{{ group_key }}_{{ lawan.id }}.classList.add('is-invalid');
-        {% if group_key == 'ungrouped' %}
-        errorMessage += '• {{ lawan.nama }} (Tanpa Grup)\n';
-        {% else %}
-        {% set grup_nama = namespace(name=None) %}
-        {% for g in station.grup_list %}
-            {% if g.id == group_key|int %}
-                {% set grup_nama.name = g.nama_grup %}
-            {% endif %}
-        {% endfor %}
-        {% if grup_nama.name %}
-        errorMessage += '• {{ lawan.nama }} ({{ grup_nama.name }})\n';
-        {% else %}
-        errorMessage += '• {{ lawan.nama }} (Grup {{ group_key }})\n';
-        {% endif %}
-        {% endif %}
-    } else if (statusSelect_{{ group_key }}_{{ lawan.id }}) {
-        statusSelect_{{ group_key }}_{{ lawan.id }}.classList.remove('is-invalid');
-    }
-    {% endfor %}
-    {% endfor %}
-    
-    if (hasErrors) {
-        e.preventDefault();
-        alert('Harap pilih status untuk semua lawan:\n\n' + errorMessage);
-        return false;
-    }
-    
-    // 2. Check if at least one file is selected
-    let totalFiles = 0;
-    {% for group_key, lawan_list in groups.items() %}
-    totalFiles += groupFiles['{{ group_key }}'].length;
-    {% endfor %}
-    
-    if (totalFiles === 0) {
-        e.preventDefault();
-        alert('Pilih minimal satu file gambar untuk diupload!');
-        return false;
-    }
-    
-    // 3. Transfer files from JavaScript to hidden inputs
-    {% for group_key, lawan_list in groups.items() %}
-    // Create hidden file input
-    const hiddenInput_{{ group_key }} = document.createElement('input');
-    hiddenInput_{{ group_key }}.type = 'file';
-    hiddenInput_{{ group_key }}.name = 'gambar_{{ group_key }}';
-    hiddenInput_{{ group_key }}.multiple = true;
-    hiddenInput_{{ group_key }}.style.display = 'none';
-    
-    // Create DataTransfer to hold files
-    const dataTransfer_{{ group_key }} = new DataTransfer();
-    
-    // Add files from JavaScript storage
-    groupFiles['{{ group_key }}'].forEach(fileData => {
-        dataTransfer_{{ group_key }}.items.add(fileData.file);
-    });
-    
-    // Assign files to hidden input
-    hiddenInput_{{ group_key }}.files = dataTransfer_{{ group_key }}.files;
-    
-    // Add to form
-    this.appendChild(hiddenInput_{{ group_key }});
-    {% endfor %}
-    
-    // 4. Show loading modal
-    const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
-    loadingModal.show();
-    
-    // 5. Disable submit button
-    const submitBtn = document.getElementById('submitBtn');
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Mengupload...';
-    
-    return true;
-});
-
 // Clean up object URLs when leaving page
 window.addEventListener('beforeunload', function() {
     for (const groupKey in groupFiles) {
         groupFiles[groupKey].forEach(file => {
-            if (file.previewUrl) {
-                URL.revokeObjectURL(file.previewUrl);
-            }
+            if (file.previewUrl) URL.revokeObjectURL(file.previewUrl);
         });
     }
 });
-
-// PERBAIKAN: Global paste handler yang simpel dan tidak membingungkan
-document.addEventListener('paste', function(e) {
-    // Hanya handle jika tidak ada input/textare yang aktif
-    if (document.activeElement.tagName !== 'INPUT' && 
-        document.activeElement.tagName !== 'TEXTAREA') {
-        
-        const items = e.clipboardData.items;
-        let hasImage = false;
-        
-        for (let i = 0; i < items.length; i++) {
-            if (items[i].kind === 'file' && items[i].type.startsWith('image/')) {
-                hasImage = true;
-                break;
-            }
-        }
-        
-        if (hasImage) {
-            e.preventDefault();
-            
-            // Tampilkan pilihan grup dalam bentuk prompt sederhana
-            const groups = [{% for group_key, lawan_list in groups.items() %}'{{ group_key }}',{% endfor %}];
-            const groupNames = [{% for group_key, lawan_list in groups.items() %}
-                {% if group_key == 'ungrouped' %}'Tanpa Grup'{% else %}
-                    {% set grup_nama = namespace(name=None) %}
-                    {% for g in station.grup_list %}
-                        {% if g.id == group_key|int %}
-                            {% set grup_nama.name = g.nama_grup %}
-                        {% endif %}
-                    {% endfor %}
-                    {% if grup_nama.name %}'{{ grup_nama.name }}'{% else %}'Grup {{ group_key }}'{% endif %}
-                {% endif %},
-            {% endfor %}];
-            
-            // Buat teks pilihan yang jelas
-            let pilihanText = 'Pilih grup untuk paste:\n\n';
-            groupNames.forEach((nama, index) => {
-                pilihanText += `${index + 1}. ${nama}\n`;
-            });
-            pilihanText += '\nMasukkan nomor (1-' + groups.length + '):';
-            
-            const groupIndex = prompt(pilihanText);
-            
-            if (groupIndex && !isNaN(groupIndex) && groupIndex > 0 && groupIndex <= groups.length) {
-                const selectedGroup = groups[groupIndex - 1];
-                
-                // Proses paste dengan grup yang dipilih
-                const files = [];
-                for (let i = 0; i < items.length; i++) {
-                    const item = items[i];
-                    if (item.kind === 'file') {
-                        const file = item.getAsFile();
-                        if (file && file.type.startsWith('image/')) {
-                            files.push(file);
-                        }
-                    }
-                }
-                
-                if (files.length > 0) {
-                    processFiles(files, selectedGroup);
-                    alert(`${files.length} file berhasil di-paste ke ${groupNames[groupIndex - 1]}!`);
-                }
-            }
-        }
-    }
-});
 </script>
-
-<style>
-.upload-box {
-    transition: all 0.3s ease;
-    min-height: 200px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
-
-.upload-box:hover {
-    background: #e3f2fd !important;
-    border-color: #0d6efd !important;
-}
-
-.upload-box i {
-    transition: transform 0.3s ease;
-}
-
-.upload-box:hover i {
-    transform: scale(1.1);
-    color: #0d6efd !important;
-}
-
-.object-fit-cover {
-    object-fit: cover;
-}
-
-.is-invalid {
-    border-color: #dc3545 !important;
-}
-
-.card {
-    transition: transform 0.2s;
-}
-
-.card:hover {
-    transform: translateY(-2px);
-}
-
-.btn-danger {
-    opacity: 0.8;
-    transition: opacity 0.2s;
-}
-
-.btn-danger:hover {
-    opacity: 1;
-}
-
-/* Table styling */
-.table th {
-    background-color: #f8f9fa;
-    font-weight: 600;
-    font-size: 0.85rem;
-}
-
-.table td {
-    vertical-align: middle;
-}
-
-.badge.bg-primary {
-    background: linear-gradient(135deg, #0d6efd, #0b5ed7) !important;
-}
-
-.badge.bg-success {
-    background: linear-gradient(135deg, #198754, #157347) !important;
-}
-
-/* Animasi untuk paste success */
-@keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); }
-}
-
-.upload-box.text-success {
-    animation: pulse 0.5s ease;
-}
-</style>
 {% endblock %}

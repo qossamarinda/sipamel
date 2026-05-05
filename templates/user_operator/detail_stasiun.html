@@ -7,11 +7,15 @@
 <style>
 /* ===== VARIABLES & RESET ===== */
 :root {
-    --gradient-primary: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-    --gradient-success: linear-gradient(135deg, #198754, #146c43);
-    --gradient-warning: linear-gradient(135deg, #ffc107, #ffb000);
-    --gradient-info: linear-gradient(135deg, #0dcaf0, #0bb2d4);
-    --gradient-danger: linear-gradient(135deg, #dc3545, #bb2d3b);
+    --gradient-primary: linear-gradient(135deg, 
+        {% if station.operator == 'telkom' or station.operator == 'telkomsel' %}#E1251B
+        {% elif station.operator == 'ioh' %}#FF6600
+        {% elif station.operator == 'xl smart' %}#7F3F98
+        {% else %}#1e3c72{% endif %} 0%, 
+        {% if station.operator == 'telkom' or station.operator == 'telkomsel' %}#B71C1C
+        {% elif station.operator == 'ioh' %}#E65100
+        {% elif station.operator == 'xl smart' %}#4A1B6D
+        {% else %}#2a5298{% endif %} 100%);
     --border-radius-lg: 16px;
     --border-radius-md: 12px;
     --border-radius-sm: 8px;
@@ -35,6 +39,7 @@
     background-color: #2a5298 !important;
     color: white !important;
 }
+
 /* ===== FIX SCROLL ISSUE ===== */
 html, body {
     overflow: auto !important;
@@ -61,15 +66,16 @@ body {
 }
 
 .station-header h2 {
-    font-size: 1.75rem;
+    font-size: 1.5rem;
     font-weight: 700;
     margin-bottom: 0.25rem;
+    word-break: break-word;
 }
 
 .station-meta {
     display: flex;
-    gap: 1rem;
-    margin-top: 1rem;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
     flex-wrap: wrap;
 }
 
@@ -78,9 +84,9 @@ body {
     align-items: center;
     gap: 0.5rem;
     background: rgba(255,255,255,0.1);
-    padding: 0.4rem 1rem;
+    padding: 0.3rem 0.75rem;
     border-radius: 100px;
-    font-size: 0.85rem;
+    font-size: 0.75rem;
 }
 
 /* ===== TABS ===== */
@@ -96,27 +102,24 @@ body {
     border: none;
     border-bottom: 3px solid transparent;
     color: #64748b;
-    padding: 0.75rem 1.25rem;
-    font-size: 0.9rem;
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
     transition: all 0.2s;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 200px;
 }
 
 .nav-tabs .nav-link i {
-    margin-right: 0.5rem;
+    margin-right: 0.4rem;
 }
 
 .nav-tabs .nav-link.active {
     border-bottom-color: #2a5298;
-    color: #1e3c72;
-    background-color: transparent;
+    color: #1e3c72 !important;
+    background-color: transparent !important;
 }
 
 .nav-tabs .nav-link .badge {
-    margin-left: 0.5rem;
+    margin-left: 0.4rem;
     background: #eef2f6;
     color: #475569;
     font-weight: 600;
@@ -127,7 +130,7 @@ body {
     background: white;
     border: 1px solid #eef2f6;
     border-radius: var(--border-radius-lg);
-    padding: 1.5rem;
+    padding: 1.25rem;
     margin-bottom: 1.5rem;
     box-shadow: var(--box-shadow);
 }
@@ -137,72 +140,59 @@ body {
     justify-content: space-between;
     align-items: center;
     padding-bottom: 1rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.25rem;
     border-bottom: 2px solid #f1f5f9;
 }
 
 .group-header h5 {
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 700;
     margin-bottom: 0.25rem;
     color: #1e293b;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 300px;
+    word-break: break-word;
 }
 
-.group-header h5[title] {
-    cursor: help;
-}
-
-/* ===== FREKUENSI BADGES ===== */
+/* ===== FREKUENSI BADGES DENGAN WARNA ===== */
 .freq-tx-badge {
     display: inline-flex;
     align-items: center;
-    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
-    color: #0d47a1;
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 0.9rem;
+    background: #e3f2fd !important;
+    color: #0d47a1 !important;
+    padding: 3px 8px;
+    border-radius: 16px;
+    font-size: 0.7rem;
     font-weight: 600;
-    border: 1px solid rgba(13, 71, 161, 0.3);
-    line-height: 1.4;
-    white-space: nowrap;
-    margin-right: 8px;
+    border: 1px solid #bbdefb;
 }
 
 .freq-tx-badge i {
-    font-size: 0.85rem;
-    margin-right: 6px;
+    font-size: 0.7rem;
+    margin-right: 3px;
     color: #1976d2;
 }
 
 .freq-rx-badge {
     display: inline-flex;
     align-items: center;
-    background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
-    color: #1b5e20;
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 0.9rem;
+    background: #e8f5e9 !important;
+    color: #1b5e20 !important;
+    padding: 3px 8px;
+    border-radius: 16px;
+    font-size: 0.7rem;
     font-weight: 600;
-    border: 1px solid rgba(27, 94, 32, 0.3);
-    line-height: 1.4;
-    white-space: nowrap;
-    margin-left: 8px;
+    border: 1px solid #c8e6c9;
 }
 
 .freq-rx-badge i {
-    font-size: 0.85rem;
-    margin-right: 6px;
+    font-size: 0.7rem;
+    margin-right: 3px;
     color: #2e7d32;
 }
 
-/* ===== GALLERY ===== */
+/* ===== GALLERY DENGAN ZOOM LANGSUNG ===== */
 .image-gallery {
     position: relative;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.25rem;
     background: #f8fafc;
     border-radius: var(--border-radius-lg);
     padding: 1rem;
@@ -218,61 +208,152 @@ body {
     align-items: center;
     justify-content: center;
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    cursor: pointer;
-}
-
-.main-image {
-    max-width: 100%;
-    max-height: 400px;
-    object-fit: contain;
-    transition: transform 0.3s;
 }
 
 .main-image-container:hover {
     box-shadow: var(--box-shadow-hover);
 }
 
-.main-image-container:hover .main-image {
-    transform: scale(1.02);
+.image-zoom-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.gallery-nav {
+.main-image {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    transition: transform 0.2s ease-out;
+    transform-origin: center center;
+    cursor: zoom-in;
+}
+
+.main-image.zoomed-mode {
+    cursor: grab;
+}
+
+.main-image.zoomed-mode:active {
+    cursor: grabbing;
+}
+
+/* Tombol Zoom dan Fullscreen - Berjajar Horizontal */
+.zoom-controls-on-image {
     position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 44px;
-    height: 44px;
+    bottom: 10px;
+    left: 10px;
+    display: flex;
+    gap: 6px;
+    z-index: 20;
+    background: rgba(0,0,0,0.6);
+    padding: 5px 8px;
+    border-radius: 50px;
+    backdrop-filter: blur(5px);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.main-image-container:hover .zoom-controls-on-image {
+    opacity: 1;
+}
+
+.zoom-controls-on-image button {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
-    background: white;
-    color: #1e293b;
-    border: 1px solid #e2e8f0;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    z-index: 20;
-    transition: all 0.25s;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    font-size: 1.2rem;
-    opacity: 0.7;
+    transition: all 0.2s;
+}
+
+.zoom-controls-on-image button:hover {
+    background: #2a5298;
+    transform: scale(1.1);
+}
+
+.zoom-controls-on-image button i {
+    font-size: 0.9rem;
+}
+
+.zoom-level {
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: rgba(0,0,0,0.5);
+    padding: 0 6px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+}
+
+/* Navigasi Panah */
+.gallery-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: white;
+    border: 2px solid #e9ecef;
+    color: #212529;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    font-size: 1rem;
+    opacity: 0;
+    transition: opacity 0.3s, background 0.2s;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.main-image-container:hover .gallery-nav {
+    opacity: 1;
 }
 
 .gallery-nav:hover {
     background: #2a5298;
-    color: white;
     border-color: #2a5298;
+    color: white;
     transform: translateY(-50%) scale(1.1);
-    opacity: 1;
 }
 
-.gallery-nav.prev { left: 20px; }
-.gallery-nav.next { right: 20px; }
+.gallery-nav.prev { left: 10px; }
+.gallery-nav.next { right: 10px; }
 
+/* Image counter */
+.image-counter {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    padding: 0.2rem 0.6rem;
+    border-radius: 50px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    backdrop-filter: blur(5px);
+}
+
+/* Thumbnails */
 .thumbnails {
     display: flex;
-    gap: 0.75rem;
-    margin-top: 1rem;
-    padding: 0.5rem 0;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    padding: 0.25rem 0;
     overflow-x: auto;
     scrollbar-width: thin;
 }
@@ -292,15 +373,15 @@ body {
 }
 
 .thumbnail {
-    width: 70px;
-    height: 70px;
+    width: 50px;
+    height: 50px;
     border-radius: var(--border-radius-sm);
     overflow: hidden;
     cursor: pointer;
     border: 2px solid transparent;
     flex-shrink: 0;
-    transition: all 0.2s;
     opacity: 0.7;
+    transition: all 0.2s;
 }
 
 .thumbnail:hover {
@@ -311,7 +392,7 @@ body {
 .thumbnail.active {
     border-color: #2a5298;
     opacity: 1;
-    box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.2);
+    box-shadow: 0 0 0 2px rgba(42, 82, 152, 0.2);
 }
 
 .thumbnail img {
@@ -321,276 +402,137 @@ body {
 }
 
 .image-info {
-    margin-top: 1rem;
-    padding: 1rem;
+    margin-top: 0.75rem;
+    padding: 0.5rem;
     background: white;
     border-radius: var(--border-radius-md);
     border: 1px solid #eef2f6;
+    font-size: 0.75rem;
 }
 
 .image-title {
     font-weight: 600;
     color: #1e293b;
-    margin-bottom: 0.25rem;
-    font-size: 0.95rem;
-}
-
-/* Image counter badge */
-.image-counter {
-    position: absolute;
-    bottom: 10px;
-    right: 10px;
-    background: rgba(0,0,0,0.6);
-    color: white;
-    padding: 4px 12px;
-    border-radius: 50px;
     font-size: 0.8rem;
-    font-weight: 500;
-    backdrop-filter: blur(5px);
-    border: 1px solid rgba(255,255,255,0.2);
-    z-index: 15;
-}
-
-/* ===== MODAL ZOOM FULL SCREEN ===== */
-.modal {
-    z-index: 999999 !important;
-}
-
-.modal-backdrop {
-    z-index: 999998 !important;
-}
-
-.modal-fullscreen {
-    padding: 0 !important;
-    margin: 0 !important;
-}
-
-.modal-fullscreen .modal-dialog {
-    margin: 0 !important;
-    padding: 0 !important;
-    max-width: 100% !important;
-    width: 100vw !important;
-    height: 100vh !important;
-}
-
-.modal-fullscreen .modal-content {
-    background-color: black !important;
-    border: none !important;
-    border-radius: 0 !important;
-    height: 100vh !important;
-    width: 100vw !important;
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-}
-
-.modal-fullscreen .modal-body {
-    background-color: black !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    height: 100vh !important;
-    width: 100vw !important;
-}
-
-#modalZoomImage {
-    filter: none !important;
-    -webkit-filter: none !important;
-    brightness: 1 !important;
-    contrast: 1 !important;
-    image-rendering: auto !important;
-    max-height: 100vh !important;
-    max-width: 100vw !important;
-    width: auto !important;
-    height: auto !important;
-    object-fit: contain !important;
-}
-
-/* Tombol Close Merah */
-.modal-header .btn-close {
-    background: transparent !important;
-    opacity: 1 !important;
-    width: 32px !important;
-    height: 32px !important;
-    border: none !important;
-    font-size: 32px !important;
-    line-height: 1 !important;
-    color: #ff4444 !important;
-    text-shadow: none !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    transition: all 0.2s !important;
-    padding: 0 !important;
-    margin: 0 !important;
-}
-
-.modal-header .btn-close:hover {
-    color: #ff0000 !important;
-    transform: scale(1.1) !important;
-    background: transparent !important;
-}
-
-/* Tombol Navigasi */
-#modalPrevBtn, #modalNextBtn, #downloadBtn {
-    z-index: 1000000 !important;
-    border-radius: 50% !important;
-    width: 50px !important;
-    height: 50px !important;
-    background-color: rgba(255,255,255,0.15) !important;
-    border: 1px solid rgba(255,255,255,0.3) !important;
-    color: white !important;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.5) !important;
-    transition: all 0.2s !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    cursor: pointer !important;
-}
-
-#modalPrevBtn i, #modalNextBtn i, #downloadBtn i {
-    font-size: 1.8rem !important;
-}
-
-#modalPrevBtn:hover, #modalNextBtn:hover, #downloadBtn:hover {
-    background-color: #2a5298 !important;
-    border-color: white !important;
-    transform: scale(1.1) !important;
-}
-
-/* Image counter */
-#modalCounter {
-    z-index: 1000000 !important;
-    background-color: rgba(0,0,0,0.7) !important;
-    backdrop-filter: blur(5px) !important;
-    font-size: 0.9rem !important;
-    border: 1px solid rgba(255,255,255,0.2) !important;
-    padding: 6px 16px !important;
-    border-radius: 50px !important;
-}
-
-/* Hilangkan scroll saat modal terbuka */
-body.modal-open {
-    overflow: hidden !important;
-    padding-right: 0 !important;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    #modalPrevBtn, #modalNextBtn, #downloadBtn {
-        width: 40px !important;
-        height: 40px !important;
-    }
-    
-    #modalPrevBtn i, #modalNextBtn i, #downloadBtn i {
-        font-size: 1.4rem !important;
-    }
-    
-    .modal-header .btn-close {
-        width: 28px !important;
-        height: 28px !important;
-        font-size: 28px !important;
-    }
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* ===== INFO PANEL ===== */
 .info-panel {
     background: white;
     border-radius: var(--border-radius-lg);
-    padding: 1.25rem;
+    padding: 1rem;
     border: 1px solid #eef2f6;
     height: 100%;
 }
 
 .info-section {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
 }
 
 .info-section h6 {
-    font-size: 0.9rem;
+    font-size: 0.7rem;
     font-weight: 700;
     color: #475569;
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
     display: flex;
     align-items: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .info-section h6 i {
-    margin-right: 0.5rem;
+    margin-right: 0.4rem;
     color: #2a5298;
+    font-size: 0.8rem;
 }
 
 .info-grid {
     display: grid;
-    gap: 0.75rem;
+    gap: 0.3rem;
 }
 
+/* Perbaikan info item agar nama panjang bisa wrap */
 .info-item {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    padding: 0.5rem 0.75rem;
+    align-items: flex-start;
+    padding: 0.3rem 0.5rem;
     background: #f8fafc;
     border-radius: var(--border-radius-sm);
-    font-size: 0.85rem;
+    font-size: 0.7rem;
+    gap: 0.5rem;
 }
 
-.info-label { color: #64748b; font-weight: 500; }
-.info-value { font-weight: 600; color: #1e293b; }
+.info-label {
+    color: #64748b;
+    font-weight: 500;
+    flex-shrink: 0;
+    min-width: 70px;
+}
 
-/* ===== STATUS STATISTICS ===== */
+.info-value {
+    font-weight: 600;
+    color: #1e293b;
+    text-align: right;
+    word-break: break-word;
+    flex: 1;
+}
+
+/* ===== STATUS STATISTICS DENGAN WARNA ===== */
 .status-statistics {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
+    gap: 0.3rem;
 }
 
 .status-stat-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.6rem 0.75rem;
+    padding: 0.3rem 0.5rem;
     border-radius: var(--border-radius-sm);
-    font-size: 0.8rem;
+    font-size: 0.7rem;
     font-weight: 500;
 }
 
 .status-stat-item span:first-child {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.3rem;
 }
 
-.status-stat-count { font-weight: 700; font-size: 1rem; }
+.status-stat-count { font-weight: 700; font-size: 0.85rem; }
 
-/* ===== STATUS BADGES ===== */
+.status-stat-item.aktif { background: #d4edda !important; color: #155724 !important; }
+.status-stat-item.tidak_aktif { background: #f8d7da !important; color: #721c24 !important; }
+.status-stat-item.tidak_sesuai { background: #d1ecf1 !important; color: #0c5460 !important; }
+
+/* ===== STATUS BADGES DENGAN WARNA ===== */
 .status-badge {
     display: inline-block;
-    padding: 0.25rem 0.75rem;
+    padding: 0.15rem 0.5rem;
     border-radius: 100px;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: 600;
     letter-spacing: 0.3px;
-    text-transform: uppercase;
 }
 
-.status-aktif { background: rgba(25, 135, 84, 0.1); color: #198754; border: 1px solid rgba(25, 135, 84, 0.2); }
-.status-tidak_aktif { background: rgba(220, 53, 69, 0.1); color: #dc3545; border: 1px solid rgba(220, 53, 69, 0.2); }
-.status-tidak_sesuai { background: rgba(13, 110, 253, 0.1); color: #0d6efd; border: 1px solid rgba(13, 110, 253, 0.2); }
-.status-belum_ada { background: rgba(108, 117, 125, 0.1); color: #6c757d; border: 1px solid rgba(108, 117, 125, 0.2); }
+.status-badge.aktif { background: #d4edda !important; color: #155724 !important; border: 1px solid #c3e6cb; }
+.status-badge.tidak_aktif { background: #f8d7da !important; color: #721c24 !important; border: 1px solid #f5c6cb; }
+.status-badge.tidak_sesuai { background: #d1ecf1 !important; color: #0c5460 !important; border: 1px solid #bee5eb; }
+.status-badge.belum_ada { background: #e9ecef !important; color: #495057 !important; border: 1px solid #dee2e6; }
 
-/* ===== INSPECTION BADGE (STATUS PEMERIKSAAN) ===== */
+/* ===== INSPECTION BADGE ===== */
 .inspection-badge {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    padding: 0.3rem 0.8rem;
+    gap: 0.3rem;
+    padding: 0.2rem 0.6rem;
     border-radius: 100px;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 600;
 }
 
@@ -606,7 +548,7 @@ body.modal-open {
 
 /* ===== OPPONENTS LIST ===== */
 .opponents-list {
-    max-height: 400px;
+    max-height: 350px;
     overflow-y: auto;
     padding-right: 0.25rem;
 }
@@ -618,8 +560,8 @@ body.modal-open {
 .opponent-item {
     display: flex;
     align-items: flex-start;
-    padding: 1rem;
-    margin-bottom: 0.75rem;
+    padding: 0.6rem;
+    margin-bottom: 0.5rem;
     background: white;
     border-radius: var(--border-radius-md);
     border: 1px solid #eef2f6;
@@ -629,20 +571,19 @@ body.modal-open {
 .opponent-item:hover {
     border-color: #2a5298;
     box-shadow: 0 2px 8px rgba(42, 82, 152, 0.1);
-    transform: translateX(3px);
 }
 
 .opponent-number {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     background: #eef2f6;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.8rem;
+    font-size: 0.7rem;
     font-weight: 700;
-    margin-right: 1rem;
+    margin-right: 0.6rem;
     flex-shrink: 0;
     color: #475569;
 }
@@ -652,23 +593,22 @@ body.modal-open {
     min-width: 0; 
 }
 
-/* Layout vertikal untuk nama dan frekuensi */
 .opponent-name-row {
     display: flex;
     flex-direction: column;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     width: 100%;
 }
 
 .opponent-name-container {
     width: 100%;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
 
 .opponent-name {
     font-weight: 600;
     color: #1e293b;
-    font-size: 0.95rem;
+    font-size: 0.8rem;
     word-break: break-word;
     white-space: normal;
     line-height: 1.4;
@@ -678,48 +618,48 @@ body.modal-open {
 .opponent-freqs {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     flex-wrap: wrap;
     width: 100%;
 }
 
 .opponent-notes {
-    font-size: 0.8rem;
+    font-size: 0.65rem;
     color: #64748b;
     font-style: italic;
-    margin: 6px 0 4px 0;
+    margin: 4px 0 2px 0;
     word-break: break-word;
     white-space: normal;
     cursor: help;
 }
 
 .opponent-notes i {
-    margin-right: 4px;
+    margin-right: 3px;
 }
 
 .opponent-update-time {
-    font-size: 0.75rem;
+    font-size: 0.6rem;
     color: #94a3b8;
-    margin-top: 4px;
+    margin-top: 3px;
 }
 
 .opponent-update-time i {
-    margin-right: 4px;
+    margin-right: 3px;
 }
 
 /* ===== ACTION BUTTONS ===== */
 .action-buttons {
     display: flex;
-    gap: 0.75rem;
-    margin-top: 1.5rem;
-    padding-top: 1.5rem;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
     border-top: 1px solid #eef2f6;
 }
 
 .action-buttons .btn {
     flex: 1;
-    padding: 0.7rem;
-    font-size: 0.9rem;
+    padding: 0.4rem;
+    font-size: 0.8rem;
     font-weight: 500;
     border-radius: var(--border-radius-md);
 }
@@ -727,40 +667,47 @@ body.modal-open {
 /* ===== EMPTY STATE ===== */
 .empty-state {
     text-align: center;
-    padding: 3rem 1.5rem;
+    padding: 2rem 1rem;
     color: #64748b;
 }
 
 .empty-state i {
-    font-size: 3.5rem;
+    font-size: 2.5rem;
     color: #cbd5e1;
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
 }
 
 .empty-state h5 {
     color: #1e293b;
     font-weight: 600;
     margin-bottom: 0.5rem;
+    font-size: 1rem;
 }
 
 /* ===== RESPONSIVE ===== */
+@media (max-width: 992px) {
+    .row.g-4 { flex-direction: column; }
+}
+
 @media (max-width: 768px) {
-    .station-header { padding: 1.25rem; }
-    .station-header h2 { font-size: 1.4rem; }
-    .station-meta { gap: 0.75rem; }
-    .meta-item { padding: 0.3rem 0.75rem; font-size: 0.75rem; }
-    .group-header { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+    .station-header { padding: 1rem; }
+    .station-header h2 { font-size: 1.2rem; }
+    .station-meta { gap: 0.5rem; }
+    .meta-item { padding: 0.2rem 0.6rem; font-size: 0.7rem; }
+    .group-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
     .main-image-container { min-height: 250px; }
-    .gallery-nav { width: 36px; height: 36px; font-size: 1rem; }
-    .gallery-nav.prev { left: 10px; }
-    .gallery-nav.next { right: 10px; }
-    .thumbnail { width: 60px; height: 60px; }
+    .gallery-nav { width: 30px; height: 30px; font-size: 0.9rem; }
+    .gallery-nav.prev { left: 5px; }
+    .gallery-nav.next { right: 5px; }
+    .thumbnail { width: 45px; height: 45px; }
+    .zoom-controls-on-image button { width: 24px; height: 24px; }
+    .zoom-controls-on-image button i { font-size: 0.7rem; }
     .status-statistics { grid-template-columns: 1fr; }
     .action-buttons { flex-direction: column; }
-    .freq-tx-badge, .freq-rx-badge { 
-        padding: 4px 8px; 
-        font-size: 0.8rem; 
-    }
+    .freq-tx-badge, .freq-rx-badge { padding: 2px 6px; font-size: 0.65rem; }
+    .info-item { flex-direction: column; align-items: flex-start; gap: 0.2rem; }
+    .info-value { text-align: left; }
+    .info-label { min-width: auto; }
 }
 
 [title] {
@@ -782,12 +729,11 @@ body.modal-open {
             </p>
         </div>
         <div class="mt-3 mt-md-0 d-flex gap-2">
-            <a href="{{ url_for('user_operator_stasiun') }}" class="btn btn-light btn-sm px-3">
-                <i class="bi bi-arrow-left me-1"></i> Kembali
+            <a href="{{ next_url or url_for('user_operator_stasiun') }}" class="btn btn-light btn-sm px-3">
+                <i class="bi bi-arrow-left me-1"></i> Kembali ke Daftar Stasiun
             </a>
-            <a href="{{ url_for('user_operator_grup_stasiun', station_id=station.id) }}" 
-               class="btn btn-info btn-sm px-3 text-white">
-                <i class="bi bi-diagram-3 me-1"></i>Grup IDU
+            <a href="{{ url_for('user_operator_grup_stasiun', station_id=station.id, next=next_url) }}" class="btn btn-info btn-sm px-3 text-white">
+                <i class="bi bi-diagram-3 me-1"></i> Grup IDU
             </a>
         </div>
     </div>
@@ -809,7 +755,6 @@ body.modal-open {
             <i class="bi bi-images"></i>
             <span>{{ all_uploads|length }} Gambar</span>
         </div>
-        <!-- STATUS PEMERIKSAAN (READ ONLY) -->
         <div class="meta-item">
             <i class="bi bi-clipboard-check"></i>
             <span>
@@ -819,9 +764,6 @@ body.modal-open {
                     </span>
                     {% if station.checked_at %}
                         <small class="ms-1">({{ station.checked_at.strftime('%d/%m/%Y') }})</small>
-                    {% endif %}
-                    {% if station.checked_by_user %}
-                        <br><small class="ms-1">Oleh: {{ station.checked_by_user.username }}</small>
                     {% endif %}
                 {% else %}
                     <span class="inspection-badge belum_diperiksa">
@@ -843,8 +785,7 @@ body.modal-open {
                 data-bs-toggle="tab" 
                 data-bs-target="#content-{{ loop.index }}" 
                 type="button"
-                role="tab"
-                data-group-key="{{ group_key }}">
+                role="tab">
             {% if group_key == 'ungrouped' %}
                 <i class="bi bi-circle"></i> Tanpa Grup
             {% else %}
@@ -860,12 +801,11 @@ body.modal-open {
 <div class="tab-content mt-3" id="groupTabsContent">
     {% if groups %}
         {% for group_key, group_info in groups.items() %}
-        {% set outer_index = loop.index0 %}
+        {% set outer_idx = loop.index0 %}
         {% set gallery_id = loop.index %}
         <div class="tab-pane fade {% if loop.first %}show active{% endif %}" 
              id="content-{{ loop.index }}"
-             role="tabpanel"
-             data-group-key="{{ group_key }}">
+             role="tabpanel">
             
             <div class="group-container">
                 <!-- GROUP HEADER -->
@@ -885,7 +825,7 @@ body.modal-open {
                     </div>
                     <div class="d-flex gap-2">
                         <a href="{{ url_for('user_operator_edit_grup', station_id=station.id, group_key=group_key) }}" 
-                           class="btn btn-outline-warning btn-sm">
+                           class="btn btn-warning btn-sm border border-dark">
                             <i class="bi bi-pencil me-1"></i> Edit
                         </a>
                     </div>
@@ -893,32 +833,47 @@ body.modal-open {
                 
                 <!-- MAIN CONTENT ROW -->
                 <div class="row g-4">
-                    <!-- LEFT COLUMN: IMAGE GALLERY -->
+                    <!-- LEFT COLUMN: IMAGE GALLERY DENGAN ZOOM -->
                     <div class="col-lg-8">
                         {% if group_info.uploads %}
-                        <div class="image-gallery" id="gallery-{{ gallery_id }}" data-gallery-index="{{ outer_index }}">
-                            <!-- MAIN IMAGE dengan navigasi panah -->
-                            <div class="main-image-container" onclick="openZoomModal({{ outer_index }}, {{ group_info.uploads[0].currentIndex|default(0) }})">
-                                <img id="mainImage-{{ gallery_id }}" 
-                                     src="{{ group_info.uploads[0].cloudinary_url }}" 
-                                     class="main-image"
-                                     alt="Gambar grup">
+                        <div class="image-gallery" id="gallery-{{ gallery_id }}" data-gallery-index="{{ outer_idx }}">
+                            <!-- MAIN IMAGE dengan zoom container -->
+                            <div class="main-image-container">
+                                <div class="image-zoom-container" id="zoomContainer-{{ gallery_id }}">
+                                    <img id="mainImage-{{ gallery_id }}" 
+                                         src="{{ group_info.uploads[0].cloudinary_url }}" 
+                                         class="main-image"
+                                         alt="Gambar grup"
+                                         draggable="false">
+                                </div>
                                 
-                                <!-- TOMBOL NAVIGASI PANAH -->
+                                <!-- Tombol Zoom dan Fullscreen -->
+                                <div class="zoom-controls-on-image">
+                                    <button onclick="event.stopPropagation(); zoomOutImage({{ outer_idx }})" title="Perkecil">
+                                        <i class="bi bi-dash-lg"></i>
+                                    </button>
+                                    <span class="zoom-level" id="zoomLevel-{{ gallery_id }}">100%</span>
+                                    <button onclick="event.stopPropagation(); zoomInImage({{ outer_idx }})" title="Perbesar">
+                                        <i class="bi bi-plus-lg"></i>
+                                    </button>
+                                    <button onclick="event.stopPropagation(); resetZoomImage({{ outer_idx }})" title="Reset zoom">
+                                        <i class="bi bi-arrow-repeat"></i>
+                                    </button>
+                                    <button onclick="event.stopPropagation(); openFullscreen({{ outer_idx }})" title="Fullscreen">
+                                        <i class="bi bi-arrows-fullscreen"></i>
+                                    </button>
+                                </div>
+                                
+                                <!-- Navigasi Panah -->
                                 {% if group_info.uploads|length > 1 %}
-                                <button class="gallery-nav prev" 
-                                        onclick="event.stopPropagation(); prevImage({{ outer_index }})"
-                                        data-gallery-index="{{ outer_index }}">
+                                <button class="gallery-nav prev" onclick="event.stopPropagation(); prevImage({{ outer_idx }})">
                                     <i class="bi bi-chevron-left"></i>
                                 </button>
-                                <button class="gallery-nav next" 
-                                        onclick="event.stopPropagation(); nextImage({{ outer_index }})"
-                                        data-gallery-index="{{ outer_index }}">
+                                <button class="gallery-nav next" onclick="event.stopPropagation(); nextImage({{ outer_idx }})">
                                     <i class="bi bi-chevron-right"></i>
                                 </button>
                                 {% endif %}
                                 
-                                <!-- INDIKATOR GAMBAR -->
                                 <span class="image-counter" id="counter-{{ gallery_id }}">
                                     1 / {{ group_info.uploads|length }}
                                 </span>
@@ -929,11 +884,9 @@ body.modal-open {
                             <div class="thumbnails" id="thumbnails-{{ gallery_id }}">
                                 {% for upload in group_info.uploads %}
                                 <div class="thumbnail {% if loop.first %}active{% endif %}" 
-                                     onclick="showImage({{ outer_index }}, {{ loop.index0 }})"
-                                     data-index="{{ loop.index0 }}">
+                                     onclick="showImage({{ outer_idx }}, {{ loop.index0 }})">
                                     <img src="{{ upload.cloudinary_url }}" 
-                                         alt="Thumb {{ loop.index }}"
-                                         style="width:70px; height:70px; object-fit:cover;">
+                                         alt="Thumb {{ loop.index }}">
                                 </div>
                                 {% endfor %}
                             </div>
@@ -949,23 +902,17 @@ body.modal-open {
                                         <div class="text-muted small">
                                             <i class="bi bi-calendar3 me-1"></i>
                                             {{ group_info.uploads[0].uploaded_at.strftime('%d %b %Y') }} •
-                                            <i class="bi bi-file-image ms-1"></i> {{ group_info.uploads[0].format|upper }} •
-                                            {{ group_info.uploads[0].bytes_size | filesizeformat }}
+                                            <i class="bi bi-file-image ms-1"></i> {{ group_info.uploads[0].format|upper }}
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         {% else %}
-                        <!-- NO IMAGES -->
                         <div class="empty-state">
                             <i class="bi bi-images"></i>
                             <h5>Belum Ada Gambar</h5>
-                            <p class="text-muted mb-3">Upload gambar pertama untuk grup ini</p>
-                            <a href="{{ url_for('user_operator_upload', station_id=station.id) }}" 
-                               class="btn btn-primary">
-                                <i class="bi bi-cloud-arrow-up me-1"></i> Upload Sekarang
-                            </a>
+                            <p class="text-muted mb-3">Upload Capture pertama untuk grup ini</p>
                         </div>
                         {% endif %}
                     </div>
@@ -973,16 +920,16 @@ body.modal-open {
                     <!-- RIGHT COLUMN: INFO PANEL -->
                     <div class="col-lg-4">
                         <div class="info-panel">
-                            <!-- STATION INFO -->
+                            <!-- STATION INFO - NAMA LENGKAP TANPA TRUNCATE -->
                             <div class="info-section">
                                 <h6><i class="bi bi-info-circle"></i>Informasi Stasiun</h6>
                                 <div class="info-grid">
                                     <div class="info-item">
                                         <span class="info-label">Nama Stasiun</span>
-                                        <span class="info-value">{{ station.stasiun_name|truncate(15) }}</span>
+                                        <span class="info-value">{{ station.stasiun_name }}</span>
                                     </div>
                                     <div class="info-item">
-                                        <span class="info-label">Kota</span>
+                                        <span class="info-label">Kota/Kab</span>
                                         <span class="info-value">{{ station.kota|title }}</span>
                                     </div>
                                     <div class="info-item">
@@ -1002,22 +949,22 @@ body.modal-open {
                                         'tidak_sesuai': group_info.lawans|selectattr('latest_status', 'equalto', 'tidak_sesuai')|list|length
                                     } %}
                                     
-                                    <div class="status-stat-item status-aktif">
+                                    <div class="status-stat-item aktif">
                                         <span><i class="bi bi-check-circle"></i> Aktif</span>
                                         <span class="status-stat-count">{{ counts.aktif }}</span>
                                     </div>
-                                    <div class="status-stat-item status-tidak_aktif">
+                                    <div class="status-stat-item tidak_aktif">
                                         <span><i class="bi bi-x-circle"></i> Tidak Aktif</span>
                                         <span class="status-stat-count">{{ counts.tidak_aktif }}</span>
                                     </div>
-                                    <div class="status-stat-item status-tidak_sesuai">
+                                    <div class="status-stat-item tidak_sesuai">
                                         <span><i class="bi bi-arrow-repeat"></i> Tidak Sesuai</span>
                                         <span class="status-stat-count">{{ counts.tidak_sesuai }}</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- DAFTAR STASIUN LAWAN - DENGAN FREKUENSI TX DAN RX -->
+                            <!-- DAFTAR STASIUN LAWAN -->
                             <div class="info-section">
                                 <h6>
                                     <i class="bi bi-people"></i>Stasiun Lawan
@@ -1029,54 +976,42 @@ body.modal-open {
                                         <div class="opponent-item">
                                             <div class="opponent-number">{{ loop.index }}</div>
                                             <div class="opponent-details">
-                                                <!-- Baris 1: NAMA (full width) -->
                                                 <div class="opponent-name-row">
                                                     <div class="opponent-name-container">
                                                         <span class="opponent-name" title="{{ lawan.nama }}">
                                                             {{ lawan.nama }}
                                                         </span>
                                                     </div>
-                                                    
-                                                    <!-- Baris 2: FREKUENSI Tx & Rx -->
                                                     <div class="opponent-freqs">
                                                         {% if lawan.freq_tx %}
                                                         <span class="freq-tx-badge" title="Freq Tx">
                                                             <i class="bi bi-arrow-up-short"></i> {{ lawan.freq_tx }}
                                                         </span>
                                                         {% endif %}
-                                                        
                                                         {% if lawan.freq_rx %}
                                                         <span class="freq-rx-badge" title="Freq Rx">
                                                             <i class="bi bi-arrow-down-short"></i> {{ lawan.freq_rx }}
                                                         </span>
                                                         {% endif %}
-                                                        
                                                         {% if not lawan.freq_tx and not lawan.freq_rx %}
                                                         <span class="badge bg-light text-muted">-</span>
                                                         {% endif %}
                                                     </div>
                                                 </div>
-                                                
-                                                <!-- Baris 3: STATUS -->
-                                                <div style="margin-bottom: 6px;">
+                                                <div style="margin-bottom: 4px;">
                                                     {% set status = lawan.latest_status if lawan.latest_status else 'belum_ada' %}
-                                                    <span class="status-badge status-{{ status }}" 
-                                                          title="Status: {% if status == 'aktif' %}Aktif{% elif status == 'tidak_aktif' %}Tidak Aktif{% elif status == 'tidak_sesuai' %}Tidak Sesuai{% else %}Belum Ada{% endif %}">
+                                                    <span class="status-badge {{ status }}">
                                                         {% if status == 'aktif' %}Aktif
                                                         {% elif status == 'tidak_aktif' %}Tidak Aktif
                                                         {% elif status == 'tidak_sesuai' %}Tidak Sesuai
                                                         {% else %}Belum Ada{% endif %}
                                                     </span>
                                                 </div>
-                                                
-                                                <!-- Baris 4: CATATAN -->
                                                 {% if lawan.catatan %}
                                                 <div class="opponent-notes" title="{{ lawan.catatan }}">
                                                     <i class="bi bi-chat"></i> {{ lawan.catatan|truncate(35) }}
                                                 </div>
                                                 {% endif %}
-                                                
-                                                <!-- Baris 5: WAKTU UPDATE -->
                                                 {% if lawan.updated_at %}
                                                 <div class="opponent-update-time" title="Terakhir diperbarui: {{ lawan.updated_at.strftime('%d/%m/%Y') }}">
                                                     <i class="bi bi-clock"></i>
@@ -1109,7 +1044,7 @@ body.modal-open {
                 <h5>Belum Ada Grup</h5>
                 <p class="text-muted">Mulai dengan membuat grup untuk mengelompokkan stasiun lawan</p>
                 <div class="d-flex justify-content-center gap-2">
-                    <a href="{{ url_for('user_operator_grup_stasiun', station_id=station.id) }}" 
+                    <a href="{{ url_for('user_operator_grup_stasiun', station_id=station.id, next=next_url) }}" 
                        class="btn btn-primary px-4">
                         <i class="bi bi-diagram-3 me-1"></i> Buat Grup
                     </a>
@@ -1122,45 +1057,6 @@ body.modal-open {
         </div>
     </div>
     {% endif %}
-</div>
-
-<!-- MODAL ZOOM -->
-<div class="modal fade" id="imageZoomModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="true">
-    <div class="modal-dialog modal-fullscreen">
-        <div class="modal-content">
-            <div class="modal-header border-0" style="position: absolute; top: 15px; right: 15px; z-index: 1000000; padding: 0;">
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" 
-                        style="background: transparent; opacity: 1; width: 32px; height: 32px; border: none; font-size: 28px; line-height: 1; color: #ff4444; text-shadow: none; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"
-                        onmouseover="this.style.color='#ff0000'; this.style.transform='scale(1.1)';"
-                        onmouseout="this.style.color='#ff4444'; this.style.transform='scale(1)';">
-                    ×
-                </button>
-            </div>
-            <div class="modal-body d-flex align-items-center justify-content-center p-0">
-                <!-- Navigation buttons -->
-                <button class="btn position-absolute start-0 ms-4" onclick="navigateModal(-1)" id="modalPrevBtn">
-                    <i class="bi bi-chevron-left"></i>
-                </button>
-                <button class="btn position-absolute end-0 me-4" onclick="navigateModal(1)" id="modalNextBtn">
-                    <i class="bi bi-chevron-right"></i>
-                </button>
-                
-                <!-- Image counter -->
-                <div class="position-absolute bottom-0 start-50 translate-middle-x mb-4 text-white px-4 py-2 rounded-pill" 
-                     id="modalCounter">
-                    1 / 1
-                </div>
-                
-                <!-- Download button -->
-                <button class="btn position-absolute bottom-0 end-0 me-4 mb-4" onclick="downloadCurrentImage()" id="downloadBtn">
-                    <i class="bi bi-download"></i>
-                </button>
-                
-                <!-- Image dengan warna asli -->
-                <img class="img-fluid" id="modalZoomImage" src="" alt="Zoom image">
-            </div>
-        </div>
-    </div>
 </div>
 
 <script>
@@ -1186,124 +1082,309 @@ const galleries = {};
     {% endfor %}
 {% endif %}
 
-// ============ BOOTSTRAP MODAL STATE ============
-let zoomModalInstance = null;
-let currentModalGalleryIndex = 0;
-let currentModalImageIndex = 0;
+// ============ ZOOM STATE ============
+const zoomStates = {};
 
-// ============ BOOTSTRAP MODAL FUNCTIONS ============
-function openZoomModal(galleryIndex, imageIndex) {
-    console.log('Opening zoom modal:', galleryIndex, imageIndex);
-    
-    const gallery = galleries[galleryIndex];
-    if (!gallery || !gallery.images || !gallery.images[imageIndex]) {
-        console.error('Gallery or image not found');
-        return;
+function getZoomState(galleryIdx) {
+    if (!zoomStates[galleryIdx]) {
+        zoomStates[galleryIdx] = {
+            scale: 1,
+            translateX: 0,
+            translateY: 0,
+            isDragging: false,
+            startX: 0,
+            startY: 0
+        };
     }
+    return zoomStates[galleryIdx];
+}
+
+function updateZoomTransform(galleryIdx) {
+    const state = getZoomState(galleryIdx);
+    const img = document.getElementById(`mainImage-${galleryIdx+1}`);
     
-    // Set current modal state
-    currentModalGalleryIndex = galleryIndex;
-    currentModalImageIndex = imageIndex;
+    if (img) {
+        img.style.transform = `scale(${state.scale}) translate(${state.translateX}px, ${state.translateY}px)`;
+        
+        if (state.scale > 1) {
+            img.classList.add('zoomed-mode');
+        } else {
+            img.classList.remove('zoomed-mode');
+            state.translateX = 0;
+            state.translateY = 0;
+            img.style.transform = `scale(1) translate(0px, 0px)`;
+        }
+        
+        const zoomLevelSpan = document.getElementById(`zoomLevel-${galleryIdx+1}`);
+        if (zoomLevelSpan) {
+            zoomLevelSpan.textContent = `${Math.round(state.scale * 100)}%`;
+        }
+    }
+}
+
+function zoomInImage(galleryIdx) {
+    const state = getZoomState(galleryIdx);
+    if (state.scale < 3) {
+        state.scale = Math.min(state.scale + 0.2, 3);
+        updateZoomTransform(galleryIdx);
+    }
+}
+
+function zoomOutImage(galleryIdx) {
+    const state = getZoomState(galleryIdx);
+    if (state.scale > 1) {
+        state.scale = Math.max(state.scale - 0.2, 1);
+        updateZoomTransform(galleryIdx);
+    }
+}
+
+function resetZoomImage(galleryIdx) {
+    const state = getZoomState(galleryIdx);
+    state.scale = 1;
+    state.translateX = 0;
+    state.translateY = 0;
+    updateZoomTransform(galleryIdx);
+}
+
+// ============ DRAG PAN ============
+function initDragPan(galleryIdx) {
+    const img = document.getElementById(`mainImage-${galleryIdx+1}`);
+    const state = getZoomState(galleryIdx);
+    if (!img) return;
     
-    // Set image source
-    const modalImg = document.getElementById('modalZoomImage');
-    modalImg.src = gallery.images[imageIndex].url;
+    img.addEventListener('mousedown', (e) => {
+        if (state.scale <= 1) return;
+        e.preventDefault();
+        state.isDragging = true;
+        state.startX = e.clientX - state.translateX;
+        state.startY = e.clientY - state.translateY;
+        img.style.cursor = 'grabbing';
+    });
     
-    // Update counter
-    updateModalCounter();
+    window.addEventListener('mousemove', (e) => {
+        if (!state.isDragging || state.scale <= 1) return;
+        e.preventDefault();
+        state.translateX = e.clientX - state.startX;
+        state.translateY = e.clientY - state.startY;
+        updateZoomTransform(galleryIdx);
+    });
     
-    // Show/hide navigation buttons
-    const prevBtn = document.getElementById('modalPrevBtn');
-    const nextBtn = document.getElementById('modalNextBtn');
+    window.addEventListener('mouseup', () => {
+        state.isDragging = false;
+        const imgEl = document.getElementById(`mainImage-${galleryIdx+1}`);
+        if (imgEl && state.scale > 1) imgEl.style.cursor = 'grab';
+    });
+    
+    img.addEventListener('touchstart', (e) => {
+        if (state.scale <= 1) return;
+        e.preventDefault();
+        const touch = e.touches[0];
+        state.isDragging = true;
+        state.startX = touch.clientX - state.translateX;
+        state.startY = touch.clientY - state.translateY;
+    });
+    
+    window.addEventListener('touchmove', (e) => {
+        if (!state.isDragging || state.scale <= 1) return;
+        e.preventDefault();
+        const touch = e.touches[0];
+        state.translateX = touch.clientX - state.startX;
+        state.translateY = touch.clientY - state.startY;
+        updateZoomTransform(galleryIdx);
+    });
+    
+    window.addEventListener('touchend', () => {
+        state.isDragging = false;
+    });
+}
+
+// ============ FULLSCREEN DENGAN NAVIGASI ============
+let fullscreenDiv = null;
+let fullscreenImg = null;
+let fsScale = 1, fsTranslateX = 0, fsTranslateY = 0;
+let fsIsDragging = false, fsStartX = 0, fsStartY = 0;
+let currentFsGalleryIdx = 0, currentFsImageIdx = 0;
+
+function openFullscreen(galleryIdx) {
+    const gallery = galleries[galleryIdx];
+    if (!gallery || !gallery.images) return;
+    
+    currentFsGalleryIdx = galleryIdx;
+    currentFsImageIdx = gallery.currentIndex;
+    
+    fullscreenDiv = document.createElement('div');
+    fullscreenDiv.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:black;z-index:999999;display:flex;align-items:center;justify-content:center;overflow:hidden';
+    
+    fullscreenImg = document.createElement('img');
+    fullscreenImg.src = gallery.images[currentFsImageIdx].url;
+    fullscreenImg.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain;transition:transform 0.2s ease-out;cursor:zoom-in';
+    
+    fullscreenDiv.appendChild(fullscreenImg);
+    document.body.appendChild(fullscreenDiv);
+    
+    fsScale = 1;
+    fsTranslateX = 0;
+    fsTranslateY = 0;
+    updateFsTransform();
+    
+    // Tombol navigasi
+    const prevBtn = createFsButton('bi-chevron-left', 'Gambar sebelumnya');
+    prevBtn.style.cssText += 'position:absolute;left:20px;top:50%;transform:translateY(-50%);width:45px;height:45px;font-size:1.8rem';
+    prevBtn.onclick = () => navigateFs(-1);
+    
+    const nextBtn = createFsButton('bi-chevron-right', 'Gambar berikutnya');
+    nextBtn.style.cssText += 'position:absolute;right:20px;top:50%;transform:translateY(-50%);width:45px;height:45px;font-size:1.8rem';
+    nextBtn.onclick = () => navigateFs(1);
     
     if (gallery.images.length <= 1) {
         prevBtn.style.display = 'none';
         nextBtn.style.display = 'none';
-    } else {
-        prevBtn.style.display = 'flex';
-        nextBtn.style.display = 'flex';
     }
     
-    // Show modal using Bootstrap
-    try {
-        const modalElement = document.getElementById('imageZoomModal');
-        
-        // Remove existing backdrop if any
-        const existingBackdrop = document.querySelector('.modal-backdrop');
-        if (existingBackdrop) {
-            existingBackdrop.remove();
+    // Counter
+    const counterSpan = document.createElement('span');
+    counterSpan.textContent = `${currentFsImageIdx + 1} / ${gallery.images.length}`;
+    counterSpan.style.cssText = 'position:absolute;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.7);color:white;padding:5px 14px;border-radius:50px;font-size:0.8rem;z-index:1000000';
+    
+    // Kontrol zoom
+    const controls = document.createElement('div');
+    controls.style.cssText = 'position:absolute;bottom:20px;right:20px;display:flex;gap:8px;background:rgba(0,0,0,0.6);padding:6px 10px;border-radius:50px;z-index:1000000';
+    
+    const zoomOutBtn = createFsButton('bi-dash-lg', 'Perkecil');
+    const zoomPercent = document.createElement('span');
+    zoomPercent.textContent = '100%';
+    zoomPercent.style.cssText = 'color:white;font-size:0.7rem;padding:0 6px';
+    const zoomInBtn = createFsButton('bi-plus-lg', 'Perbesar');
+    const resetBtn = createFsButton('bi-arrow-repeat', 'Reset zoom');
+    const closeBtn = createFsButton('bi-x-lg', 'Tutup');
+    
+    zoomOutBtn.onclick = () => {
+        if (fsScale > 1) {
+            fsScale = Math.max(fsScale - 0.2, 1);
+            if (fsScale === 1) { fsTranslateX = 0; fsTranslateY = 0; }
+            updateFsTransform();
+            zoomPercent.textContent = `${Math.round(fsScale * 100)}%`;
         }
-        
-        // Initialize modal if not exists
-        if (!zoomModalInstance) {
-            zoomModalInstance = new bootstrap.Modal(modalElement, {
-                backdrop: 'static',
-                keyboard: true
-            });
+    };
+    
+    zoomInBtn.onclick = () => {
+        if (fsScale < 3) {
+            fsScale = Math.min(fsScale + 0.2, 3);
+            updateFsTransform();
+            zoomPercent.textContent = `${Math.round(fsScale * 100)}%`;
         }
+    };
+    
+    resetBtn.onclick = () => {
+        fsScale = 1;
+        fsTranslateX = 0;
+        fsTranslateY = 0;
+        updateFsTransform();
+        zoomPercent.textContent = '100%';
+    };
+    
+    closeBtn.onclick = () => {
+        document.body.removeChild(fullscreenDiv);
+        document.removeEventListener('keydown', fsKeyHandler);
+    };
+    
+    controls.appendChild(zoomOutBtn);
+    controls.appendChild(zoomPercent);
+    controls.appendChild(zoomInBtn);
+    controls.appendChild(resetBtn);
+    controls.appendChild(closeBtn);
+    
+    fullscreenDiv.appendChild(prevBtn);
+    fullscreenDiv.appendChild(nextBtn);
+    fullscreenDiv.appendChild(counterSpan);
+    fullscreenDiv.appendChild(controls);
+    
+    function updateZoomPercent() {
+        zoomPercent.textContent = `${Math.round(fsScale * 100)}%`;
+    }
+    
+    function updateFsTransform() {
+        fullscreenImg.style.transform = `scale(${fsScale}) translate(${fsTranslateX}px, ${fsTranslateY}px)`;
+        fullscreenImg.style.cursor = fsScale > 1 ? 'grab' : 'zoom-in';
+    }
+    
+    function navigateFs(direction) {
+        let newIndex = currentFsImageIdx + direction;
+        if (newIndex < 0) newIndex = gallery.images.length - 1;
+        if (newIndex >= gallery.images.length) newIndex = 0;
         
-        // Show modal
-        zoomModalInstance.show();
-        
-        // Prevent body scroll
-        document.body.classList.add('modal-open');
-        
-    } catch (error) {
-        console.error('Error showing modal:', error);
-    }
-}
-
-function closeZoomModal() {
-    if (zoomModalInstance) {
-        zoomModalInstance.hide();
-        document.body.classList.remove('modal-open');
-    }
-}
-
-function navigateModal(direction) {
-    const gallery = galleries[currentModalGalleryIndex];
-    if (!gallery || !gallery.images) return;
-    
-    let newIndex = currentModalImageIndex + direction;
-    
-    if (newIndex < 0) {
-        newIndex = gallery.images.length - 1;
-    } else if (newIndex >= gallery.images.length) {
-        newIndex = 0;
+        currentFsImageIdx = newIndex;
+        gallery.currentIndex = newIndex;
+        fullscreenImg.src = gallery.images[newIndex].url;
+        fsScale = 1;
+        fsTranslateX = 0;
+        fsTranslateY = 0;
+        updateFsTransform();
+        updateZoomPercent();
+        counterSpan.textContent = `${newIndex + 1} / ${gallery.images.length}`;
+        showImage(galleryIdx, newIndex);
     }
     
-    // Update modal image
-    currentModalImageIndex = newIndex;
-    const modalImg = document.getElementById('modalZoomImage');
-    modalImg.src = gallery.images[newIndex].url;
+    // Drag
+    fullscreenImg.addEventListener('mousedown', (e) => {
+        if (fsScale <= 1) return;
+        e.preventDefault();
+        fsIsDragging = true;
+        fsStartX = e.clientX - fsTranslateX;
+        fsStartY = e.clientY - fsTranslateY;
+        fullscreenImg.style.cursor = 'grabbing';
+    });
     
-    // Update counter
-    updateModalCounter();
+    window.addEventListener('mousemove', (e) => {
+        if (!fsIsDragging || fsScale <= 1) return;
+        fsTranslateX = e.clientX - fsStartX;
+        fsTranslateY = e.clientY - fsStartY;
+        updateFsTransform();
+    });
     
-    // Also update the gallery view
-    showImage(currentModalGalleryIndex, newIndex);
+    window.addEventListener('mouseup', () => {
+        fsIsDragging = false;
+        if (fsScale > 1) fullscreenImg.style.cursor = 'grab';
+    });
+    
+    fullscreenImg.ondblclick = () => {
+        if (fsScale > 1) {
+            fsScale = 1;
+            fsTranslateX = 0;
+            fsTranslateY = 0;
+            updateFsTransform();
+            updateZoomPercent();
+        } else {
+            fsScale = 2;
+            updateFsTransform();
+            updateZoomPercent();
+        }
+    };
+    
+    const fsKeyHandler = (e) => {
+        if (e.key === 'Escape') {
+            if (fullscreenDiv && document.body.contains(fullscreenDiv)) document.body.removeChild(fullscreenDiv);
+            document.removeEventListener('keydown', fsKeyHandler);
+        } else if (e.key === 'ArrowLeft') { e.preventDefault(); navigateFs(-1); }
+        else if (e.key === 'ArrowRight') { e.preventDefault(); navigateFs(1); }
+        else if (e.key === '+' || e.key === '=') { e.preventDefault(); if (fsScale < 3) { fsScale = Math.min(fsScale + 0.2, 3); updateFsTransform(); updateZoomPercent(); } }
+        else if (e.key === '-' || e.key === '_') { e.preventDefault(); if (fsScale > 1) { fsScale = Math.max(fsScale - 0.2, 1); if (fsScale === 1) { fsTranslateX = 0; fsTranslateY = 0; } updateFsTransform(); updateZoomPercent(); } }
+        else if (e.key === '0') { e.preventDefault(); fsScale = 1; fsTranslateX = 0; fsTranslateY = 0; updateFsTransform(); updateZoomPercent(); }
+    };
+    document.addEventListener('keydown', fsKeyHandler);
 }
 
-function updateModalCounter() {
-    const gallery = galleries[currentModalGalleryIndex];
-    if (gallery && gallery.images) {
-        const counter = document.getElementById('modalCounter');
-        counter.textContent = `${currentModalImageIndex + 1} / ${gallery.images.length}`;
-    }
-}
-
-function downloadCurrentImage() {
-    const gallery = galleries[currentModalGalleryIndex];
-    if (!gallery || !gallery.images || !gallery.images[currentModalImageIndex]) return;
-    
-    const image = gallery.images[currentModalImageIndex];
-    const link = document.createElement('a');
-    link.href = image.url;
-    link.download = image.filename || 'image.jpg';
-    link.target = '_blank';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+function createFsButton(iconClass, title) {
+    const btn = document.createElement('button');
+    btn.style.cssText = 'background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;width:40px;height:40px;border-radius:50%;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center';
+    const icon = document.createElement('i');
+    icon.className = `bi ${iconClass}`;
+    icon.style.fontSize = '1.2rem';
+    btn.appendChild(icon);
+    btn.title = title;
+    btn.onmouseenter = () => { btn.style.backgroundColor = '#2a5298'; btn.style.transform = 'scale(1.1)'; };
+    btn.onmouseleave = () => { btn.style.backgroundColor = 'rgba(255,255,255,0.2)'; btn.style.transform = 'scale(1)'; };
+    return btn;
 }
 
 // ============ GALLERY FUNCTIONS ============
@@ -1311,113 +1392,69 @@ function showImage(galleryIdx, imgIdx) {
     const g = galleries[galleryIdx];
     if (!g || !g.images[imgIdx]) return;
     
+    resetZoomImage(galleryIdx);
     g.currentIndex = imgIdx;
     const img = g.images[imgIdx];
     
-    // Update main image
-    const mainImage = document.querySelector(`#gallery-${galleryIdx+1} .main-image`);
-    if (mainImage) {
-        mainImage.src = img.url;
-    }
+    const mainImage = document.getElementById(`mainImage-${galleryIdx+1}`);
+    if (mainImage) mainImage.src = img.url;
     
-    // Update title
-    const titleEl = document.querySelector(`#gallery-${galleryIdx+1} .image-title`);
-    if (titleEl) {
-        titleEl.textContent = img.title.length > 30 ? img.title.substring(0,30)+'...' : img.title;
-    }
+    const titleEl = document.getElementById(`imageTitle-${galleryIdx+1}`);
+    if (titleEl) titleEl.textContent = img.title.length > 30 ? img.title.substring(0,30)+'...' : img.title;
     
-    // Update counter
-    const counterEl = document.querySelector(`#gallery-${galleryIdx+1} .image-counter`);
-    if (counterEl) {
-        counterEl.textContent = `${g.currentIndex + 1} / ${g.images.length}`;
-    }
+    const counterEl = document.getElementById(`counter-${galleryIdx+1}`);
+    if (counterEl) counterEl.textContent = `${g.currentIndex + 1} / ${g.images.length}`;
     
-    // Update thumbnails
-    const thumbnails = document.querySelectorAll(`#gallery-${galleryIdx+1} .thumbnail`);
+    const thumbnails = document.querySelectorAll(`#thumbnails-${galleryIdx+1} .thumbnail`);
     thumbnails.forEach((thumb, i) => {
-        if (i === g.currentIndex) {
-            thumb.classList.add('active');
-        } else {
-            thumb.classList.remove('active');
-        }
+        thumb.classList.toggle('active', i === g.currentIndex);
     });
 }
 
 function prevImage(galleryIdx) {
     const g = galleries[galleryIdx];
     if (!g || g.images.length <= 1) return;
-    
-    g.currentIndex--;
-    if (g.currentIndex < 0) {
-        g.currentIndex = g.images.length - 1;
-    }
+    g.currentIndex = (g.currentIndex - 1 + g.images.length) % g.images.length;
     showImage(galleryIdx, g.currentIndex);
 }
 
 function nextImage(galleryIdx) {
     const g = galleries[galleryIdx];
     if (!g || g.images.length <= 1) return;
-    
-    g.currentIndex++;
-    if (g.currentIndex >= g.images.length) {
-        g.currentIndex = 0;
-    }
+    g.currentIndex = (g.currentIndex + 1) % g.images.length;
     showImage(galleryIdx, g.currentIndex);
 }
 
 // ============ INITIALIZATION ============
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, galleries:', galleries);
-    
-    // Set first image for each gallery
     Object.keys(galleries).forEach(idx => {
-        showImage(parseInt(idx), 0);
+        const galleryIdx = parseInt(idx);
+        showImage(galleryIdx, 0);
+        initDragPan(galleryIdx);
     });
     
-    // Handle tab changes
-    const tabs = document.querySelectorAll('button[data-bs-toggle="tab"]');
-    tabs.forEach(tab => {
-        tab.addEventListener('shown.bs.tab', function(event) {
-            const targetId = event.target.getAttribute('data-bs-target');
-            const targetPane = document.querySelector(targetId);
+    document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(tab => {
+        tab.addEventListener('shown.bs.tab', function() {
+            const targetPane = document.querySelector(this.getAttribute('data-bs-target'));
             const galleryIdx = Array.from(document.querySelectorAll('.tab-pane')).indexOf(targetPane);
-            
-            if (galleries[galleryIdx]) {
-                showImage(galleryIdx, 0);
-            }
+            if (galleries[galleryIdx]) { resetZoomImage(galleryIdx); showImage(galleryIdx, 0); }
         });
     });
     
-    // Clean up modal when hidden
-    const modalElement = document.getElementById('imageZoomModal');
-    modalElement.addEventListener('hidden.bs.modal', function () {
-        document.body.classList.remove('modal-open');
-        const backdrop = document.querySelector('.modal-backdrop');
-        if (backdrop) {
-            backdrop.remove();
+    document.addEventListener('keydown', (e) => {
+        const activeTab = document.querySelector('.tab-pane.show.active');
+        if (!activeTab) return;
+        const galleryIdx = Array.from(document.querySelectorAll('.tab-pane')).indexOf(activeTab);
+        if (galleryIdx >= 0 && galleries[galleryIdx]) {
+            if (e.key === 'ArrowLeft') { e.preventDefault(); prevImage(galleryIdx); }
+            else if (e.key === 'ArrowRight') { e.preventDefault(); nextImage(galleryIdx); }
+            else if (e.key === '+' || e.key === '=') { e.preventDefault(); zoomInImage(galleryIdx); }
+            else if (e.key === '-' || e.key === '_') { e.preventDefault(); zoomOutImage(galleryIdx); }
+            else if (e.key === '0') { e.preventDefault(); resetZoomImage(galleryIdx); }
         }
     });
     
-    // Keyboard navigation for modal
-    document.addEventListener('keydown', function(e) {
-        // Check if modal is open (has 'show' class)
-        const modal = document.getElementById('imageZoomModal');
-        if (modal && modal.classList.contains('show')) {
-            if (e.key === 'ArrowLeft') {
-                e.preventDefault();
-                navigateModal(-1);
-            } else if (e.key === 'ArrowRight') {
-                e.preventDefault();
-                navigateModal(1);
-            }
-        }
-    });
-    
-    // Tooltips
-    const tooltipTriggerList = document.querySelectorAll('[title]');
-    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
-        new bootstrap.Tooltip(tooltipTriggerEl);
-    });
+    document.querySelectorAll('[title]').forEach(el => new bootstrap.Tooltip(el));
 });
 </script>
 {% endblock %}

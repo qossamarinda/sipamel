@@ -1,0 +1,18 @@
+{% extends "admin_master/base.html" %}
+{% block title %}Edit Laporan - Admin Master{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4"><h2 class="mb-0"><i class="bi bi-pencil-square me-2 text-warning"></i>Edit Laporan</h2><a href="{{ url_for('admin_master_hasil_laporan') }}" class="btn btn-secondary"><i class="bi bi-arrow-left me-2"></i>Kembali</a></div>
+<div class="card shadow-sm"><div class="card-body p-4">
+    <form method="POST" enctype="multipart/form-data">
+        <div class="row g-3">
+            <div class="col-md-6"><label class="form-label fw-semibold">Operator <span class="text-danger">*</span></label><select name="operator" class="form-select" required>{% for op in operators %}<option value="{{ op }}" {% if laporan.operator == op %}selected{% endif %}>{{ op|upper }}</option>{% endfor %}</select></div>
+            <div class="col-md-6"><label class="form-label fw-semibold">Kota/Kab <span class="text-danger">*</span></label><select name="kota_kab" class="form-select" required>{% for kota in kota_list %}<option value="{{ kota }}" {% if laporan.kota_kab == kota %}selected{% endif %}>{{ kota|title }}</option>{% endfor %}</select></div>
+            <div class="col-md-6"><label class="form-label fw-semibold">Nomor BA <span class="text-danger">*</span></label><input type="text" name="nomor_ba" class="form-control" value="{{ laporan.nomor_ba }}" required></div>
+            <div class="col-md-6"><label class="form-label fw-semibold">Tanggal BA <span class="text-danger">*</span></label><input type="date" name="tanggal_ba" class="form-control" value="{{ laporan.tanggal_ba.strftime('%Y-%m-%d') }}" required></div>
+            <div class="col-md-6"><label class="form-label fw-semibold">Nomor SPT <span class="text-danger">*</span></label><input type="text" name="nomor_spt" class="form-control" value="{{ laporan.nomor_spt }}" required></div>
+            <div class="col-md-6"><label class="form-label fw-semibold">Upload PDF Baru (Opsional)</label><input type="file" name="file_pdf" class="form-control" accept=".pdf">{% if laporan.file_pdf_url %}<div class="mt-2"><span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>PDF saat ini:</span> <a href="{{ laporan.file_pdf_url }}" target="_blank">Lihat PDF</a></div>{% endif %}</div>
+        </div>
+        <div class="mt-4 pt-3 border-top"><button type="submit" class="btn btn-primary"><i class="bi bi-save me-2"></i>Simpan Perubahan</button><a href="{{ url_for('admin_master_hasil_laporan') }}" class="btn btn-secondary ms-2"><i class="bi bi-x-circle me-2"></i>Batal</a></div>
+    </form>
+</div></div>
+{% endblock %}

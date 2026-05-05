@@ -1,4 +1,3 @@
-<!-- templates/admin_operator/detail_stasiun.html -->
 {% extends "admin_operator/base.html" %}
 
 {% block title %}Detail Stasiun - {{ station.stasiun_name }}{% endblock %}
@@ -9,8 +8,8 @@
 :root {
     --gradient-telkom: linear-gradient(135deg, #E1251B 0%, #B71C1C 100%);
     --gradient-telkomsel: linear-gradient(135deg, #E1251B 0%, #B71C1C 100%);
-    --gradient-indosat: linear-gradient(135deg, #FF6600 0%, #E65100 100%);
-    --gradient-xl: linear-gradient(135deg, #7F3F98 0%, #4A1B6D 100%);
+    --gradient-ioh: linear-gradient(135deg, #FF6600 0%, #E65100 100%);
+    --gradient-xl-smart: linear-gradient(135deg, #7F3F98 0%, #4A1B6D 100%);
     --border-radius: 16px;
     --border-radius-sm: 8px;
     --shadow: 0 8px 20px rgba(0,0,0,0.08);
@@ -27,16 +26,21 @@
 }
 
 .station-header.telkom, .station-header.telkomsel { background: var(--gradient-telkom); }
-.station-header.indosat { background: var(--gradient-indosat); }
-.station-header.xl { background: var(--gradient-xl); }
+.station-header.ioh { background: var(--gradient-ioh); }
+.station-header.xl-smart { background: var(--gradient-xl-smart); }
 .station-header.default { background: linear-gradient(135deg, #1e3c72, #2a5298); }
 
-.station-header h2 { font-size: 1.8rem; font-weight: 700; margin-bottom: 0.25rem; }
+.station-header h2 { 
+    font-size: 1.5rem; 
+    font-weight: 700; 
+    margin-bottom: 0.25rem;
+    word-break: break-word;
+}
 
 .station-meta {
     display: flex;
-    gap: 1.5rem;
-    margin-top: 1rem;
+    gap: 1rem;
+    margin-top: 0.75rem;
     flex-wrap: wrap;
 }
 
@@ -45,9 +49,9 @@
     align-items: center;
     gap: 0.5rem;
     background: rgba(255,255,255,0.15);
-    padding: 0.4rem 1rem;
+    padding: 0.3rem 0.8rem;
     border-radius: 50px;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     backdrop-filter: blur(5px);
 }
 
@@ -61,17 +65,10 @@
     border-left: 4px solid;
 }
 
-.inspection-card.sudah_diperiksa {
-    border-left-color: #28a745;
-}
+.inspection-card.sudah_diperiksa { border-left-color: #28a745; }
+.inspection-card.belum_diperiksa { border-left-color: #ffc107; }
 
-.inspection-card.belum_diperiksa {
-    border-left-color: #ffc107;
-}
-
-.inspection-card .card-body {
-    padding: 1rem 1.5rem;
-}
+.inspection-card .card-body { padding: 0.75rem 1.5rem; }
 
 .inspection-status {
     display: flex;
@@ -81,10 +78,10 @@
 }
 
 .inspection-badge {
-    padding: 0.5rem 1rem;
+    padding: 0.4rem 0.8rem;
     border-radius: 50px;
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
@@ -102,27 +99,22 @@
 
 .inspection-info {
     color: #6c757d;
-    font-size: 0.85rem;
-}
-
-.inspection-info i {
-    margin-right: 0.25rem;
+    font-size: 0.8rem;
 }
 
 .btn-mark-inspected {
     background: #28a745;
     border: none;
     color: white;
-    padding: 0.4rem 1rem;
+    padding: 0.3rem 0.8rem;
     border-radius: 50px;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     transition: all 0.2s;
 }
 
 .btn-mark-inspected:hover {
     background: #218838;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
 }
 
 /* ===== TABS CUSTOM ===== */
@@ -132,22 +124,8 @@
     white-space: nowrap;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: thin;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
     border-bottom: 2px solid #e9ecef;
-}
-
-.group-tabs-wrapper::-webkit-scrollbar {
-    height: 3px;
-}
-
-.group-tabs-wrapper::-webkit-scrollbar-track {
-    background: #f1f5f9;
-    border-radius: 10px;
-}
-
-.group-tabs-wrapper::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 10px;
 }
 
 .group-tabs-wrapper .nav-tabs {
@@ -168,10 +146,10 @@
 .group-tabs-wrapper .nav-tabs .nav-link {
     border: none;
     border-bottom: 3px solid transparent;
-    color: #212529 !important;
+    color: #495057 !important;
     font-weight: 600;
     padding: 0.6rem 1.2rem;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     transition: all 0.2s;
     white-space: nowrap;
     background: transparent;
@@ -185,8 +163,8 @@
 
 .group-tabs-wrapper .nav-tabs .nav-link .badge {
     margin-left: 0.4rem;
-    background: #e9ecef !important;
-    color: #495057 !important;
+    background: #6c757d !important;
+    color: white !important;
     font-size: 0.7rem;
     padding: 0.2rem 0.4rem;
 }
@@ -198,7 +176,7 @@
 }
 
 .group-tabs-wrapper .nav-tabs .nav-link:hover i {
-    color: #495057;
+    color: #000000;
 }
 
 .group-tabs-wrapper .nav-tabs .nav-link.active {
@@ -211,11 +189,7 @@
     color: #000000 !important;
 }
 
-.nav-tabs {
-    border-bottom: none;
-}
-
-/* ===== SPLIT LAYOUT ===== */
+/* ===== SPLIT LAYOUT - FIX UNTUK BANYAK GAMBAR ===== */
 .split-container {
     display: flex;
     background: white;
@@ -223,31 +197,36 @@
     border: 1px solid #e9ecef;
     overflow: hidden;
     box-shadow: var(--shadow);
-    min-height: 550px;
+    min-height: 500px;
+    align-items: flex-start;  /* Agar tidak stretch */
 }
 
-/* LEFT SIDE - GAMBAR */
+/* LEFT SIDE - GAMBAR (FIX UNTUK BANYAK GAMBAR) */
 .image-side {
-    flex: 1;
+    flex: 2;
+    min-width: 0;  /* KRUSIAL! Mencegah overflow */
     background: #f8f9fa;
-    padding: 1.5rem;
+    padding: 1rem;
     border-right: 1px solid #e9ecef;
     display: flex;
     flex-direction: column;
+    overflow-x: hidden;  /* Cegah overflow horizontal */
+    max-height: 80vh;  /* Batasi tinggi */
+    overflow-y: auto;  /* Scroll di image side jika perlu */
 }
 
 .image-main-container {
     position: relative;
-    flex: 1;
+    flex-shrink: 0;  /* Jangan mengecil */
     display: flex;
     align-items: center;
     justify-content: center;
     background: white;
     border-radius: var(--border-radius-sm);
-    padding: 1rem;
-    margin-bottom: 1rem;
-    min-height: 350px;
-    cursor: pointer;
+    margin-bottom: 0.75rem;
+    min-height: 300px;
+    max-height: 450px;  /* Batasi tinggi maksimal */
+    overflow: hidden;
     transition: all 0.3s;
 }
 
@@ -255,26 +234,111 @@
     box-shadow: var(--shadow-hover);
 }
 
+.image-zoom-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .image-main {
+    display: block;
     max-width: 100%;
     max-height: 100%;
     width: auto;
     height: auto;
     object-fit: contain;
-    transition: transform 0.3s;
+    transition: transform 0.2s ease-out;
+    transform-origin: center center;
+    cursor: zoom-in;
 }
 
-.image-main-container:hover .image-main {
-    transform: scale(1.02);
+.image-main.zoomed-mode {
+    cursor: grab;
 }
 
-/* ===== NAVIGASI PANAH ===== */
+.image-main.zoomed-mode:active {
+    cursor: grabbing;
+}
+
+/* Tombol Zoom dan Fullscreen - Berjajar Horizontal */
+.zoom-controls-on-image {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    display: flex;
+    gap: 6px;
+    z-index: 20;
+    background: rgba(0,0,0,0.6);
+    padding: 5px 8px;
+    border-radius: 50px;
+    backdrop-filter: blur(5px);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.image-main-container:hover .zoom-controls-on-image {
+    opacity: 1;
+}
+
+.zoom-controls-on-image button {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.zoom-controls-on-image button:hover {
+    background: #0d6efd;
+    transform: scale(1.1);
+}
+
+.zoom-controls-on-image button i {
+    font-size: 0.9rem;
+}
+
+.zoom-level {
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: rgba(0,0,0,0.5);
+    padding: 0 6px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.image-counter {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    padding: 0.2rem 0.6rem;
+    border-radius: 50px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    backdrop-filter: blur(5px);
+    z-index: 20;
+}
+
+/* Navigasi Panah */
 .image-nav {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    width: 40px;
-    height: 40px;
+    width: 34px;
+    height: 34px;
     border-radius: 50%;
     background: white;
     border: 2px solid #e9ecef;
@@ -284,11 +348,9 @@
     justify-content: center;
     cursor: pointer;
     z-index: 10;
-    transition: all 0.2s;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    font-size: 1.2rem;
+    font-size: 1rem;
     opacity: 0;
-    transition: opacity 0.3s, background 0.2s, transform 0.2s;
+    transition: opacity 0.3s, background 0.2s;
 }
 
 .image-main-container:hover .image-nav {
@@ -299,48 +361,42 @@
     background: #0d6efd;
     border-color: #0d6efd;
     color: white;
-    transform: translateY(-50%) scale(1.1);
 }
 
 .image-nav.prev { left: 10px; }
 .image-nav.next { right: 10px; }
 
-/* Indikator gambar */
-.image-counter {
-    position: absolute;
-    bottom: 10px;
-    right: 10px;
-    background: rgba(0,0,0,0.6);
-    color: white;
-    padding: 0.25rem 0.75rem;
-    border-radius: 50px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    backdrop-filter: blur(5px);
-    border: 1px solid rgba(255,255,255,0.2);
-}
-
+/* THUMBNAIL CONTAINER - FIX UNTUK BANYAK GAMBAR */
 .image-thumbnails {
     display: flex;
     gap: 0.5rem;
     overflow-x: auto;
-    padding: 0.25rem 0;
+    overflow-y: hidden;
+    padding: 0.5rem 0;
     margin-bottom: 0.5rem;
-    scrollbar-width: thin;
+    flex-shrink: 0;  /* Jangan mengecil */
+    max-height: 70px;  /* Batasi tinggi */
+    min-height: 60px;
+    scroll-behavior: smooth;
 }
 
+/* Scrollbar styling untuk thumbnail */
 .image-thumbnails::-webkit-scrollbar {
-    height: 4px;
+    height: 6px;
 }
 
 .image-thumbnails::-webkit-scrollbar-track {
     background: #e9ecef;
-    border-radius: 10px;
+    border-radius: 3px;
 }
 
 .image-thumbnails::-webkit-scrollbar-thumb {
     background: #adb5bd;
-    border-radius: 10px;
+    border-radius: 3px;
+}
+
+.image-thumbnails::-webkit-scrollbar-thumb:hover {
+    background: #6c757d;
 }
 
 .image-thumb {
@@ -350,7 +406,7 @@
     overflow: hidden;
     cursor: pointer;
     border: 2px solid transparent;
-    flex-shrink: 0;
+    flex-shrink: 0;  /* Penting: mencegah thumbnail mengecil */
     opacity: 0.7;
     transition: all 0.2s;
 }
@@ -363,7 +419,6 @@
 .image-thumb.active { 
     border-color: #0d6efd; 
     opacity: 1; 
-    box-shadow: 0 0 0 2px rgba(13,110,253,0.3);
 }
 
 .image-thumb img {
@@ -373,40 +428,47 @@
 }
 
 .image-info-footer {
-    padding: 0.75rem;
+    padding: 0.5rem;
     background: white;
     border-radius: var(--border-radius-sm);
     border: 1px solid #e9ecef;
-    font-size: 0.85rem;
+    font-size: 0.75rem;
+    flex-shrink: 0;
 }
 
 .image-info-footer strong {
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     display: block;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 250px;
 }
 
-/* RIGHT SIDE - INFORMASI */
+/* RIGHT SIDE - INFORMASI (TETAP TERLIHAT) */
 .info-side {
-    width: 450px;
+    width: 320px;
+    min-width: 280px;
+    max-width: 350px;
     background: white;
-    padding: 1.25rem;
+    padding: 0.75rem;
     overflow-y: auto;
+    flex-shrink: 0;  /* Mencegah info-side mengecil */
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    max-height: 80vh;
 }
 
 .info-section {
-    margin-bottom: 1.25rem;
+    margin-bottom: 0.75rem;
 }
 
 .info-section h6 {
-    font-size: 0.85rem;
+    font-size: 0.7rem;
     font-weight: 700;
     color: #495057;
-    margin-bottom: 0.75rem;
-    padding-bottom: 0.4rem;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.3rem;
     border-bottom: 2px solid #e9ecef;
     display: flex;
     align-items: center;
@@ -415,121 +477,126 @@
 }
 
 .info-section h6 i {
-    margin-right: 0.5rem;
+    margin-right: 0.4rem;
+    font-size: 0.8rem;
     color: #0d6efd;
-    font-size: 1rem;
 }
 
 .info-grid {
     display: grid;
-    gap: 0.4rem;
+    gap: 0.3rem;
 }
 
 .info-item {
     display: flex;
     justify-content: space-between;
-    padding: 0.4rem 0.6rem;
+    align-items: flex-start;
+    padding: 0.3rem 0.5rem;
     background: #f8f9fa;
     border-radius: 6px;
-    font-size: 0.8rem;
+    font-size: 0.7rem;
+    gap: 0.5rem;
 }
 
-.info-label { color: #6c757d; font-weight: 500; }
-.info-value { font-weight: 600; color: #212529; }
+.info-label {
+    color: #6c757d;
+    font-weight: 500;
+    flex-shrink: 0;
+    min-width: 70px;
+}
 
-/* ===== FREKUENSI BADGE ===== */
+.info-value {
+    font-weight: 600;
+    color: #212529;
+    text-align: right;
+    word-break: break-word;
+    flex: 1;
+}
+
+/* ===== FREKUENSI BADGE DENGAN WARNA ===== */
 .freq-tx-badge {
     display: inline-flex;
     align-items: center;
-    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
-    color: #0d47a1;
-    padding: 4px 10px;
+    background: #e3f2fd !important;
+    color: #0d47a1 !important;
+    padding: 2px 8px;
     border-radius: 16px;
-    font-size: 0.85rem;
+    font-size: 0.7rem;
     font-weight: 600;
-    border: 1px solid rgba(13, 71, 161, 0.3);
-    line-height: 1.4;
-    white-space: nowrap;
+    border: 1px solid #bbdefb;
 }
 
 .freq-tx-badge i {
-    font-size: 0.8rem;
-    margin-right: 4px;
+    font-size: 0.7rem;
+    margin-right: 3px;
     color: #1976d2;
 }
 
 .freq-rx-badge {
     display: inline-flex;
     align-items: center;
-    background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
-    color: #1b5e20;
-    padding: 4px 10px;
+    background: #e8f5e9 !important;
+    color: #1b5e20 !important;
+    padding: 2px 8px;
     border-radius: 16px;
-    font-size: 0.85rem;
+    font-size: 0.7rem;
     font-weight: 600;
-    border: 1px solid rgba(27, 94, 32, 0.3);
-    line-height: 1.4;
-    white-space: nowrap;
+    border: 1px solid #c8e6c9;
 }
 
 .freq-rx-badge i {
-    font-size: 0.8rem;
-    margin-right: 4px;
+    font-size: 0.7rem;
+    margin-right: 3px;
     color: #2e7d32;
 }
 
-/* STATUS STATISTICS */
-.status-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.5rem;
+/* ===== STATUS OPPONENT DENGAN WARNA ===== */
+.opponent-status {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    white-space: nowrap;
 }
 
-.status-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 0.5rem 0.7rem;
-    border-radius: 6px;
-    font-size: 0.85rem;
+.opponent-status.aktif { 
+    background: #d4edda !important; 
+    color: #155724 !important; 
+    border: 1px solid #c3e6cb;
 }
 
-.status-item.aktif { background: rgba(25,135,84,0.1); color: #198754; }
-.status-item.tidak_aktif { background: rgba(220,53,69,0.1); color: #dc3545; }
-.status-item.tidak_sesuai { background: rgba(13,110,253,0.1); color: #0d6efd; }
+.opponent-status.tidak_aktif { 
+    background: #f8d7da !important; 
+    color: #721c24 !important; 
+    border: 1px solid #f5c6cb;
+}
 
-.status-count { font-weight: 700; font-size: 1rem; }
+.opponent-status.tidak_sesuai { 
+    background: #d1ecf1 !important; 
+    color: #0c5460 !important; 
+    border: 1px solid #bee5eb;
+}
 
-/* OPPONENTS LIST - LAYOUT VERTIKAL */
+.opponent-status.belum_ada { 
+    background: #e9ecef !important; 
+    color: #495057 !important; 
+    border: 1px solid #dee2e6;
+}
+
+/* Daftar lawan */
 .opponents-list {
     max-height: 350px;
     overflow-y: auto;
-    padding-right: 5px;
-}
-
-.opponents-list::-webkit-scrollbar {
-    width: 6px;
-}
-
-.opponents-list::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 10px;
-}
-
-.opponents-list::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
-    border-radius: 10px;
-}
-
-.opponents-list::-webkit-scrollbar-thumb:hover {
-    background: #a8a8a8;
+    padding-right: 3px;
 }
 
 .opponent-item {
     display: flex;
-    padding: 0.9rem 0.8rem;
-    margin-bottom: 0.6rem;
+    padding: 0.5rem 0.5rem;
+    margin-bottom: 0.4rem;
     background: #f8f9fa;
-    border-radius: 8px;
+    border-radius: 6px;
     border-left: 3px solid transparent;
     transition: all 0.2s;
 }
@@ -537,112 +604,97 @@
 .opponent-item:hover { 
     border-left-color: #0d6efd; 
     background: #f1f3f5;
-    transform: translateX(3px);
 }
 
 .opponent-number {
-    width: 26px;
-    height: 26px;
+    width: 22px;
+    height: 22px;
     background: white;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.8rem;
+    font-size: 0.7rem;
     font-weight: 600;
-    margin-right: 0.8rem;
+    margin-right: 0.5rem;
     flex-shrink: 0;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
-.opponent-details {
-    flex: 1;
-    min-width: 0;
-    width: 100%;
-}
-
-/* Layout vertikal: Nama di atas, frekuensi di bawah */
-.opponent-name-row {
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 8px;
-    width: 100%;
-}
-
-.opponent-name-container {
-    width: 100%;
-    margin-bottom: 6px;
-}
-
-.opponent-name { 
-    font-weight: 600; 
-    font-size: 0.95rem;
+.opponent-name {
+    font-weight: 600;
+    font-size: 0.8rem;
     color: #212529;
     word-break: break-word;
-    white-space: normal;
-    line-height: 1.4;
-    display: block;
-    cursor: help;
-    padding-right: 5px;
-}
-
-.opponent-name:hover {
-    color: #0d6efd;
 }
 
 .opponent-freqs {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 5px;
     flex-wrap: wrap;
-    width: 100%;
+    margin-top: 3px;
 }
-
-.opponent-status {
-    display: inline-block;
-    padding: 0.2rem 0.6rem;
-    border-radius: 4px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    white-space: nowrap;
-}
-
-.opponent-status.aktif { background: rgba(25,135,84,0.1); color: #198754; }
-.opponent-status.tidak_aktif { background: rgba(220,53,69,0.1); color: #dc3545; }
-.opponent-status.tidak_sesuai { background: rgba(13,110,253,0.1); color: #0d6efd; }
-.opponent-status.belum_ada { background: rgba(108,117,125,0.1); color: #6c757d; }
 
 .opponent-notes {
-    font-size: 0.8rem;
+    font-size: 0.7rem;
     color: #6c757d;
     font-style: italic;
-    margin: 6px 0 4px 0;
-    word-break: break-word;
-    white-space: normal;
-    cursor: help;
-    line-height: 1.4;
+    margin: 4px 0 2px 0;
 }
 
-.opponent-notes i {
+/* Waktu update - TERAKHIR DIPERBAHARUI */
+.opponent-update-time {
+    font-size: 0.6rem;
+    color: #0d6efd;
+    margin-top: 6px;
+    padding-top: 4px;
+    border-top: 1px dashed #e9ecef;
+}
+
+.opponent-update-time i {
     margin-right: 4px;
-    color: #6c757d;
+    font-size: 0.6rem;
 }
 
-.opponent-time {
-    font-size: 0.75rem;
-    color: #adb5bd;
-    margin-top: 4px;
+/* Status grid */
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.3rem;
 }
 
-.opponent-time i {
+.status-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.3rem 0.5rem;
+    border-radius: 6px;
     font-size: 0.7rem;
-    margin-right: 4px;
 }
 
-/* ACTION BUTTON */
+.status-item.aktif { 
+    background: #d4edda !important; 
+    color: #155724 !important; 
+}
+
+.status-item.tidak_aktif { 
+    background: #f8d7da !important; 
+    color: #721c24 !important; 
+}
+
+.status-item.tidak_sesuai { 
+    background: #d1ecf1 !important; 
+    color: #0c5460 !important; 
+}
+
+.status-count {
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+
+/* Action button */
 .action-buttons {
-    margin-top: 1.5rem;
-    padding-top: 1rem;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
     border-top: 1px solid #e9ecef;
 }
 
@@ -651,226 +703,101 @@
     border: none;
     color: #212529;
     font-weight: 600;
-    padding: 0.7rem;
+    padding: 0.5rem;
     border-radius: 8px;
-    transition: all 0.2s;
-    font-size: 0.95rem;
+    font-size: 0.85rem;
 }
 
 .btn-edit:hover {
     background: #ffca2c;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(255,193,7,0.3);
 }
 
-/* ===== BOOTSTRAP MODAL ZOOM ===== */
-.modal {
-    z-index: 999999 !important;
-}
-
-.modal-backdrop {
-    z-index: 999998 !important;
-}
-
-.modal-fullscreen {
-    padding: 0 !important;
-    margin: 0 !important;
-}
-
-.modal-fullscreen .modal-dialog {
-    margin: 0 !important;
-    padding: 0 !important;
-    max-width: 100% !important;
-    width: 100vw !important;
-    height: 100vh !important;
-}
-
-.modal-fullscreen .modal-content {
-    background-color: black !important;
-    border: none !important;
-    border-radius: 0 !important;
-    height: 100vh !important;
-    width: 100vw !important;
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-}
-
-.modal-fullscreen .modal-body {
-    background-color: black !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    height: 100vh !important;
-    width: 100vw !important;
-}
-
-#modalZoomImage {
-    filter: none !important;
-    -webkit-filter: none !important;
-    brightness: 1 !important;
-    contrast: 1 !important;
-    image-rendering: auto !important;
-    max-height: 100vh !important;
-    max-width: 100vw !important;
-    width: auto !important;
-    height: auto !important;
-    object-fit: contain !important;
-}
-
-.modal-header .btn-close {
-    background: transparent !important;
-    opacity: 1 !important;
-    width: 32px !important;
-    height: 32px !important;
-    border: none !important;
-    font-size: 32px !important;
-    line-height: 1 !important;
-    color: #ff4444 !important;
-    text-shadow: none !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    transition: all 0.2s !important;
-    padding: 0 !important;
-    margin: 0 !important;
-}
-
-.modal-header .btn-close:hover {
-    color: #ff0000 !important;
-    transform: scale(1.1) !important;
-    background: transparent !important;
-}
-
-#modalPrevBtn, #modalNextBtn, #downloadBtn {
-    z-index: 1000000 !important;
-    border-radius: 50% !important;
-    width: 50px !important;
-    height: 50px !important;
-    background-color: rgba(255,255,255,0.15) !important;
-    border: 1px solid rgba(255,255,255,0.3) !important;
-    color: white !important;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.5) !important;
-    transition: all 0.2s !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    cursor: pointer !important;
-}
-
-#modalPrevBtn i, #modalNextBtn i, #downloadBtn i {
-    font-size: 1.8rem !important;
-}
-
-#modalPrevBtn:hover, #modalNextBtn:hover, #downloadBtn:hover {
-    background-color: #2a5298 !important;
-    border-color: white !important;
-    transform: scale(1.1) !important;
-}
-
-#modalCounter {
-    z-index: 1000000 !important;
-    background-color: rgba(0,0,0,0.7) !important;
-    backdrop-filter: blur(5px) !important;
-    font-size: 0.9rem !important;
-    border: 1px solid rgba(255,255,255,0.2) !important;
-    padding: 6px 16px !important;
-    border-radius: 50px !important;
-}
-
-body.modal-open {
-    overflow: hidden !important;
-    padding-right: 0 !important;
-}
-
-@media (max-width: 768px) {
-    #modalPrevBtn, #modalNextBtn, #downloadBtn {
-        width: 40px !important;
-        height: 40px !important;
-    }
-    
-    #modalPrevBtn i, #modalNextBtn i, #downloadBtn i {
-        font-size: 1.4rem !important;
-    }
-    
-    .modal-header .btn-close {
-        width: 28px !important;
-        height: 28px !important;
-        font-size: 28px !important;
-    }
-}
-
-/* EMPTY STATE */
 .empty-state {
     text-align: center;
-    padding: 2rem;
+    padding: 1.5rem;
+}
+
+.empty-state i { font-size: 2.5rem; color: #dee2e6; margin-bottom: 0.5rem; }
+.empty-state h6 { font-size: 0.9rem; }
+
+/* Thumbnail info untuk banyak gambar */
+.thumbnail-info-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 5px;
+    font-size: 0.7rem;
     color: #6c757d;
+    flex-shrink: 0;
 }
 
-.empty-state i { font-size: 3rem; color: #dee2e6; margin-bottom: 0.75rem; }
-
-/* RESPONSIVE */
-@media (max-width: 1200px) {
-    .info-side {
-        width: 400px;
-    }
+.thumbnail-info-bar span {
+    background: #e9ecef;
+    padding: 2px 8px;
+    border-radius: 12px;
 }
 
+/* Responsive */
 @media (max-width: 992px) {
     .split-container { 
         flex-direction: column; 
         min-height: auto;
     }
     .info-side { 
-        width: 100%; 
+        width: 100%;
+        max-width: 100%;
+        position: static;
+        max-height: none;
     }
     .image-side { 
         border-right: none; 
-        border-bottom: 1px solid #e9ecef; 
+        border-bottom: 1px solid #e9ecef;
+        max-height: none;
     }
-    .image-main-container { min-height: 300px; }
 }
 
 @media (max-width: 768px) {
-    .group-tabs-wrapper .nav-tabs .nav-link {
-        padding: 0.5rem 1rem;
-        font-size: 0.85rem;
+    .station-header h2 { font-size: 1.2rem; }
+    .station-meta { gap: 0.5rem; }
+    .meta-item { font-size: 0.7rem; padding: 0.2rem 0.6rem; }
+    .info-item { 
+        flex-direction: column; 
+        align-items: flex-start; 
+        gap: 0.2rem;
     }
-    
-    .opponent-freqs {
-        gap: 6px;
+    .info-value { 
+        text-align: left; 
     }
-    
-    .freq-tx-badge, .freq-rx-badge {
-        padding: 3px 8px;
-        font-size: 0.8rem;
+    .info-label { 
+        min-width: auto; 
+    }
+    .zoom-controls-on-image button { width: 28px; height: 28px; }
+    .image-main-container {
+        max-height: 300px;
+        min-height: 250px;
     }
 }
 
 [title] {
     cursor: help;
-    position: relative;
 }
 </style>
 {% endblock %}
 
 {% block content %}
 <!-- STATION HEADER -->
-<div class="station-header {% if station.operator == 'telkom' or station.operator == 'telkomsel' %}telkom{% elif station.operator == 'indosat' %}indosat{% elif station.operator == 'xl' %}xl{% else %}default{% endif %}">
+<div class="station-header {% if station.operator == 'telkom' or station.operator == 'telkomsel' %}telkom{% elif station.operator == 'ioh' %}ioh{% elif station.operator == 'xl smart' %}xl-smart{% else %}default{% endif %}">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div>
             <h2><i class="bi bi-broadcast me-2"></i>{{ station.stasiun_name }}</h2>
             <p class="mb-0 opacity-75"><i class="bi bi-building me-1"></i>Operator: <strong>{{ station.operator|upper }}</strong></p>
         </div>
         <div class="d-flex gap-2">
-            <a href="{{ url_for('admin_operator_daftar_stasiun') }}" class="btn btn-light btn-sm">
+            <a href="{{ request.args.get('next', url_for('admin_operator_daftar_stasiun')) }}" class="btn btn-light btn-sm">
                 <i class="bi bi-arrow-left"></i> Kembali
             </a>
-            <a href="{{ url_for('admin_operator_edit_stasiun', station_id=station.id) }}" class="btn btn-warning btn-sm">
+            <a href="{{ url_for('admin_operator_edit_stasiun', station_id=station.id, next=request.args.get('next', '')) }}" class="btn btn-warning btn-sm">
                 <i class="bi bi-pencil"></i> Edit
             </a>
         </div>
@@ -884,7 +811,7 @@ body.modal-open {
     </div>
 </div>
 
-<!-- ===== CARD STATUS PEMERIKSAAN ===== -->
+<!-- STATUS PEMERIKSAAN -->
 <div class="inspection-card {{ station.status_pemeriksaan }}">
     <div class="card-body">
         <div class="inspection-status">
@@ -915,7 +842,7 @@ body.modal-open {
     </div>
 </div>
 
-<!-- TABS -->
+<!-- TABS - MENAMPILKAN JUMLAH STASIUN LAWAN -->
 {% if groups %}
 <div class="group-tabs-wrapper mb-3">
     <ul class="nav nav-tabs" id="groupTabs" role="tablist">
@@ -925,9 +852,7 @@ body.modal-open {
                     id="tab-{{ loop.index }}" 
                     data-bs-toggle="tab" 
                     data-bs-target="#group-{{ loop.index }}" 
-                    type="button" 
-                    role="tab"
-                    title="{% if group_key != 'ungrouped' and group_info.nama_grup %}{{ group_info.nama_grup }}{% endif %}">
+                    type="button" role="tab">
                 <i class="bi {% if group_key == 'ungrouped' %}bi-circle{% else %}bi-collection{% endif %}"></i>
                 {% if group_key == 'ungrouped' %}
                     Tanpa Grup
@@ -938,7 +863,7 @@ body.modal-open {
                         Grup {{ group_key }}
                     {% endif %}
                 {% endif %}
-                <span class="badge bg-secondary ms-1">{{ group_info.uploads|length }}</span>
+                <span class="badge bg-secondary ms-1">{{ group_info.opponents|length }}</span>
             </button>
         </li>
         {% endfor %}
@@ -950,18 +875,37 @@ body.modal-open {
     {% set outer_idx = loop.index0 %}
     <div class="tab-pane fade {% if loop.first %}show active{% endif %}" id="group-{{ loop.index }}" role="tabpanel">
         
-        <!-- SPLIT LAYOUT -->
         <div class="split-container">
-            <!-- LEFT SIDE: GAMBAR DENGAN NAVIGASI PANAH -->
+            <!-- LEFT SIDE: GAMBAR -->
             <div class="image-side">
                 {% if group_info.uploads %}
-                    <!-- MAIN IMAGE dengan navigasi panah -->
-                    <div class="image-main-container" onclick="openZoomModal({{ outer_idx }}, {{ group_info.currentIndex|default(0) }})">
-                        <img id="mainImage-{{ loop.index }}" 
-                             src="{{ group_info.uploads[0].public_id | cloudinary_optimized(800) }}"
-                             class="image-main"
-                             alt="Gambar grup">
+                    <div class="image-main-container">
+                        <div class="image-zoom-container" id="zoomContainer-{{ loop.index }}">
+                            <img id="mainImage-{{ loop.index }}" 
+                                 src="{{ group_info.uploads[0].public_id | cloudinary_optimized(800) }}"
+                                 class="image-main"
+                                 alt="Gambar grup"
+                                 draggable="false">
+                        </div>
                         
+                        <!-- Tombol Zoom dan Fullscreen -->
+                        <div class="zoom-controls-on-image">
+                            <button onclick="event.stopPropagation(); zoomOutImage({{ outer_idx }})" title="Perkecil">
+                                <i class="bi bi-dash-lg"></i>
+                            </button>
+                            <span class="zoom-level" id="zoomLevel-{{ loop.index }}">100%</span>
+                            <button onclick="event.stopPropagation(); zoomInImage({{ outer_idx }})" title="Perbesar">
+                                <i class="bi bi-plus-lg"></i>
+                            </button>
+                            <button onclick="event.stopPropagation(); resetZoomImage({{ outer_idx }})" title="Reset zoom">
+                                <i class="bi bi-arrow-repeat"></i>
+                            </button>
+                            <button onclick="event.stopPropagation(); openFullscreen({{ outer_idx }})" title="Fullscreen">
+                                <i class="bi bi-arrows-fullscreen"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Navigasi Panah -->
                         {% if group_info.uploads|length > 1 %}
                         <button class="image-nav prev" onclick="event.stopPropagation(); prevImage({{ outer_idx }})">
                             <i class="bi bi-chevron-left"></i>
@@ -976,32 +920,35 @@ body.modal-open {
                         </span>
                     </div>
                     
-                    {% if group_info.uploads|length > 1 %}
+                    <!-- THUMBNAILS - BISA SCROLL UNTUK BANYAK GAMBAR -->
                     <div class="image-thumbnails" id="thumbnails-{{ loop.index }}">
                         {% for upload in group_info.uploads %}
                         <div class="image-thumb {% if loop.first %}active{% endif %}"
                              onclick="showImage({{ outer_idx }}, {{ loop.index0 }})">
                             <img src="{{ upload.public_id | cloudinary_thumbnail(50, 50) }}" 
-                                 alt="Thumbnail {{ loop.index }}">
+                                 alt="Thumbnail {{ loop.index }}"
+                                 loading="lazy">
                         </div>
                         {% endfor %}
                     </div>
+                    
+                    <!-- Info jumlah thumbnail jika banyak -->
+                    {% if group_info.uploads|length > 10 %}
+                    <div class="thumbnail-info-bar">
+                        <span><i class="bi bi-images"></i> {{ group_info.uploads|length }} gambar - <i class="bi bi-arrow-left-right"></i> geser untuk lihat semua</span>
+                    </div>
                     {% endif %}
                     
+                    <!-- IMAGE INFO DENGAN TANGGAL UPLOAD -->
                     <div class="image-info-footer">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <strong id="imageTitle-{{ loop.index }}">{{ group_info.uploads[0].original_filename|truncate(30) }}</strong>
                                 <small class="text-muted d-block">
                                     <i class="bi bi-calendar3 me-1"></i>{{ group_info.uploads[0].uploaded_at.strftime('%d %b %Y') }} •
-                                    <i class="bi bi-file-image ms-1"></i> {{ group_info.uploads[0].format|upper }} •
-                                    {{ group_info.uploads[0].bytes_size | filesizeformat }}
+                                    <i class="bi bi-file-image ms-1"></i> {{ group_info.uploads[0].format|upper }}
                                 </small>
                             </div>
-                            <a href="{{ group_info.uploads[0].cloudinary_url }}" 
-                               target="_blank" class="btn btn-sm btn-outline-primary">
-                                <i class="bi bi-eye"></i>
-                            </a>
                         </div>
                     </div>
                 {% else %}
@@ -1013,9 +960,8 @@ body.modal-open {
                 {% endif %}
             </div>
             
-            <!-- RIGHT SIDE: INFORMASI -->
+            <!-- RIGHT SIDE: INFORMASI - PASTIKAN SELALU TERLIHAT -->
             <div class="info-side">
-                <!-- INFORMASI STASIUN -->
                 <div class="info-section">
                     <h6><i class="bi bi-info-circle"></i> Informasi Stasiun</h6>
                     <div class="info-grid">
@@ -1024,7 +970,7 @@ body.modal-open {
                             <span class="info-value">{{ station.stasiun_name }}</span>
                         </div>
                         <div class="info-item">
-                            <span class="info-label">Kota</span>
+                            <span class="info-label">Kota/Kab</span>
                             <span class="info-value">{{ station.kota|title }}</span>
                         </div>
                         <div class="info-item">
@@ -1034,7 +980,6 @@ body.modal-open {
                     </div>
                 </div>
                 
-                <!-- STATUS STATISTICS -->
                 <div class="info-section">
                     <h6><i class="bi bi-pie-chart"></i> Status Grup</h6>
                     <div class="status-grid">
@@ -1053,69 +998,55 @@ body.modal-open {
                     </div>
                 </div>
                 
-                <!-- DAFTAR STASIUN LAWAN -->
                 <div class="info-section">
-                    <h6><i class="bi bi-people"></i> Stasiun Lawan <span class="badge bg-secondary ms-2">{{ group_info.opponents|length }}</span></h6>
+                    <h6><i class="bi bi-people"></i> Stasiun Lawan <span class="badge bg-secondary ms-1">{{ group_info.opponents|length }}</span></h6>
                     <div class="opponents-list">
                         {% for opponent in group_info.opponents %}
                         <div class="opponent-item">
                             <div class="opponent-number">{{ loop.index }}</div>
                             <div class="opponent-details">
-                                <div class="opponent-name-row">
-                                    <div class="opponent-name-container">
-                                        <span class="opponent-name" title="{{ opponent.nama }}">{{ opponent.nama }}</span>
-                                    </div>
-                                    
-                                    <div class="opponent-freqs">
-                                        {% if opponent.freq_tx and opponent.freq_tx|trim %}
-                                        <span class="freq-tx-badge" title="Freq Tx">
-                                            <i class="bi bi-arrow-up-short"></i> {{ opponent.freq_tx }}
-                                        </span>
-                                        {% endif %}
-                                        
-                                        {% if opponent.freq_rx and opponent.freq_rx|trim %}
-                                        <span class="freq-rx-badge" title="Freq Rx">
-                                            <i class="bi bi-arrow-down-short"></i> {{ opponent.freq_rx }}
-                                        </span>
-                                        {% endif %}
-                                        
-                                        {% if not opponent.freq_tx and not opponent.freq_rx %}
-                                        <span class="badge bg-light text-dark" style="font-size: 0.8rem; padding: 4px 10px;" title="Belum ada frekuensi">-</span>
-                                        {% endif %}
-                                    </div>
+                                <div class="opponent-name">{{ opponent.nama }}</div>
+                                <div class="opponent-freqs">
+                                    {% if opponent.freq_tx and opponent.freq_tx|trim %}
+                                    <span class="freq-tx-badge"><i class="bi bi-arrow-up-short"></i> {{ opponent.freq_tx }}</span>
+                                    {% endif %}
+                                    {% if opponent.freq_rx and opponent.freq_rx|trim %}
+                                    <span class="freq-rx-badge"><i class="bi bi-arrow-down-short"></i> {{ opponent.freq_rx }}</span>
+                                    {% endif %}
+                                    {% if not opponent.freq_tx and not opponent.freq_rx %}
+                                    <span class="badge bg-light text-muted">-</span>
+                                    {% endif %}
                                 </div>
-                                
-                                <div style="margin: 6px 0 4px 0;">
-                                    <span class="opponent-status {{ opponent.latest_status if opponent.latest_status else 'belum_ada' }}" 
-                                          title="Status: {% if opponent.latest_status == 'aktif' %}Aktif{% elif opponent.latest_status == 'tidak_aktif' %}Tidak Aktif{% elif opponent.latest_status == 'tidak_sesuai' %}Tidak Sesuai{% else %}Belum Ada{% endif %}">
+                                <div style="margin: 4px 0;">
+                                    <span class="opponent-status {{ opponent.latest_status if opponent.latest_status else 'belum_ada' }}">
                                         {% if opponent.latest_status == 'aktif' %}Aktif
                                         {% elif opponent.latest_status == 'tidak_aktif' %}Tidak Aktif
                                         {% elif opponent.latest_status == 'tidak_sesuai' %}Tidak Sesuai
                                         {% else %}Belum Ada{% endif %}
                                     </span>
                                 </div>
-                                
                                 {% if opponent.catatan %}
-                                <div class="opponent-notes" title="Catatan: {{ opponent.catatan }}">
-                                    <i class="bi bi-chat"></i> {{ opponent.catatan }}
+                                <div class="opponent-notes" title="{{ opponent.catatan }}">
+                                    <i class="bi bi-chat"></i> {{ opponent.catatan|truncate(50) }}
                                 </div>
                                 {% endif %}
-                                
-                                {% if opponent.status_updated_at %}
-                                <div class="opponent-time" title="Terakhir diperbarui: {{ opponent.status_updated_at.strftime('%d/%m/%Y') }}">
-                                    <i class="bi bi-clock"></i> {{ opponent.status_updated_at.strftime('%d/%m/%Y') }}
+                                <!-- TERAKHIR DIPERBAHARUI -->
+                                <div class="opponent-update-time">
+                                    <i class="bi bi-clock-history"></i>
+                                    {% if opponent.updated_at %}
+                                        Diperbarui: {{ opponent.updated_at.strftime('%d/%m/%Y %H:%M') }}
+                                    {% else %}
+                                        <span class="text-muted">Belum ada update</span>
+                                    {% endif %}
                                 </div>
-                                {% endif %}
                             </div>
                         </div>
                         {% endfor %}
                     </div>
                 </div>
                 
-                <!-- ACTION BUTTON -->
                 <div class="action-buttons">
-                    <a href="{{ url_for('admin_operator_edit_stasiun', station_id=station.id) }}" 
-                       class="btn btn-edit w-100">
+                    <a href="{{ url_for('admin_operator_edit_stasiun', station_id=station.id) }}" class="btn btn-edit w-100">
                         <i class="bi bi-pencil me-2"></i> Edit Stasiun
                     </a>
                 </div>
@@ -1126,7 +1057,6 @@ body.modal-open {
 </div>
 
 {% else %}
-<!-- NO GROUPS -->
 <div class="card border-0 shadow-sm">
     <div class="card-body text-center py-5">
         <i class="bi bi-diagram-3 display-1 text-muted"></i>
@@ -1138,41 +1068,6 @@ body.modal-open {
     </div>
 </div>
 {% endif %}
-
-<!-- MODAL ZOOM - FULL SCREEN -->
-<div class="modal fade" id="imageZoomModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="true">
-    <div class="modal-dialog modal-fullscreen">
-        <div class="modal-content">
-            <div class="modal-header border-0" style="position: absolute; top: 15px; right: 15px; z-index: 1000000; padding: 0;">
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" 
-                        style="background: transparent; opacity: 1; width: 32px; height: 32px; border: none; font-size: 32px; line-height: 1; color: #ff4444; text-shadow: none; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"
-                        onmouseover="this.style.color='#ff0000'; this.style.transform='scale(1.1)';"
-                        onmouseout="this.style.color='#ff4444'; this.style.transform='scale(1)';">
-                    ×
-                </button>
-            </div>
-            <div class="modal-body d-flex align-items-center justify-content-center p-0">
-                <button class="btn position-absolute start-0 ms-4" onclick="navigateModal(-1)" id="modalPrevBtn">
-                    <i class="bi bi-chevron-left"></i>
-                </button>
-                <button class="btn position-absolute end-0 me-4" onclick="navigateModal(1)" id="modalNextBtn">
-                    <i class="bi bi-chevron-right"></i>
-                </button>
-                
-                <div class="position-absolute bottom-0 start-50 translate-middle-x mb-4 text-white px-4 py-2 rounded-pill" 
-                     id="modalCounter">
-                    1 / 1
-                </div>
-                
-                <button class="btn position-absolute bottom-0 end-0 me-4 mb-4" onclick="downloadCurrentImage()" id="downloadBtn">
-                    <i class="bi bi-download"></i>
-                </button>
-                
-                <img class="img-fluid" id="modalZoomImage" src="" alt="Zoom image">
-            </div>
-        </div>
-    </div>
-</div>
 
 <script>
 // ============ GALLERY DATA ============
@@ -1198,127 +1093,354 @@ const galleries = {};
     {% endfor %}
 {% endif %}
 
-let zoomModalInstance = null;
-let currentModalGalleryIndex = 0;
-let currentModalImageIndex = 0;
+// ============ ZOOM STATE ============
+const zoomStates = {};
+
+function getZoomState(galleryIdx) {
+    if (!zoomStates[galleryIdx]) {
+        zoomStates[galleryIdx] = {
+            scale: 1,
+            translateX: 0,
+            translateY: 0,
+            isDragging: false,
+            startX: 0,
+            startY: 0
+        };
+    }
+    return zoomStates[galleryIdx];
+}
+
+function updateZoomTransform(galleryIdx) {
+    const state = getZoomState(galleryIdx);
+    const img = document.getElementById(`mainImage-${galleries[galleryIdx].galleryId}`);
+    
+    if (img) {
+        img.style.transform = `scale(${state.scale}) translate(${state.translateX}px, ${state.translateY}px)`;
+        
+        if (state.scale > 1) {
+            img.classList.add('zoomed-mode');
+        } else {
+            img.classList.remove('zoomed-mode');
+            state.translateX = 0;
+            state.translateY = 0;
+            img.style.transform = `scale(1) translate(0px, 0px)`;
+        }
+        
+        const zoomLevelSpan = document.getElementById(`zoomLevel-${galleries[galleryIdx].galleryId}`);
+        if (zoomLevelSpan) {
+            zoomLevelSpan.textContent = `${Math.round(state.scale * 100)}%`;
+        }
+    }
+}
+
+function zoomInImage(galleryIdx) {
+    const state = getZoomState(galleryIdx);
+    if (state.scale < 3) {
+        state.scale = Math.min(state.scale + 0.2, 3);
+        updateZoomTransform(galleryIdx);
+    }
+}
+
+function zoomOutImage(galleryIdx) {
+    const state = getZoomState(galleryIdx);
+    if (state.scale > 1) {
+        state.scale = Math.max(state.scale - 0.2, 1);
+        updateZoomTransform(galleryIdx);
+    }
+}
+
+function resetZoomImage(galleryIdx) {
+    const state = getZoomState(galleryIdx);
+    state.scale = 1;
+    state.translateX = 0;
+    state.translateY = 0;
+    updateZoomTransform(galleryIdx);
+}
+
+// ============ DRAG PAN ============
+function initDragPan(galleryIdx) {
+    const img = document.getElementById(`mainImage-${galleries[galleryIdx].galleryId}`);
+    const state = getZoomState(galleryIdx);
+    if (!img) return;
+    
+    img.addEventListener('mousedown', (e) => {
+        if (state.scale <= 1) return;
+        e.preventDefault();
+        state.isDragging = true;
+        state.startX = e.clientX - state.translateX;
+        state.startY = e.clientY - state.translateY;
+        img.style.cursor = 'grabbing';
+    });
+    
+    window.addEventListener('mousemove', (e) => {
+        if (!state.isDragging || state.scale <= 1) return;
+        e.preventDefault();
+        state.translateX = e.clientX - state.startX;
+        state.translateY = e.clientY - state.startY;
+        updateZoomTransform(galleryIdx);
+    });
+    
+    window.addEventListener('mouseup', () => {
+        state.isDragging = false;
+        const imgEl = document.getElementById(`mainImage-${galleries[galleryIdx].galleryId}`);
+        if (imgEl && state.scale > 1) imgEl.style.cursor = 'grab';
+    });
+    
+    img.addEventListener('touchstart', (e) => {
+        if (state.scale <= 1) return;
+        e.preventDefault();
+        const touch = e.touches[0];
+        state.isDragging = true;
+        state.startX = touch.clientX - state.translateX;
+        state.startY = touch.clientY - state.translateY;
+    });
+    
+    window.addEventListener('touchmove', (e) => {
+        if (!state.isDragging || state.scale <= 1) return;
+        e.preventDefault();
+        const touch = e.touches[0];
+        state.translateX = touch.clientX - state.startX;
+        state.translateY = touch.clientY - state.startY;
+        updateZoomTransform(galleryIdx);
+    });
+    
+    window.addEventListener('touchend', () => {
+        state.isDragging = false;
+    });
+}
+
+// ============ FULLSCREEN DENGAN NAVIGASI ============
+function openFullscreen(galleryIdx) {
+    const currentGallery = galleries[galleryIdx];
+    if (!currentGallery || !currentGallery.images) return;
+    
+    let currentImageIdx = currentGallery.currentIndex;
+    let currentGalleryIdx = galleryIdx;
+    
+    const fullscreenDiv = document.createElement('div');
+    fullscreenDiv.style.position = 'fixed';
+    fullscreenDiv.style.top = '0';
+    fullscreenDiv.style.left = '0';
+    fullscreenDiv.style.width = '100vw';
+    fullscreenDiv.style.height = '100vh';
+    fullscreenDiv.style.backgroundColor = 'black';
+    fullscreenDiv.style.zIndex = '999999';
+    fullscreenDiv.style.display = 'flex';
+    fullscreenDiv.style.alignItems = 'center';
+    fullscreenDiv.style.justifyContent = 'center';
+    fullscreenDiv.style.overflow = 'hidden';
+    
+    const fullscreenImg = document.createElement('img');
+    fullscreenImg.src = currentGallery.images[currentImageIdx].url;
+    fullscreenImg.style.maxWidth = '100%';
+    fullscreenImg.style.maxHeight = '100%';
+    fullscreenImg.style.objectFit = 'contain';
+    fullscreenImg.style.transition = 'transform 0.2s ease-out';
+    fullscreenImg.style.cursor = 'zoom-in';
+    
+    fullscreenDiv.appendChild(fullscreenImg);
+    document.body.appendChild(fullscreenDiv);
+    
+    let fsScale = 1;
+    let fsTranslateX = 0, fsTranslateY = 0;
+    let fsIsDragging = false;
+    let fsStartX = 0, fsStartY = 0;
+    
+    function updateFS() {
+        fullscreenImg.style.transform = `scale(${fsScale}) translate(${fsTranslateX}px, ${fsTranslateY}px)`;
+        fullscreenImg.style.cursor = fsScale > 1 ? 'grab' : 'zoom-in';
+    }
+    
+    function loadImage(index) {
+        currentImageIdx = index;
+        currentGallery.currentIndex = index;
+        fullscreenImg.src = currentGallery.images[index].url;
+        fsScale = 1;
+        fsTranslateX = 0;
+        fsTranslateY = 0;
+        updateFS();
+        updateFullscreenCounter();
+        showImage(currentGalleryIdx, index);
+    }
+    
+    function nextImage() {
+        let newIndex = currentImageIdx + 1;
+        if (newIndex >= currentGallery.images.length) newIndex = 0;
+        loadImage(newIndex);
+    }
+    
+    function prevImage() {
+        let newIndex = currentImageIdx - 1;
+        if (newIndex < 0) newIndex = currentGallery.images.length - 1;
+        loadImage(newIndex);
+    }
+    
+    function updateFullscreenCounter() {
+        counterSpan.textContent = `${currentImageIdx + 1} / ${currentGallery.images.length}`;
+    }
+    
+    // Tombol navigasi
+    const prevBtn = document.createElement('button');
+    prevBtn.innerHTML = '<i class="bi bi-chevron-left"></i>';
+    prevBtn.style.cssText = 'position:absolute;left:20px;top:50%;transform:translateY(-50%);width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;font-size:2rem;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:1000000;transition:all 0.2s';
+    prevBtn.onmouseenter = () => { prevBtn.style.backgroundColor = '#0d6efd'; prevBtn.style.transform = 'translateY(-50%) scale(1.1)'; };
+    prevBtn.onmouseleave = () => { prevBtn.style.backgroundColor = 'rgba(255,255,255,0.2)'; prevBtn.style.transform = 'translateY(-50%) scale(1)'; };
+    prevBtn.onclick = () => prevImage();
+    
+    const nextBtn = document.createElement('button');
+    nextBtn.innerHTML = '<i class="bi bi-chevron-right"></i>';
+    nextBtn.style.cssText = 'position:absolute;right:20px;top:50%;transform:translateY(-50%);width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:white;font-size:2rem;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:1000000;transition:all 0.2s';
+    nextBtn.onmouseenter = () => { nextBtn.style.backgroundColor = '#0d6efd'; nextBtn.style.transform = 'translateY(-50%) scale(1.1)'; };
+    nextBtn.onmouseleave = () => { nextBtn.style.backgroundColor = 'rgba(255,255,255,0.2)'; nextBtn.style.transform = 'translateY(-50%) scale(1)'; };
+    nextBtn.onclick = () => nextImage();
+    
+    if (currentGallery.images.length <= 1) {
+        prevBtn.style.display = 'none';
+        nextBtn.style.display = 'none';
+    }
+    
+    // Counter
+    const counterSpan = document.createElement('span');
+    counterSpan.textContent = `${currentImageIdx + 1} / ${currentGallery.images.length}`;
+    counterSpan.style.cssText = 'position:absolute;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.7);color:white;padding:6px 16px;border-radius:50px;font-size:0.9rem;font-weight:600;backdrop-filter:blur(5px);z-index:1000000;border:1px solid rgba(255,255,255,0.2)';
+    
+    // Kontrol zoom
+    const controls = document.createElement('div');
+    controls.style.cssText = 'position:absolute;bottom:20px;right:20px;display:flex;gap:10px;background:rgba(0,0,0,0.6);padding:8px 12px;border-radius:50px;backdrop-filter:blur(5px);z-index:1000000';
+    
+    const zoomOutBtn = createFSButton('bi-dash-lg');
+    const zoomPercent = document.createElement('span');
+    zoomPercent.textContent = '100%';
+    zoomPercent.style.cssText = 'color:white;font-size:0.75rem;font-weight:600;background:rgba(0,0,0,0.5);padding:0 8px;border-radius:20px';
+    
+    const zoomInBtn = createFSButton('bi-plus-lg');
+    const resetBtn = createFSButton('bi-arrow-repeat');
+    const closeBtn = createFSButton('bi-x-lg');
+    
+    zoomOutBtn.onclick = () => {
+        if (fsScale > 1) {
+            fsScale = Math.max(fsScale - 0.2, 1);
+            if (fsScale === 1) { fsTranslateX = 0; fsTranslateY = 0; }
+            updateFS();
+            zoomPercent.textContent = `${Math.round(fsScale * 100)}%`;
+        }
+    };
+    
+    zoomInBtn.onclick = () => {
+        if (fsScale < 3) {
+            fsScale = Math.min(fsScale + 0.2, 3);
+            updateFS();
+            zoomPercent.textContent = `${Math.round(fsScale * 100)}%`;
+        }
+    };
+    
+    resetBtn.onclick = () => {
+        fsScale = 1;
+        fsTranslateX = 0;
+        fsTranslateY = 0;
+        updateFS();
+        zoomPercent.textContent = '100%';
+    };
+    
+    closeBtn.onclick = () => {
+        document.body.removeChild(fullscreenDiv);
+        document.removeEventListener('keydown', keyHandler);
+    };
+    
+    controls.appendChild(zoomOutBtn);
+    controls.appendChild(zoomPercent);
+    controls.appendChild(zoomInBtn);
+    controls.appendChild(resetBtn);
+    controls.appendChild(closeBtn);
+    
+    fullscreenDiv.appendChild(prevBtn);
+    fullscreenDiv.appendChild(nextBtn);
+    fullscreenDiv.appendChild(counterSpan);
+    fullscreenDiv.appendChild(controls);
+    
+    // Drag
+    fullscreenImg.addEventListener('mousedown', (e) => {
+        if (fsScale <= 1) return;
+        e.preventDefault();
+        fsIsDragging = true;
+        fsStartX = e.clientX - fsTranslateX;
+        fsStartY = e.clientY - fsTranslateY;
+        fullscreenImg.style.cursor = 'grabbing';
+    });
+    
+    window.addEventListener('mousemove', (e) => {
+        if (!fsIsDragging || fsScale <= 1) return;
+        e.preventDefault();
+        fsTranslateX = e.clientX - fsStartX;
+        fsTranslateY = e.clientY - fsStartY;
+        updateFS();
+    });
+    
+    window.addEventListener('mouseup', () => {
+        fsIsDragging = false;
+        if (fsScale > 1) fullscreenImg.style.cursor = 'grab';
+    });
+    
+    fullscreenImg.ondblclick = () => {
+        if (fsScale > 1) {
+            fsScale = 1;
+            fsTranslateX = 0;
+            fsTranslateY = 0;
+            updateFS();
+            zoomPercent.textContent = '100%';
+        } else {
+            fsScale = 2;
+            updateFS();
+            zoomPercent.textContent = '200%';
+        }
+    };
+    
+    // Keyboard
+    const keyHandler = (e) => {
+        if (e.key === 'Escape') {
+            if (document.body.contains(fullscreenDiv)) document.body.removeChild(fullscreenDiv);
+            document.removeEventListener('keydown', keyHandler);
+        } else if (e.key === 'ArrowLeft') { e.preventDefault(); prevImage(); }
+        else if (e.key === 'ArrowRight') { e.preventDefault(); nextImage(); }
+        else if (e.key === '+' || e.key === '=') { e.preventDefault(); zoomInBtn.onclick(); }
+        else if (e.key === '-' || e.key === '_') { e.preventDefault(); zoomOutBtn.onclick(); }
+        else if (e.key === '0') { e.preventDefault(); resetBtn.onclick(); }
+    };
+    document.addEventListener('keydown', keyHandler);
+    
+    function createFSButton(iconClass) {
+        const btn = document.createElement('button');
+        btn.style.cssText = 'background:rgba(255,255,255,0.2);border:none;color:white;width:40px;height:40px;border-radius:50%;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center';
+        const icon = document.createElement('i');
+        icon.className = `bi ${iconClass}`;
+        icon.style.fontSize = '1.2rem';
+        btn.appendChild(icon);
+        btn.onmouseenter = () => { btn.style.backgroundColor = '#0d6efd'; btn.style.transform = 'scale(1.1)'; };
+        btn.onmouseleave = () => { btn.style.backgroundColor = 'rgba(255,255,255,0.2)'; btn.style.transform = 'scale(1)'; };
+        return btn;
+    }
+}
 
 // ============ MARK AS INSPECTED ============
 function markAsInspected(stationId) {
-    if (!confirm('Apakah Anda yakin ingin menandai stasiun ini sebagai "Sudah Diperiksa"?\n\nTindakan ini akan mencatat waktu dan nama pemeriksa.')) {
-        return;
-    }
+    if (!confirm('Apakah Anda yakin ingin menandai stasiun ini sebagai "Sudah Diperiksa"?')) return;
     
     const btn = document.querySelector('.btn-mark-inspected');
     const originalText = btn.innerHTML;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Menyimpan...';
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Menyimpan...';
     btn.disabled = true;
     
     fetch(`/admin-operator/update-status-pemeriksaan/${stationId}`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            status: 'sudah_diperiksa'
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'sudah_diperiksa' })
     })
     .then(response => response.json())
     .then(data => {
-        if (data.success) {
-            location.reload();
-        } else {
-            alert('Gagal update status: ' + data.message);
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        }
+        if (data.success) location.reload();
+        else { alert('Gagal: ' + data.message); btn.innerHTML = originalText; btn.disabled = false; }
     })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Terjadi kesalahan saat mengupdate status');
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-    });
-}
-
-// ============ MODAL FUNCTIONS ============
-function openZoomModal(galleryIndex, imageIndex) {
-    const gallery = galleries[galleryIndex];
-    if (!gallery || !gallery.images || !gallery.images[imageIndex]) return;
-    
-    currentModalGalleryIndex = galleryIndex;
-    currentModalImageIndex = imageIndex;
-    
-    const modalImg = document.getElementById('modalZoomImage');
-    modalImg.src = gallery.images[imageIndex].url;
-    
-    updateModalCounter();
-    
-    const prevBtn = document.getElementById('modalPrevBtn');
-    const nextBtn = document.getElementById('modalNextBtn');
-    
-    if (gallery.images.length <= 1) {
-        prevBtn.style.display = 'none';
-        nextBtn.style.display = 'none';
-    } else {
-        prevBtn.style.display = 'flex';
-        nextBtn.style.display = 'flex';
-    }
-    
-    try {
-        const modalElement = document.getElementById('imageZoomModal');
-        const existingBackdrop = document.querySelector('.modal-backdrop');
-        if (existingBackdrop) existingBackdrop.remove();
-        
-        if (!zoomModalInstance) {
-            zoomModalInstance = new bootstrap.Modal(modalElement, {
-                backdrop: 'static',
-                keyboard: true
-            });
-        }
-        
-        zoomModalInstance.show();
-        document.body.classList.add('modal-open');
-    } catch (error) {
-        console.error('Error showing modal:', error);
-    }
-}
-
-function navigateModal(direction) {
-    const gallery = galleries[currentModalGalleryIndex];
-    if (!gallery || !gallery.images) return;
-    
-    let newIndex = currentModalImageIndex + direction;
-    if (newIndex < 0) newIndex = gallery.images.length - 1;
-    if (newIndex >= gallery.images.length) newIndex = 0;
-    
-    currentModalImageIndex = newIndex;
-    const modalImg = document.getElementById('modalZoomImage');
-    modalImg.src = gallery.images[newIndex].url;
-    
-    updateModalCounter();
-    showImage(currentModalGalleryIndex, newIndex);
-}
-
-function updateModalCounter() {
-    const gallery = galleries[currentModalGalleryIndex];
-    if (gallery && gallery.images) {
-        const counter = document.getElementById('modalCounter');
-        counter.textContent = `${currentModalImageIndex + 1} / ${gallery.images.length}`;
-    }
-}
-
-function downloadCurrentImage() {
-    const gallery = galleries[currentModalGalleryIndex];
-    if (!gallery || !gallery.images || !gallery.images[currentModalImageIndex]) return;
-    
-    const image = gallery.images[currentModalImageIndex];
-    const link = document.createElement('a');
-    link.href = image.url;
-    link.download = image.filename || 'image.jpg';
-    link.target = '_blank';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    .catch(error => { alert('Error: ' + error); btn.innerHTML = originalText; btn.disabled = false; });
 }
 
 // ============ GALLERY FUNCTIONS ============
@@ -1326,6 +1448,7 @@ function showImage(galleryIdx, imgIdx) {
     const g = galleries[galleryIdx];
     if (!g || !g.images[imgIdx]) return;
     
+    resetZoomImage(galleryIdx);
     g.currentIndex = imgIdx;
     const img = g.images[imgIdx];
     
@@ -1339,72 +1462,59 @@ function showImage(galleryIdx, imgIdx) {
     if (counterEl) counterEl.textContent = `${g.currentIndex + 1} / ${g.images.length}`;
     
     const thumbnails = document.querySelectorAll(`#thumbnails-${g.galleryId} .image-thumb`);
-    thumbnails.forEach((thumb, i) => {
-        thumb.classList.toggle('active', i === g.currentIndex);
-    });
+    thumbnails.forEach((thumb, i) => thumb.classList.toggle('active', i === g.currentIndex));
+    
+    // Scroll thumbnail ke tengah
+    const activeThumb = thumbnails[g.currentIndex];
+    if (activeThumb) {
+        activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
 }
 
 function prevImage(galleryIdx) {
     const g = galleries[galleryIdx];
     if (!g || g.images.length <= 1) return;
-    
-    g.currentIndex--;
-    if (g.currentIndex < 0) g.currentIndex = g.images.length - 1;
+    g.currentIndex = (g.currentIndex - 1 + g.images.length) % g.images.length;
     showImage(galleryIdx, g.currentIndex);
 }
 
 function nextImage(galleryIdx) {
     const g = galleries[galleryIdx];
     if (!g || g.images.length <= 1) return;
-    
-    g.currentIndex++;
-    if (g.currentIndex >= g.images.length) g.currentIndex = 0;
+    g.currentIndex = (g.currentIndex + 1) % g.images.length;
     showImage(galleryIdx, g.currentIndex);
 }
 
 // ============ INITIALIZATION ============
 document.addEventListener('DOMContentLoaded', function() {
     Object.keys(galleries).forEach(idx => {
-        showImage(parseInt(idx), 0);
+        const galleryIdx = parseInt(idx);
+        showImage(galleryIdx, 0);
+        initDragPan(galleryIdx);
     });
     
-    const tabs = document.querySelectorAll('button[data-bs-toggle="tab"]');
-    tabs.forEach((tab, idx) => {
+    document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(tab => {
         tab.addEventListener('shown.bs.tab', function() {
-            const targetId = this.getAttribute('data-bs-target');
-            const targetPane = document.querySelector(targetId);
+            const targetPane = document.querySelector(this.getAttribute('data-bs-target'));
             const galleryIdx = Array.from(document.querySelectorAll('.tab-pane')).indexOf(targetPane);
-            if (galleries[galleryIdx]) showImage(galleryIdx, 0);
+            if (galleries[galleryIdx]) { resetZoomImage(galleryIdx); showImage(galleryIdx, 0); }
         });
     });
     
-    const modalElement = document.getElementById('imageZoomModal');
-    modalElement.addEventListener('hidden.bs.modal', function () {
-        document.body.classList.remove('modal-open');
-        const backdrop = document.querySelector('.modal-backdrop');
-        if (backdrop) backdrop.remove();
-    });
-    
-    document.addEventListener('keydown', function(e) {
-        const modal = document.getElementById('imageZoomModal');
-        if (modal && modal.classList.contains('show')) {
-            if (e.key === 'ArrowLeft') { e.preventDefault(); navigateModal(-1); }
-            else if (e.key === 'ArrowRight') { e.preventDefault(); navigateModal(1); }
-        } else {
-            const activeTab = document.querySelector('.tab-pane.show.active');
-            if (!activeTab) return;
-            const galleryIdx = Array.from(document.querySelectorAll('.tab-pane')).indexOf(activeTab);
-            if (galleryIdx >= 0 && galleries[galleryIdx] && galleries[galleryIdx].images.length > 1) {
-                if (e.key === 'ArrowLeft') { e.preventDefault(); prevImage(galleryIdx); }
-                else if (e.key === 'ArrowRight') { e.preventDefault(); nextImage(galleryIdx); }
-            }
+    document.addEventListener('keydown', (e) => {
+        const activeTab = document.querySelector('.tab-pane.show.active');
+        if (!activeTab) return;
+        const galleryIdx = Array.from(document.querySelectorAll('.tab-pane')).indexOf(activeTab);
+        if (galleryIdx >= 0 && galleries[galleryIdx]) {
+            if (e.key === 'ArrowLeft') { e.preventDefault(); prevImage(galleryIdx); }
+            else if (e.key === 'ArrowRight') { e.preventDefault(); nextImage(galleryIdx); }
+            else if (e.key === '+' || e.key === '=') { e.preventDefault(); zoomInImage(galleryIdx); }
+            else if (e.key === '-' || e.key === '_') { e.preventDefault(); zoomOutImage(galleryIdx); }
+            else if (e.key === '0') { e.preventDefault(); resetZoomImage(galleryIdx); }
         }
     });
     
-    const tooltipTriggerList = document.querySelectorAll('[title]');
-    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
-        new bootstrap.Tooltip(tooltipTriggerEl);
-    });
+    document.querySelectorAll('[title]').forEach(el => new bootstrap.Tooltip(el));
 });
 </script>
 {% endblock %}

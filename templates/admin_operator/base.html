@@ -28,18 +28,18 @@
         
         :root {
             --operator-color: {% if current_user.operator_type == 'telkom' %}#E1251B
-                             {% elif current_user.operator_type == 'telkomsel' %}#E1251B
-                             {% elif current_user.operator_type == 'indosat' %}#FF6600
-                             {% elif current_user.operator_type == 'xl' %}#7F3F98
-                             {% else %}#4361ee{% endif %};
-            --operator-light: {% if current_user.operator_type == 'telkom' %}rgba(225, 37, 27, 0.08)
-                              {% elif current_user.operator_type == 'telkomsel' %}rgba(225, 37, 27, 0.08)
-                              {% elif current_user.operator_type == 'indosat' %}rgba(255, 102, 0, 0.08)
-                              {% elif current_user.operator_type == 'xl' %}rgba(127, 63, 152, 0.08)
-                              {% else %}rgba(67, 97, 238, 0.08){% endif %};
-            
-            --sidebar-width: 280px;
-            --navbar-height: 60px;
+                         {% elif current_user.operator_type == 'telkomsel' %}#E1251B
+                         {% elif current_user.operator_type == 'ioh' %}#FF6600
+                         {% elif current_user.operator_type == 'xl smart' %}#7F3F98
+                         {% else %}#4361ee{% endif %};
+        --operator-light: {% if current_user.operator_type == 'telkom' %}rgba(225, 37, 27, 0.08)
+                          {% elif current_user.operator_type == 'telkomsel' %}rgba(225, 37, 27, 0.08)
+                          {% elif current_user.operator_type == 'ioh' %}rgba(255, 102, 0, 0.08)
+                          {% elif current_user.operator_type == 'xl smart' %}rgba(127, 63, 152, 0.08)
+                          {% else %}rgba(67, 97, 238, 0.08){% endif %};
+        
+        --sidebar-width: 280px;
+        --navbar-height: 60px;
         }
         
         body {
@@ -67,12 +67,35 @@
             font-size: 1.5rem;
             color: white !important;
             display: flex;
+            flex-direction: column;
+            text-decoration: none;
+            line-height: 1.2;
+        }
+        
+        .brand-main {
+            display: flex;
             align-items: center;
             gap: 0.5rem;
         }
         
-        .navbar-brand i {
-            font-size: 1.8rem;
+        .brand-main img {
+            height: 36px;
+            width: auto;
+            /* HAPUS filter yang membuat logo menjadi putih */
+            /* filter: brightness(0) invert(1); */
+        }
+        
+        .brand-main span {
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+        
+        .brand-sub {
+            font-size: 0.6rem;
+            font-weight: 500;
+            opacity: 0.8;
+            margin-top: 2px;
+            letter-spacing: 0.3px;
         }
         
         .navbar-toggle {
@@ -429,8 +452,11 @@
                 </button>
                 
                 <a class="navbar-brand" href="{{ url_for('admin_operator_dashboard') }}">
-                    <i class="bi bi-wifi"></i>
-                    <span>{{ current_user.operator_type|upper }}</span>
+                    <div class="brand-main">
+                        <img src="{{ url_for('static', filename='logo3.png') }}" alt="Logo">
+                        <span>SiPaMeL</span>
+                    </div>
+                    <div class="brand-sub">Sistem Pemeriksaan Microwave Link</div>
                 </a>
             </div>
             
@@ -514,21 +540,27 @@
         </ul>
         
         <!-- Rekap Laporan -->
-        <div class="section-title">Rekap Laporan</div>
-        <ul class="nav flex-column">
-            <li class="nav-item">
-                <a class="nav-link {% if request.endpoint == 'admin_operator_rekap_bulanan' %}active{% endif %}" 
-                   href="{{ url_for('admin_operator_rekap_bulanan') }}">
-                    <i class="bi bi-calendar-month"></i> Rekap Bulanan
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {% if request.endpoint == 'admin_operator_rekap_tahunan' %}active{% endif %}" 
-                   href="{{ url_for('admin_operator_rekap_tahunan') }}">
-                    <i class="bi bi-calendar-year"></i> Rekap Tahunan
-                </a>
-            </li>
-        </ul>
+<div class="section-title">Rekap Laporan</div>
+<ul class="nav flex-column">
+    <li class="nav-item">
+        <a class="nav-link {% if request.endpoint == 'admin_operator_rekap_bulanan' %}active{% endif %}" 
+           href="{{ url_for('admin_operator_rekap_bulanan') }}">
+            <i class="bi bi-calendar-month"></i> Rekap Bulanan
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if request.endpoint == 'admin_operator_rekap_tahunan' %}active{% endif %}" 
+           href="{{ url_for('admin_operator_rekap_tahunan') }}">
+            <i class="bi bi-calendar-year"></i> Rekap Tahunan
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if request.endpoint == 'admin_operator_hasil_laporan' %}active{% endif %}" 
+           href="{{ url_for('admin_operator_hasil_laporan') }}">
+            <i class="bi bi-file-text"></i> Hasil Laporan
+        </a>
+    </li>
+</ul>
         
         <div class="divider"></div>
         

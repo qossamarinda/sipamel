@@ -1,0 +1,238 @@
+{% extends "user_operator/base.html" %}
+
+{% block title %}Hasil Laporan - {{ operator_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .laporan-card { transition: transform 0.2s; border: none; border-radius: 12px; overflow: hidden; }
+    .laporan-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+    .pdf-preview { background: #f8f9fa; border-radius: 8px; padding: 1rem; text-align: center; }
+    .pdf-icon { font-size: 3rem; color: #dc3545; }
+    .filter-card { background: white; border-radius: 12px; padding: 1rem; margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .operator-badge { background: var(--operator-light); color: var(--operator-color); padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 500; }
+    .info-row { display: flex; padding: 0.5rem 0; border-bottom: 1px solid #e9ecef; font-size: 0.85rem; }
+    .info-label { width: 100px; font-weight: 600; color: #64748b; }
+    .info-value { flex: 1; color: #1e293b; }
+    .search-input-group { position: relative; }
+    .search-input-group .btn-clear {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: #999;
+        cursor: pointer;
+    }
+    .search-input-group .btn-clear:hover { color: #333; }
+    .btn-download {
+        background-color: #28a745;
+        color: white;
+        border: none;
+    }
+    .btn-download:hover {
+        background-color: #218838;
+        color: white;
+    }
+    .btn-view {
+        background-color: #17a2b8;
+        color: white;
+        border: none;
+    }
+    .btn-view:hover {
+        background-color: #138496;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-0"><i class="bi bi-file-text me-2" style="color: var(--operator-color);"></i>Hasil Laporan</h2>
+        <p class="text-muted small mt-1">Daftar laporan untuk operator {{ operator_name }}</p>
+    </div>
+</div>
+
+<!-- Filter Card -->
+<div class="filter-card">
+    <form method="GET" class="row g-3">
+        <div class="col-md-3">
+            <label class="form-label fw-semibold">Kota/Kab</label>
+            <select name="filter_kota" class="form-select">
+                <option value="all" {% if filter_kota == 'all' %}selected{% endif %}>Semua Kota/Kab</option>
+                {% for kota in kota_with_laporan %}
+                <option value="{{ kota }}" {% if filter_kota == kota %}selected{% endif %}>{{ kota|title }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label fw-semibold">Nomor BA</label>
+            <div class="search-input-group">
+                <input type="text" name="search_nomor_ba" class="form-control" placeholder="Nomor BA..." 
+                       value="{{ request.args.get('search_nomor_ba', '') }}">
+                {% if request.args.get('search_nomor_ba') %}
+                <button type="button" class="btn-clear" onclick="clearSearch('search_nomor_ba')">&times;</button>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-md-6 d-flex align-items-end gap-2">
+            <button type="submit" class="btn btn-primary flex-grow-1" style="background: var(--operator-color); border-color: var(--operator-color);">
+                <i class="bi bi-search me-2"></i>Cari
+            </button>
+            <a href="{{ url_for('user_operator_hasil_laporan') }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-repeat me-2"></i>Reset
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Hasil Pencarian Info -->
+{% if request.args.get('search_nomor_ba') or request.args.get('search_nomor_spt') or request.args.get('tanggal_mulai') or request.args.get('tanggal_sampai') or filter_kota != 'all' %}
+<div class="alert alert-info alert-dismissible fade show mb-3">
+    <i class="bi bi-info-circle me-2"></i>
+    <strong>Hasil filter:</strong> 
+    {% if request.args.get('search_nomor_ba') %} Nomor BA: "{{ request.args.get('search_nomor_ba') }}" | {% endif %}
+    {% if request.args.get('search_nomor_spt') %} Nomor SPT: "{{ request.args.get('search_nomor_spt') }}" | {% endif %}
+    {% if request.args.get('tanggal_mulai') %} Tgl Mulai: {{ request.args.get('tanggal_mulai') }} | {% endif %}
+    {% if request.args.get('tanggal_sampai') %} Tgl Sampai: {{ request.args.get('tanggal_sampai') }} | {% endif %}
+    {% if filter_kota != 'all' %} Kota: {{ filter_kota|title }} | {% endif %}
+    Ditemukan <strong>{{ laporan_list|length }}</strong> laporan
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<!-- Daftar Laporan -->
+<div class="row">
+    {% for laporan in laporan_list %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card laporan-card shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <span class="badge operator-badge mb-2">
+                            <i class="bi bi-building me-1"></i>{{ laporan.operator|upper }}
+                        </span>
+                    </div>
+                </div>
+                <h5 class="card-title mb-2">
+                    <span class="badge bg-primary me-2">BA</span>
+                    {{ laporan.nomor_ba }}
+                </h5>
+                <div class="mb-3">
+                    <div class="info-row">
+                        <div class="info-label">Tanggal BA</div>
+                        <div class="info-value">{{ laporan.tanggal_ba.strftime('%d/%m/%Y') }}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Nomor SPT</div>
+                        <div class="info-value">{{ laporan.nomor_spt }}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Kota/Kab</div>
+                        <div class="info-value">{{ laporan.kota_kab|title }}</div>
+                    </div>
+                </div>
+                {% if laporan.file_pdf_url %}
+                <div class="pdf-preview text-center">
+                    <div class="pdf-icon"><i class="bi bi-file-pdf"></i></div>
+                    <div class="small mb-2">{{ laporan.file_pdf_url.split('/')[-1][:30] }}...</div>
+                    <div class="d-flex gap-2 justify-content-center flex-wrap">
+                        <a href="{{ laporan.file_pdf_url }}" download="{{ laporan.nomor_ba }}.pdf" class="btn btn-sm btn-download">
+                            <i class="bi bi-download me-1"></i>Download
+                        </a>
+                        <a href="{{ laporan.file_pdf_url }}" target="_blank" class="btn btn-sm btn-view">
+                            <i class="bi bi-box-arrow-up-right me-1"></i>Buka PDF
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <div class="pdf-preview text-center text-muted">
+                    <i class="bi bi-file-earmark-excel fs-1"></i>
+                    <div class="small">Tidak ada file PDF</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="alert alert-info text-center">
+            <i class="bi bi-info-circle fs-3 d-block mb-2"></i>
+            <h5>Belum ada data laporan</h5>
+            <p class="mb-0">Laporan akan muncul setelah Admin Master menambahkan laporan untuk operator {{ operator_name }}.</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if pagination and pagination.pages > 1 %}
+<nav class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if pagination.has_prev %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('user_operator_hasil_laporan', 
+                page=pagination.prev_num, 
+                filter_kota=filter_kota,
+                search_nomor_ba=request.args.get('search_nomor_ba', ''),
+                search_nomor_spt=request.args.get('search_nomor_spt', ''),
+                tanggal_mulai=request.args.get('tanggal_mulai', ''),
+                tanggal_sampai=request.args.get('tanggal_sampai', '')) }}">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link"><i class="bi bi-chevron-left"></i></span></li>
+        {% endif %}
+        
+        {% for page_num in pagination.iter_pages() %}
+            {% if page_num %}
+            <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                <a class="page-link" href="{{ url_for('user_operator_hasil_laporan', 
+                    page=page_num, 
+                    filter_kota=filter_kota,
+                    search_nomor_ba=request.args.get('search_nomor_ba', ''),
+                    search_nomor_spt=request.args.get('search_nomor_spt', ''),
+                    tanggal_mulai=request.args.get('tanggal_mulai', ''),
+                    tanggal_sampai=request.args.get('tanggal_sampai', '')) }}">
+                    {{ page_num }}
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">...</span></li>
+            {% endif %}
+        {% endfor %}
+        
+        {% if pagination.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('user_operator_hasil_laporan', 
+                page=pagination.next_num, 
+                filter_kota=filter_kota,
+                search_nomor_ba=request.args.get('search_nomor_ba', ''),
+                search_nomor_spt=request.args.get('search_nomor_spt', ''),
+                tanggal_mulai=request.args.get('tanggal_mulai', ''),
+                tanggal_sampai=request.args.get('tanggal_sampai', '')) }}">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link"><i class="bi bi-chevron-right"></i></span></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+<script>
+function clearSearch(fieldName) {
+    document.querySelector(`input[name="${fieldName}"]`).value = '';
+    document.querySelector('form').submit();
+}
+
+setTimeout(function() { 
+    document.querySelectorAll('.alert').forEach(function(a) { 
+        (bootstrap.Alert.getInstance(a) || new bootstrap.Alert(a)).close(); 
+    }); 
+}, 5000);
+</script>
+{% endblock %}

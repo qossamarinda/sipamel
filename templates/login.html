@@ -18,6 +18,7 @@
             box-sizing: border-box;
         }
         
+        
         body {
             min-height: 100vh;
             display: flex;
@@ -26,9 +27,9 @@
             padding: 20px;
             position: relative;
             /* Background dengan gambar */
-            background-image: url("{{ url_for('static', filename='bg1.png') }}");
+            background-image: url("{{ url_for('static', filename='bg7.png') }}");
             background-repeat: no-repeat;
-            background-position: center top; /* Fokus ke bagian atas untuk menampilkan logo */
+            background-position: center bottom; /* Fokus ke bagian atas untuk menampilkan logo */
             background-attachment: fixed;
             /* Menggunakan cover agar memenuhi seluruh layar */
             background-size: cover;
@@ -44,7 +45,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.65);
+            background: rgba(0, 0, 0, 0.50);
             z-index: 0;
         }
         
@@ -305,7 +306,7 @@
                 <div class="text-center mt-4">
                     <small class="text-muted">
                         <i class="bi bi-shield-check"></i> 
-                        Sistem Pemeriksaan Microwave Link © 2026
+                        Balmon Kelas I Samarinda © 2026
                     </small>
                 </div>
             </div>
@@ -369,7 +370,7 @@
         
         // Preload background image untuk mengurangi flicker
         const bgImage = new Image();
-        bgImage.src = "{{ url_for('static', filename='bg1.png') }}";
+        bgImage.src = "{{ url_for('static', filename='bg7.png') }}";
         
         // Menambahkan efek loading
         bgImage.onload = function() {

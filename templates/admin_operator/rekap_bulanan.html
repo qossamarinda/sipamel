@@ -6,16 +6,16 @@
 <style>
     :root {
         --operator-color: {% if current_user.operator_type == 'telkom' or current_user.operator_type == 'telkomsel' %}#E1251B
-                         {% elif current_user.operator_type == 'indosat' %}#FF6600
-                         {% elif current_user.operator_type == 'xl' %}#7F3F98
+                         {% elif current_user.operator_type == 'ioh' %}#FF6600
+                         {% elif current_user.operator_type == 'xl smart' %}#7F3F98
                          {% else %}#0d6efd{% endif %};
         --operator-color-dark: {% if current_user.operator_type == 'telkom' or current_user.operator_type == 'telkomsel' %}#B81C14
-                              {% elif current_user.operator_type == 'indosat' %}#E65C00
-                              {% elif current_user.operator_type == 'xl' %}#6A2F82
+                              {% elif current_user.operator_type == 'ioh' %}#E65C00
+                              {% elif current_user.operator_type == 'xl smart' %}#6A2F82
                               {% else %}#0b5ed7{% endif %};
         --operator-color-light: {% if current_user.operator_type == 'telkom' or current_user.operator_type == 'telkomsel' %}rgba(225, 37, 27, 0.1)
-                               {% elif current_user.operator_type == 'indosat' %}rgba(255, 102, 0, 0.1)
-                               {% elif current_user.operator_type == 'xl' %}rgba(127, 63, 152, 0.1)
+                               {% elif current_user.operator_type == 'ioh' %}rgba(255, 102, 0, 0.1)
+                               {% elif current_user.operator_type == 'xl smart' %}rgba(127, 63, 152, 0.1)
                                {% else %}rgba(13, 110, 253, 0.1){% endif %};
         --border-radius: 16px;
         --shadow: 0 8px 24px rgba(0,0,0,0.08);

@@ -25,67 +25,123 @@
     <div class="card-body">
         <form method="GET" action="{{ url_for('admin_operator_daftar_stasiun') }}" class="row g-3" id="filterForm">
             <!-- Field Pencarian Nama Stasiun -->
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <label for="search_stasiun" class="form-label">
-                    <i class="bi bi-search"></i> Nama Stasiun
+                    <i class="bi bi-search"></i> Cari Stasiun Name
                 </label>
                 <input type="text" 
                        class="form-control" 
                        id="search_stasiun" 
                        name="search_stasiun" 
                        value="{{ request.args.get('search_stasiun', '') }}"
-                       placeholder="Cari nama stasiun...">
+                       placeholder="Ketik nama stasiun...">
             </div>
             
             <!-- Filter Kota -->
             <div class="col-md-3">
                 <label for="kota" class="form-label">
-                    <i class="bi bi-geo-alt"></i> Kota/Kabupaten
+                    <i class="bi bi-geo-alt"></i> Filter Kota
                 </label>
                 <select class="form-select" id="kota" name="kota">
-                    <option value="all">Semua Kota/kab/Kab</option>
+                    <option value="all" {% if selected_kota == 'all' %}selected{% endif %}>Semua Kota/Kab</option>
                     {% for kota in kota_list %}
-                    <option value="{{ kota }}" {% if request.args.get('kota') == kota %}selected{% endif %}>
+                    <option value="{{ kota }}" {% if selected_kota == kota %}selected{% endif %}>
                         {{ kota|title }}
                     </option>
                     {% endfor %}
                 </select>
             </div>
             
+            <!-- Filter Status Pemeriksaan Stasiun -->
+            <div class="col-md-3">
+                <label for="status_pemeriksaan" class="form-label">
+                    <i class="bi bi-clipboard-check"></i> Status Pemeriksaan
+                </label>
+                <select class="form-select" id="status_pemeriksaan" name="status_pemeriksaan">
+                    <option value="all" {% if selected_status == 'all' %}selected{% endif %}>Semua</option>
+                    <option value="belum_diperiksa" {% if selected_status == 'belum_diperiksa' %}selected{% endif %}>
+                        Belum Diperiksa
+                    </option>
+                    <option value="sudah_diperiksa" {% if selected_status == 'sudah_diperiksa' %}selected{% endif %}>
+                        Sudah Diperiksa
+                    </option>
+                </select>
+            </div>
+            
+            <!-- Filter Status Update Stasiun Lawan (2 OPSI) -->
+            <div class="col-md-3">
+                <label for="status_update_filter" class="form-label">
+                    <i class="bi bi-chat-square-text"></i> Status Status Lawan
+                </label>
+                <select class="form-select" id="status_update_filter" name="status_update_filter">
+                    <option value="all" {% if selected_status_update == 'all' %}selected{% endif %}>Semua</option>
+                    <option value="belum_lengkap" {% if selected_status_update == 'belum_lengkap' %}selected{% endif %}>
+                        Belum Lengkap (Masih ada status kosong)
+                    </option>
+                    <option value="lengkap" {% if selected_status_update == 'lengkap' %}selected{% endif %}>
+                        Sudah Lengkap (Semua status terisi)
+                    </option>
+                </select>
+            </div>
+            
             <!-- Filter Per Page -->
-            <div class="col-md-2">
+            <div class="col-md-3">
                 <label for="per_page" class="form-label">
-                    <i class="bi bi-list"></i> Tampilkan
+                    <i class="bi bi-list-ul"></i> Tampilkan Per Halaman
                 </label>
                 <select class="form-select" id="per_page" name="per_page">
-                    <option value="10" {% if request.args.get('per_page', '20') == '10' %}selected{% endif %}>10</option>
-                    <option value="20" {% if request.args.get('per_page', '20') == '20' %}selected{% endif %}>20</option>
-                    <option value="50" {% if request.args.get('per_page', '20') == '50' %}selected{% endif %}>50</option>
-                    <option value="100" {% if request.args.get('per_page', '20') == '100' %}selected{% endif %}>100</option>
+                    <option value="10" {% if request.args.get('per_page', '20') == '10' %}selected{% endif %}>10 data</option>
+                    <option value="20" {% if request.args.get('per_page', '20') == '20' %}selected{% endif %}>20 data</option>
+                    <option value="50" {% if request.args.get('per_page', '20') == '50' %}selected{% endif %}>50 data</option>
+                    <option value="100" {% if request.args.get('per_page', '20') == '100' %}selected{% endif %}>100 data</option>
                 </select>
             </div>
             
             <!-- Tombol Aksi -->
-            <div class="col-md-3 d-flex align-items-end">
-                <button type="submit" class="btn btn-primary w-100 me-2">
+            <div class="col-12 d-flex justify-content-end gap-2 mt-3">
+                <button type="submit" class="btn btn-primary px-4">
                     <i class="bi bi-search"></i> Cari
                 </button>
-                <a href="{{ url_for('admin_operator_daftar_stasiun') }}" class="btn btn-outline-secondary w-100">
-                    <i class="bi bi-arrow-clockwise"></i> Reset
+                <a href="{{ url_for('admin_operator_daftar_stasiun') }}" class="btn btn-outline-secondary px-4">
+                    <i class="bi bi-arrow-clockwise"></i> Reset Filter
                 </a>
             </div>
         </form>
         
         <!-- Info Pencarian Aktif -->
-        {% if request.args.get('search_stasiun') or (request.args.get('kota') and request.args.get('kota') != 'all') %}
+        {% if request.args.get('search_stasiun') or (request.args.get('kota') and request.args.get('kota') != 'all') or (request.args.get('status_pemeriksaan') and request.args.get('status_pemeriksaan') != 'all') or (request.args.get('status_update_filter') and request.args.get('status_update_filter') != 'all') %}
         <div class="alert alert-info mt-3 mb-0 py-2">
             <i class="bi bi-info-circle"></i> 
             <strong>Filter aktif:</strong>
             {% if request.args.get('search_stasiun') %}
-                <span class="badge bg-info me-2">Nama: "{{ request.args.get('search_stasiun') }}"</span>
+                <span class="badge bg-info me-2">Cari: "{{ request.args.get('search_stasiun') }}"</span>
             {% endif %}
             {% if request.args.get('kota') and request.args.get('kota') != 'all' %}
-                <span class="badge bg-info me-2">Kota/Kab: {{ request.args.get('kota')|title }}</span>
+                <span class="badge bg-info me-2">Kota: {{ request.args.get('kota')|title }}</span>
+            {% endif %}
+            {% if request.args.get('status_pemeriksaan') and request.args.get('status_pemeriksaan') != 'all' %}
+                <span class="badge bg-info me-2">
+                    Pemeriksaan: 
+                    {% if request.args.get('status_pemeriksaan') == 'sudah_diperiksa' %}
+                        Sudah Diperiksa
+                    {% else %}
+                        Belum Diperiksa
+                    {% endif %}
+                </span>
+            {% endif %}
+            {% if request.args.get('status_update_filter') and request.args.get('status_update_filter') != 'all' %}
+                <span class="badge bg-info me-2">
+                    Status Lawan:
+                    {% if request.args.get('status_update_filter') == 'sudah_ada_status' %}
+                        Sudah Input Status
+                    {% elif request.args.get('status_update_filter') == 'belum_ada_status' %}
+                        Belum Input Status
+                    {% elif request.args.get('status_update_filter') == 'semua_lawan_sudah' %}
+                        Lengkap
+                    {% elif request.args.get('status_update_filter') == 'ada_lawan_belum' %}
+                        Belum Lengkap
+                    {% endif %}
+                </span>
             {% endif %}
             <span class="badge bg-secondary">Menampilkan {{ pagination.total }} data</span>
         </div>
@@ -106,6 +162,42 @@
     </div>
 
     <div class="card-body">
+        <!-- Summary Alert -->
+        <div class="summary-alert mb-3">
+            <div class="d-flex align-items-center flex-wrap gap-3">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-pie-chart-fill text-primary me-1" style="font-size: 1.4rem;"></i>
+                    <strong style="font-size: 1.2rem; color: #1e3c72;">Status Kelengkapan Data Upload (PERHALAMAN) :</strong>
+                </div>
+                <div class="d-flex gap-3">
+                    <span class="badge bg-success px-4 py-2 rounded-pill" style="font-size: 1rem; font-weight: 700; box-shadow: 0 2px 5px rgba(40,167,69,0.3);">
+                        <i class="bi bi-check-circle-fill me-2"></i> Lengkap: {{ status_summary.lengkap|default(0) }}
+                    </span>
+                    <span class="badge bg-warning text-dark px-4 py-2 rounded-pill" style="font-size: 1rem; font-weight: 700; box-shadow: 0 2px 5px rgba(255,193,7,0.3);">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i> Belum Lengkap: {{ status_summary.belum_lengkap|default(0) }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+    <div class="text-muted small">
+        <i class="bi bi-layout-text-window me-1"></i>
+        Menampilkan 
+        <strong>
+            {% set start_item = ((pagination.page - 1) * pagination.per_page) + 1 %}
+            {% set end_item = pagination.page * pagination.per_page %}
+            {{ start_item }} - 
+            {% if end_item > pagination.total %}{{ pagination.total }}{% else %}{{ end_item }}{% endif %}
+        </strong>
+        dari <strong>{{ pagination.total }}</strong> data
+    </div>
+    <div class="text-muted small">
+        <i class="bi bi-book me-1"></i>
+        Halaman <strong>{{ pagination.page }}</strong> dari <strong>{{ pagination.pages }}</strong>
+    </div>
+</div>
+
         {% if stations %}
         <div class="table-responsive">
             <table class="table table-hover" id="stasiunTable">
@@ -114,19 +206,26 @@
                         <th style="width: 5%;">No</th>
                         <th style="width: 15%;">Nama Stasiun</th>
                         <th style="width: 12%;">Kota/Kab</th>
-                        <th style="width: 25%;">Stasiun Lawan & Status</th>
-                        <th style="width: 8%;">Freq Tx</th>
-                        <th style="width: 8%;">Freq Rx</th>
+                        <th style="width: 28%;">Stasiun Lawan & Status</th>
+                        <th style="width: 8%;">Freq Tx (MHz)</th>
+                        <th style="width: 8%;">Freq Rx (MHz)</th>
                         <th style="width: 12%;">Status Pemeriksaan</th>
-                        <th style="width: 8%;">Tanggal</th>
-                        <th style="width: 7%;" class="text-center">Aksi</th>
+                        <th style="width: 7%;">Tanggal</th>
+                        <th style="width: 5%;" class="text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for station in stations %}
-                    <tr>
+                    <tr class="{% if station.has_lawan_without_status %}table-warning{% endif %}">
                         <td class="align-middle text-center">{{ loop.index + (pagination.page - 1) * pagination.per_page }}</td>
-                        <td class="align-middle"><strong>{{ station.stasiun_name }}</strong></td>
+                        <td class="align-middle">
+                            <strong>{{ station.stasiun_name }}</strong>
+                            {% if station.has_lawan_without_status %}
+                                <span class="badge bg-warning text-dark ms-1" title="Ada stasiun lawan yang belum diisi status">
+                                    <i class="bi bi-exclamation-triangle"></i> Belum Lengkap
+                                </span>
+                            {% endif %}
+                        </td>
                         <td class="align-middle">{{ station.kota|title }}</td>
                         
                         <!-- KOLOM STASIUN LAWAN & STATUS -->
@@ -134,7 +233,7 @@
                             {% if station.stasiun_lawan_list %}
                                 <div class="mb-2">
                                     <span class="badge bg-secondary mb-2">
-                                        {{ station.stasiun_lawan_list|length }} stasiun lawan
+                                        {{ station.stasiun_lawan_list|length }} Stasiun Lawan
                                     </span>
                                     
                                     <div class="mt-1">
@@ -194,7 +293,9 @@
                                                                 }}
                                                             </span>
                                                         {% else %}
-                                                            <span class="badge bg-light text-dark" style="padding: 2px 5px; font-size: 10px;">Belum</span>
+                                                            <span class="badge bg-light text-dark border" style="padding: 2px 5px; font-size: 10px;">
+                                                                <i class="bi bi-hourglass-split"></i> Belum Upload
+                                                            </span>
                                                         {% endif %}
                                                     </div>
                                                 </div>
@@ -303,7 +404,7 @@
                             {% endif %}
                         </td>
                         
-                        <!-- KOLOM STATUS PEMERIKSAAN (BARU) -->
+                        <!-- KOLOM STATUS PEMERIKSAAN -->
                         <td class="align-middle">
                             <div class="status-check-container" data-station-id="{{ station.id }}">
                                 {% if station.status_pemeriksaan == 'sudah_diperiksa' %}
@@ -313,10 +414,7 @@
                                         </span>
                                         {% if station.checked_at %}
                                             <small class="text-muted mt-1" style="font-size: 10px;">
-                                                <i class="bi bi-calendar-check"></i> {{ station.checked_at.strftime('%d/%m/%Y') }}
-                                                {% if station.checked_by_user %}
-                                                    <br><i class="bi bi-person-check"></i> {{ station.checked_by_user.username }}
-                                                {% endif %}
+                                                {{ station.checked_at.strftime('%d/%m/%Y') }}
                                             </small>
                                         {% endif %}
                                     </div>
@@ -345,11 +443,11 @@
                         <!-- KOLOM AKSI -->
                         <td class="text-center align-middle">
                             <div class="btn-group btn-group-sm" role="group">
-                                <a href="{{ url_for('admin_operator_detail_stasiun', station_id=station.id) }}"
+                                <a href="{{ url_for('admin_operator_detail_stasiun', station_id=station.id, next=request.full_path) }}"
                                     class="btn btn-outline-info" title="Detail">
                                     <i class="bi bi-eye"></i>
                                 </a>
-                                <a href="{{ url_for('admin_operator_edit_stasiun', station_id=station.id) }}"
+                                <a href="{{ url_for('admin_operator_edit_stasiun', station_id=station.id, next=request.full_path) }}"
                                     class="btn btn-outline-warning" title="Edit">
                                     <i class="bi bi-pencil"></i>
                                 </a>
@@ -370,88 +468,10 @@
             </table>
         </div>
 
-        <!-- PAGINATION -->
+        <!-- PAGINATION BAWAH (KEDUA - SETELAH TABEL) -->
         <div class="mt-4">
-            <nav aria-label="Page navigation">
-                <ul class="pagination justify-content-center">
-                    <!-- First page -->
-                    <li class="page-item {% if pagination.page == 1 %}disabled{% endif %}">
-                        <a class="page-link" 
-                           href="{{ url_for('admin_operator_daftar_stasiun', 
-                                            page=1, 
-                                            kota=request.args.get('kota'),
-                                            search_stasiun=request.args.get('search_stasiun', ''),
-                                            per_page=pagination.per_page) }}"
-                           aria-label="First">
-                            <span aria-hidden="true"><i class="bi bi-chevron-double-left"></i></span>
-                        </a>
-                    </li>
-                    
-                    <!-- Previous page -->
-                    <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
-                        <a class="page-link" 
-                           href="{{ url_for('admin_operator_daftar_stasiun', 
-                                            page=pagination.prev_num, 
-                                            kota=request.args.get('kota'),
-                                            search_stasiun=request.args.get('search_stasiun', ''),
-                                            per_page=pagination.per_page) }}"
-                           aria-label="Previous">
-                            <span class="d-none d-md-inline">Prev</span>
-                            <span aria-hidden="true"><i class="bi bi-chevron-left ms-1"></i></span>
-                        </a>
-                    </li>
-
-                    <!-- Page numbers -->
-                    {% for page_num in pagination.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}
-                        {% if page_num %}
-                            <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
-                                <a class="page-link" 
-                                   href="{{ url_for('admin_operator_daftar_stasiun', 
-                                                    page=page_num, 
-                                                    kota=request.args.get('kota'),
-                                                    search_stasiun=request.args.get('search_stasiun', ''),
-                                                    per_page=pagination.per_page) }}">
-                                    {{ page_num }}
-                                </a>
-                            </li>
-                        {% else %}
-                            <li class="page-item disabled">
-                                <span class="page-link">...</span>
-                            </li>
-                        {% endif %}
-                    {% endfor %}
-
-                    <!-- Next page -->
-                    <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
-                        <a class="page-link" 
-                           href="{{ url_for('admin_operator_daftar_stasiun', 
-                                            page=pagination.next_num, 
-                                            kota=request.args.get('kota'),
-                                            search_stasiun=request.args.get('search_stasiun', ''),
-                                            per_page=pagination.per_page) }}"
-                           aria-label="Next">
-                            <span class="d-none d-md-inline">Next</span>
-                            <span aria-hidden="true"><i class="bi bi-chevron-right ms-1"></i></span>
-                        </a>
-                    </li>
-                    
-                    <!-- Last page -->
-                    <li class="page-item {% if pagination.page == pagination.pages %}disabled{% endif %}">
-                        <a class="page-link" 
-                           href="{{ url_for('admin_operator_daftar_stasiun', 
-                                            page=pagination.pages, 
-                                            kota=request.args.get('kota'),
-                                            search_stasiun=request.args.get('search_stasiun', ''),
-                                            per_page=pagination.per_page) }}"
-                           aria-label="Last">
-                            <span aria-hidden="true"><i class="bi bi-chevron-double-right"></i></span>
-                        </a>
-                    </li>
-                </ul>
-            </nav>
-            
-            <!-- Info Pagination -->
-            <div class="d-flex flex-wrap justify-content-between align-items-center mt-3">
+            <!-- Info Halaman -->
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
                 <div class="text-muted small">
                     <i class="bi bi-layout-text-window me-1"></i>
                     Menampilkan 
@@ -462,17 +482,89 @@
                     </strong>
                     dari <strong>{{ pagination.total }}</strong> data
                 </div>
-                
                 <div class="text-muted small">
                     <i class="bi bi-book me-1"></i>
                     Halaman <strong>{{ pagination.page }}</strong> dari <strong>{{ pagination.pages }}</strong>
                 </div>
-                
                 <div class="text-muted small">
                     <i class="bi bi-grid me-1"></i>
-                    Per halaman <strong>{{ pagination.per_page }}</strong>
+                    {{ pagination.per_page }} data per halaman
                 </div>
             </div>
+            
+            <!-- Navigasi Pagination -->
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item {% if pagination.page == 1 %}disabled{% endif %}">
+                        <a class="page-link" 
+                           href="{{ url_for('admin_operator_daftar_stasiun', 
+                                            page=1, 
+                                            kota=request.args.get('kota'),
+                                            search_stasiun=request.args.get('search_stasiun', ''),
+                                            status_pemeriksaan=request.args.get('status_pemeriksaan'),
+                                            status_update_filter=request.args.get('status_update_filter'),
+                                            per_page=pagination.per_page) }}">
+                            <i class="bi bi-chevron-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                        <a class="page-link" 
+                           href="{{ url_for('admin_operator_daftar_stasiun', 
+                                            page=pagination.prev_num, 
+                                            kota=request.args.get('kota'),
+                                            search_stasiun=request.args.get('search_stasiun', ''),
+                                            status_pemeriksaan=request.args.get('status_pemeriksaan'),
+                                            status_update_filter=request.args.get('status_update_filter'),
+                                            per_page=pagination.per_page) }}">
+                            <span class="d-none d-md-inline">Prev</span>
+                            <i class="bi bi-chevron-left ms-1"></i>
+                        </a>
+                    </li>
+                    {% for page_num in pagination.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}
+                        {% if page_num %}
+                            <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                                <a class="page-link" 
+                                   href="{{ url_for('admin_operator_daftar_stasiun', 
+                                                    page=page_num, 
+                                                    kota=request.args.get('kota'),
+                                                    search_stasiun=request.args.get('search_stasiun', ''),
+                                                    status_pemeriksaan=request.args.get('status_pemeriksaan'),
+                                                    status_update_filter=request.args.get('status_update_filter'),
+                                                    per_page=pagination.per_page) }}">
+                                    {{ page_num }}
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                        <a class="page-link" 
+                           href="{{ url_for('admin_operator_daftar_stasiun', 
+                                            page=pagination.next_num, 
+                                            kota=request.args.get('kota'),
+                                            search_stasiun=request.args.get('search_stasiun', ''),
+                                            status_pemeriksaan=request.args.get('status_pemeriksaan'),
+                                            status_update_filter=request.args.get('status_update_filter'),
+                                            per_page=pagination.per_page) }}">
+                            <span class="d-none d-md-inline">Next</span>
+                            <i class="bi bi-chevron-right ms-1"></i>
+                        </a>
+                    </li>
+                    <li class="page-item {% if pagination.page == pagination.pages %}disabled{% endif %}">
+                        <a class="page-link" 
+                           href="{{ url_for('admin_operator_daftar_stasiun', 
+                                            page=pagination.pages, 
+                                            kota=request.args.get('kota'),
+                                            search_stasiun=request.args.get('search_stasiun', ''),
+                                            status_pemeriksaan=request.args.get('status_pemeriksaan'),
+                                            status_update_filter=request.args.get('status_update_filter'),
+                                            per_page=pagination.per_page) }}">
+                            <i class="bi bi-chevron-double-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
         </div>
 
         {% else %}
@@ -480,15 +572,14 @@
             <i class="bi bi-inbox" style="font-size: 64px; color: #dee2e6;"></i>
             <h5 class="text-muted mt-3">Tidak ada data stasiun</h5>
             <p class="text-muted">
-                {% if request.args.get('search_stasiun') or (request.args.get('kota') and request.args.get('kota') != 'all') %}
-                Tidak ada hasil untuk pencarian "{{ request.args.get('search_stasiun') }}" 
-                {% if request.args.get('kota') and request.args.get('kota') != 'all' %}di kota {{ request.args.get('kota')|title }}{% endif %}.
+                {% if request.args.get('search_stasiun') or (request.args.get('kota') and request.args.get('kota') != 'all') or (request.args.get('status_pemeriksaan') and request.args.get('status_pemeriksaan') != 'all') %}
+                Tidak ada hasil untuk filter yang dipilih.
                 <br>
                 <a href="{{ url_for('admin_operator_daftar_stasiun') }}" class="btn btn-sm btn-outline-primary mt-2">
                     <i class="bi bi-arrow-clockwise"></i> Reset Filter
                 </a>
                 {% else %}
-                <a href="{{ url_for('admin_operator_tambah_data') }}">tambahkan stasiun baru</a>.
+                <a href="{{ url_for('admin_operator_tambah_data') }}">Tambahkan stasiun baru</a>.
                 {% endif %}
             </p>
         </div>
@@ -496,7 +587,7 @@
     </div>
 </div>
 
-<!-- Modal Konfirmasi Hapus (Satu Data) -->
+<!-- Modal Konfirmasi Hapus -->
 <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -531,7 +622,7 @@
     </div>
 </div>
 
-<!-- Modal Hapus Semua Data - ADMIN OPERATOR (VERSI FIX) -->
+<!-- Modal Hapus Semua Data -->
 <div class="modal fade" id="deleteAllModal" tabindex="-1" aria-labelledby="deleteAllModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
@@ -544,7 +635,6 @@
             
             <form method="POST" action="{{ url_for('admin_operator_hapus_semua_data') }}" id="deleteAllForm">
                 <div class="modal-body">
-                    <!-- PERINGATAN KERAS -->
                     <div class="alert alert-danger border-2 border-danger mb-4">
                         <div class="d-flex">
                             <div class="flex-shrink-0">
@@ -552,112 +642,11 @@
                             </div>
                             <div class="flex-grow-1 ms-3">
                                 <h4 class="alert-heading text-danger fw-bold">⚠️ PERINGATAN!</h4>
-                                <p class="mb-2">Anda akan menghapus <strong class="text-decoration-underline">SEMUA DATA</strong> untuk operator <strong class="text-danger">{{ operator_name }}</strong>:</p>
-                                <ul class="mb-0">
-                                    <li><strong>SEMUA stasiun</strong> milik {{ operator_name }}</li>
-                                    <li><strong>SEMUA stasiun lawan</strong> dari stasiun {{ operator_name }}</li>
-                                    <li><strong>SEMUA gambar</strong> yang diupload untuk {{ operator_name }}</li>
-                                    <li><strong>SEMUA riwayat status</strong> update</li>
-                                    <li><strong>SEMUA grup</strong> yang telah dibuat</li>
-                                </ul>
+                                <p class="mb-2">Anda akan menghapus <strong class="text-decoration-underline">SEMUA DATA</strong> untuk operator <strong class="text-danger">{{ operator_name }}</strong>.</p>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- STATISTIK YANG AKAN DIHAPUS - VERSI AMAN TANPA NAMESPACE -->
-                    <div class="card border-danger mb-4">
-                        <div class="card-header bg-danger text-white">
-                            <i class="bi bi-bar-chart"></i> Data {{ operator_name }} yang Akan Dihapus
-                        </div>
-                        <div class="card-body">
-                            {% set total_stasiun = stations|length %}
-                            
-                            {# Hitung stasiun lawan #}
-                            {% set opponent_list = [] %}
-                            {% for station in stations %}
-                                {% for lawan in station.stasiun_lawan_list %}
-                                    {% set _ = opponent_list.append(lawan) %}
-                                {% endfor %}
-                            {% endfor %}
-                            
-                            {# Hitung upload #}
-                            {% set upload_list = [] %}
-                            {% for station in stations %}
-                                {% for upload in station.uploads %}
-                                    {% set _ = upload_list.append(upload) %}
-                                {% endfor %}
-                            {% endfor %}
-                            
-                            {# Hitung status #}
-                            {% set status_list = [] %}
-                            {% for station in stations %}
-                                {% for lawan in station.stasiun_lawan_list %}
-                                    {% for status in lawan.status_updates %}
-                                        {% set _ = status_list.append(status) %}
-                                    {% endfor %}
-                                {% endfor %}
-                            {% endfor %}
-                            
-                            {# Hitung grup #}
-                            {% set group_list = [] %}
-                            {% for station in stations %}
-                                {% for group in station.grup_list %}
-                                    {% set _ = group_list.append(group) %}
-                                {% endfor %}
-                            {% endfor %}
-                            
-                            {# Hitung file unik di Cloudinary #}
-                            {% set unique_files = [] %}
-                            {% for station in stations %}
-                                {% for upload in station.uploads %}
-                                    {% if upload.public_id not in unique_files %}
-                                        {% set _ = unique_files.append(upload.public_id) %}
-                                    {% endif %}
-                                {% endfor %}
-                            {% endfor %}
-                            
-                            <div class="row text-center">
-                                <div class="col-4 mb-3">
-                                    <div class="p-3 bg-light rounded">
-                                        <h3 class="text-danger mb-0">{{ total_stasiun }}</h3>
-                                        <small class="text-muted">Stasiun</small>
-                                    </div>
-                                </div>
-                                <div class="col-4 mb-3">
-                                    <div class="p-3 bg-light rounded">
-                                        <h3 class="text-danger mb-0">{{ opponent_list|length }}</h3>
-                                        <small class="text-muted">Stasiun Lawan</small>
-                                    </div>
-                                </div>
-                                <div class="col-4 mb-3">
-                                    <div class="p-3 bg-light rounded">
-                                        <h3 class="text-danger mb-0">{{ upload_list|length }}</h3>
-                                        <small class="text-muted">Record Gambar</small>
-                                    </div>
-                                </div>
-                                <div class="col-4">
-                                    <div class="p-3 bg-light rounded">
-                                        <h3 class="text-danger mb-0">{{ status_list|length }}</h3>
-                                        <small class="text-muted">Status Update</small>
-                                    </div>
-                                </div>
-                                <div class="col-4">
-                                    <div class="p-3 bg-light rounded">
-                                        <h3 class="text-danger mb-0">{{ group_list|length }}</h3>
-                                        <small class="text-muted">Grup</small>
-                                    </div>
-                                </div>
-                                <div class="col-4">
-                                    <div class="p-3 bg-light rounded">
-                                        <h3 class="text-danger mb-0">{{ unique_files|length }}</h3>
-                                        <small class="text-muted">File di Cloudinary</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- FORM KONFIRMASI -->
                     <div class="mb-3">
                         <label for="confirm_delete" class="form-label fw-bold text-danger">
                             <i class="bi bi-key"></i> Konfirmasi Penghapusan
@@ -675,11 +664,10 @@
                         </div>
                         <div class="form-text text-danger mt-2">
                             <i class="bi bi-info-circle"></i> 
-                            Ketik <strong class="text-danger">HAPUS {{ operator_name|upper }}</strong> (huruf kapital) untuk mengonfirmasi
+                            Ketik <strong class="text-danger">HAPUS {{ operator_name|upper }}</strong> untuk mengonfirmasi
                         </div>
                     </div>
                     
-                    <!-- KOTAK CENTANG TAMBAHAN -->
                     <div class="form-check mb-2">
                         <input class="form-check-input" type="checkbox" id="understand" required>
                         <label class="form-check-label" for="understand">
@@ -687,12 +675,6 @@
                         </label>
                     </div>
                     <div class="form-check mb-2">
-                        <input class="form-check-input" type="checkbox" id="backup" required>
-                        <label class="form-check-label" for="backup">
-                            Saya telah melakukan backup data jika diperlukan
-                        </label>
-                    </div>
-                    <div class="form-check mb-3">
                         <input class="form-check-input" type="checkbox" id="confirm" required>
                         <label class="form-check-label" for="confirm">
                             Saya yakin ingin menghapus <strong>SEMUA DATA {{ operator_name|upper }}</strong>
@@ -729,187 +711,26 @@
     font-size: 10px;
     border-radius: 3px;
 }
-
-/* Style untuk input pencarian */
-#search_stasiun {
-    border-radius: 8px;
-    border: 1px solid #eef2f6;
-    padding: 0.5rem 1rem;
-    transition: all 0.3s ease;
+.table-warning {
+    background-color: #fff3cd !important;
 }
-
-#search_stasiun:focus {
-    border-color: var(--operator-color);
-    box-shadow: 0 0 0 3px var(--operator-color-light);
-    outline: none;
-}
-
-/* Style untuk info filter */
-.alert-info {
-    background-color: var(--operator-color-light);
-    border: none;
-    color: var(--operator-color-dark);
-    border-radius: 8px;
-}
-
-.alert-info .badge {
-    font-size: 0.7rem;
-    padding: 0.2rem 0.5rem;
-}
-
-/* Pagination styling */
-.pagination {
-    gap: 5px;
-    margin-bottom: 0;
-}
-
-.page-link {
-    border-radius: 8px;
-    color: var(--operator-color);
-    border: 1px solid #eef2f6;
-    padding: 0.5rem 0.75rem;
-    transition: all 0.2s ease;
-}
-
-.page-link:hover {
-    background-color: var(--operator-color-light);
-    color: var(--operator-color-dark);
-    border-color: var(--operator-color);
-    transform: translateY(-2px);
-}
-
-.page-item.active .page-link {
-    background-color: var(--operator-color);
-    border-color: var(--operator-color);
-    color: white;
-}
-
-.page-item.disabled .page-link {
-    background-color: #f8fafc;
-    color: #94a3b8;
-}
-
-/* Style untuk status pemeriksaan */
-.status-check-container {
-    text-align: center;
-}
-
 .status-check-container .badge.bg-success {
     background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
     padding: 6px 12px;
     border-radius: 20px;
     font-weight: 500;
-    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
 }
-
 .status-check-container .btn-outline-warning {
     border-radius: 20px;
     padding: 4px 12px;
-    transition: all 0.3s ease;
 }
-
-.status-check-container .btn-outline-warning:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);
-}
-
-.status-check-container .dropdown-menu {
-    min-width: 180px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-
-.status-check-container .dropdown-item {
-    padding: 8px 16px;
-    transition: all 0.2s ease;
-}
-
-.status-check-container .dropdown-item:hover {
-    background-color: #f8f9fa;
-    padding-left: 20px;
-}
-
-.status-check-container .text-muted {
-    font-size: 10px;
-    margin-top: 4px;
-}
-
-/* Style untuk modal hapus semua */
-.modal-lg {
-    max-width: 700px;
-}
-
-.modal-content {
-    border: none;
-    border-radius: 16px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-}
-
-.modal-header {
-    border-radius: 16px 16px 0 0;
-    padding: 1rem 1.5rem;
-}
-
-.modal-header .btn-close {
-    filter: brightness(0) invert(1);
-}
-
-.modal-body {
-    padding: 2rem;
-}
-
-.modal-footer {
-    border-top: 1px solid #eef2f6;
-    padding: 1rem 1.5rem;
-    border-radius: 0 0 16px 16px;
-}
-
-.alert-danger {
-    background-color: #fff2f2;
-    border-color: #ffb3b3;
-}
-
-.alert-danger .fs-1 {
-    font-size: 2.5rem !important;
-}
-
-.card.border-danger {
-    border-width: 2px;
-    border-color: #dc3545 !important;
-}
-
-.card-header.bg-danger {
-    background: linear-gradient(135deg, #dc3545 0%, #b02a37 100%) !important;
-    border-bottom: none;
-    padding: 1rem;
-}
-
-#confirm_delete {
-    font-family: monospace;
-    font-weight: bold;
-    letter-spacing: 1px;
-    text-align: center;
-}
-
-#confirm_delete.is-valid {
-    background-color: #d4edda;
-    border-color: #28a745;
-}
-
-#confirm_delete.is-invalid {
-    background-color: #f8d7da;
-    border-color: #dc3545;
-}
-
-.form-check-input:checked {
-    background-color: #dc3545;
-    border-color: #dc3545;
+.form-select, .form-control {
+    cursor: pointer;
 }
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Tangani klik tombol hapus satu data
     const deleteButtons = document.querySelectorAll('.btn-delete');
     const stationNameElement = document.getElementById('stationName');
     const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
@@ -918,36 +739,14 @@ document.addEventListener('DOMContentLoaded', function() {
         button.addEventListener('click', function() {
             const stationId = this.getAttribute('data-station-id');
             const stationName = this.getAttribute('data-station-name');
-            
             stationNameElement.textContent = stationName;
             confirmDeleteBtn.href = "{{ url_for('admin_operator_hapus_stasiun', station_id=0) }}".replace('0', stationId);
         });
     });
     
-    // Auto submit form ketika per_page berubah
-    const perPageSelect = document.getElementById('per_page');
-    if (perPageSelect) {
-        perPageSelect.addEventListener('change', function() {
-            document.getElementById('filterForm').submit();
-        });
-    }
-    
-    // Search dengan tombol Enter
-    const searchInput = document.getElementById('search_stasiun');
-    if (searchInput) {
-        searchInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                document.getElementById('filterForm').submit();
-            }
-        });
-    }
-    
-    // Validasi form hapus semua
     const deleteAllForm = document.getElementById('deleteAllForm');
     const confirmInput = document.getElementById('confirm_delete');
     const understandCheck = document.getElementById('understand');
-    const backupCheck = document.getElementById('backup');
     const confirmCheck = document.getElementById('confirm');
     const deleteAllBtn = document.getElementById('deleteAllBtn');
     
@@ -955,85 +754,38 @@ document.addEventListener('DOMContentLoaded', function() {
         const confirmValue = confirmInput ? confirmInput.value.trim() : '';
         const expectedValue = 'HAPUS {{ operator_name|upper }}';
         const isConfirmValid = confirmValue === expectedValue;
-        const isChecksValid = understandCheck && understandCheck.checked && 
-                              backupCheck && backupCheck.checked && 
-                              confirmCheck && confirmCheck.checked;
+        const isChecksValid = understandCheck && understandCheck.checked && confirmCheck && confirmCheck.checked;
         
         if (deleteAllBtn) {
             deleteAllBtn.disabled = !(isConfirmValid && isChecksValid);
         }
-        
-        // Styling feedback
-        if (confirmInput && confirmValue) {
-            if (isConfirmValid) {
-                confirmInput.classList.remove('is-invalid');
-                confirmInput.classList.add('is-valid');
-            } else {
-                confirmInput.classList.remove('is-valid');
-                confirmInput.classList.add('is-invalid');
-            }
-        } else if (confirmInput) {
-            confirmInput.classList.remove('is-valid', 'is-invalid');
-        }
     }
     
-    if (confirmInput) {
-        confirmInput.addEventListener('input', validateDeleteAll);
-    }
-    
-    if (understandCheck) {
-        understandCheck.addEventListener('change', validateDeleteAll);
-    }
-    
-    if (backupCheck) {
-        backupCheck.addEventListener('change', validateDeleteAll);
-    }
-    
-    if (confirmCheck) {
-        confirmCheck.addEventListener('change', validateDeleteAll);
-    }
-    
-    // Konfirmasi sebelum submit
-    if (deleteAllForm) {
-        deleteAllForm.addEventListener('submit', function(e) {
-            if (!confirm('APAKAH ANDA BENAR-BENAR YAKIN?\n\nIni akan menghapus SEMUA DATA {{ operator_name|upper }} secara permanen!\n\nKlik OK untuk melanjutkan.')) {
-                e.preventDefault();
-                return false;
-            }
-        });
-    }
+    if (confirmInput) confirmInput.addEventListener('input', validateDeleteAll);
+    if (understandCheck) understandCheck.addEventListener('change', validateDeleteAll);
+    if (confirmCheck) confirmCheck.addEventListener('change', validateDeleteAll);
 });
 
-// Fungsi untuk update status pemeriksaan
 function updateStatusPemeriksaan(stationId, status) {
-    const statusText = status === 'sudah_diperiksa' ? 'Sudah Diperiksa' : 'Belum Diperiksa';
-    
-    if (!confirm(`Apakah Anda yakin ingin menandai stasiun ini sebagai "${statusText}"?`)) {
+    if (!confirm(`Apakah Anda yakin ingin menandai stasiun ini sebagai "Sudah Diperiksa"?`)) {
         return;
     }
     
-    // Tampilkan loading indicator
     const container = document.querySelector(`.status-check-container[data-station-id="${stationId}"]`);
     if (container) {
         const originalHtml = container.innerHTML;
-        container.innerHTML = '<div class="spinner-border spinner-border-sm text-primary" role="status"><span class="visually-hidden">Loading...</span></div>';
+        container.innerHTML = '<div class="spinner-border spinner-border-sm text-primary" role="status"></div>';
         
         fetch(`/admin-operator/update-status-pemeriksaan/${stationId}`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                status: status
-            })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: status })
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Reload halaman untuk menampilkan perubahan
                 location.reload();
             } else {
-                // Restore original HTML
                 container.innerHTML = originalHtml;
                 alert('Gagal update status: ' + data.message);
             }

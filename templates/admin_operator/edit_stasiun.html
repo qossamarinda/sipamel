@@ -3,6 +3,8 @@
 {% block title %}Edit Stasiun - {{ station.stasiun_name }}{% endblock %}
 
 {% block content %}
+{% set next_url = request.args.get('next', url_for('admin_operator_detail_stasiun', station_id=station.id)) %}
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h3 class="mb-0">
@@ -12,13 +14,13 @@
             <ol class="breadcrumb mb-0">
                 <li class="breadcrumb-item"><a href="{{ url_for('admin_operator_dashboard') }}">Dashboard</a></li>
                 <li class="breadcrumb-item"><a href="{{ url_for('admin_operator_daftar_stasiun') }}">Daftar Stasiun</a></li>
-                <li class="breadcrumb-item"><a href="{{ url_for('admin_operator_detail_stasiun', station_id=station.id) }}">Detail</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('admin_operator_detail_stasiun', station_id=station.id, next=next_url) }}">Detail</a></li>
                 <li class="breadcrumb-item active">Edit</li>
             </ol>
         </nav>
     </div>
     <div>
-        <a href="{{ url_for('admin_operator_detail_stasiun', station_id=station.id) }}" class="btn btn-outline-secondary">
+        <a href="{{ next_url }}" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left"></i> Batal
         </a>
     </div>
@@ -26,6 +28,7 @@
 
 <div id="js-data" 
      data-opponent-count="{{ station.stasiun_lawan_list|length }}"
+     data-next-url="{{ next_url }}"
      style="display: none;"></div>
 
 <div class="card">
@@ -54,7 +57,7 @@
         <h5 class="mb-0"><i class="bi bi-wifi"></i> Form Edit Stasiun</h5>
     </div>
     <div class="card-body">
-        <form method="POST" action="{{ url_for('admin_operator_edit_stasiun', station_id=station.id) }}" id="editForm" onsubmit="return validateForm()">
+        <form method="POST" action="{{ url_for('admin_operator_edit_stasiun', station_id=station.id, next=next_url) }}" id="editForm" onsubmit="return validateForm()">
             <div class="row mb-4">
                 <div class="col-md-6">
                     <div class="mb-3">
@@ -150,7 +153,7 @@
             </div>
 
             <div class="d-flex justify-content-between">
-                <a href="{{ url_for('admin_operator_detail_stasiun', station_id=station.id) }}" class="btn btn-secondary">
+                <a href="{{ next_url }}" class="btn btn-secondary">
                     <i class="bi bi-x-circle"></i> Batal
                 </a>
                 <button type="submit" class="btn btn-primary" onclick="return confirmSubmit()">
@@ -165,6 +168,7 @@
     const jsDataElement = document.getElementById('js-data');
     let opponentCounter = parseInt(jsDataElement.getAttribute('data-opponent-count'));
     let deletedLawanIds = [];
+    const nextUrl = jsDataElement.getAttribute('data-next-url');
 
     function addOpponentField() {
         opponentCounter++;
@@ -292,6 +296,7 @@
     console.log('Current kota value:', document.getElementById('kota').value);
     console.log('Station kota:', '{{ station.kota }}');
     console.log('Available kota options:', {{ kota_list|tojson }});
+    console.log('Next URL:', nextUrl);
 </script>
 
 <style>

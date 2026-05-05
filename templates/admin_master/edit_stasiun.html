@@ -18,17 +18,13 @@
         </nav>
     </div>
     <div>
-        <a href="{{ url_for('admin_master_detail_stasiun', station_id=station.id) }}" class="btn btn-outline-info">
+        <a href="{{ url_for('admin_master_detail_stasiun', station_id=station.id, next=next_url) }}" class="btn btn-outline-info">
             <i class="bi bi-eye"></i> Lihat Detail
         </a>
+        <a href="{{ next_url or url_for('admin_master_daftar_stasiun') }}" class="btn btn-outline-secondary ms-2">
+            <i class="bi bi-arrow-left"></i> Kembali ke Daftar
+        </a>
     </div>
-</div>
-
-<!-- DEBUG INFO (HAPUS SETELAH TESTING) -->
-<div class="alert alert-warning small" style="display: none;">
-    <strong>Debug Info:</strong><br>
-    Station kota: "{{ station.kota }}"<br>
-    Kota list: {{ kota_list|join(', ') }}
 </div>
 
 <div class="card">
@@ -57,7 +53,7 @@
         <h5 class="mb-0"><i class="bi bi-wifi"></i> Form Edit Stasiun</h5>
     </div>
     <div class="card-body">
-        <form method="POST" action="{{ url_for('admin_master_edit_stasiun', station_id=station.id) }}" id="stasiunForm" onsubmit="return validateForm()">
+        <form method="POST" action="{{ url_for('admin_master_edit_stasiun', station_id=station.id, next=next_url) }}" id="stasiunForm" onsubmit="return validateForm()">
             <div class="row mb-4">
                 <div class="col-md-6">
                     <div class="mb-3">
@@ -160,7 +156,7 @@
             </div>
 
             <div class="d-flex justify-content-between">
-                <a href="{{ url_for('admin_master_detail_stasiun', station_id=station.id) }}" class="btn btn-secondary">
+                <a href="{{ next_url or url_for('admin_master_detail_stasiun', station_id=station.id) }}" class="btn btn-secondary">
                     <i class="bi bi-x-circle"></i> Batal
                 </a>
                 <button type="submit" class="btn btn-primary" onclick="return confirmSubmit()">
@@ -293,11 +289,6 @@
             document.getElementById('kotaFeedback').style.display = 'none';
         }
     });
-    
-    // Debug: Tampilkan nilai yang dipilih
-    console.log('Current kota select value:', document.getElementById('kota').value);
-    console.log('Station kota from database:', '{{ station.kota }}');
-    console.log('Available kota options:', {{ kota_list|tojson }});
 </script>
 
 <style>

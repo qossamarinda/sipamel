@@ -360,10 +360,52 @@
         border-left-width: 3px !important;
     }
     
+    /* Summary Alert - Versi Besar dengan Progress Bar */
+    .summary-alert {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border: 1px solid #e9ecef;
+        border-radius: 16px;
+        padding: 20px 24px;
+        margin-top: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+    
+    .summary-alert .badge {
+        font-size: 1rem;
+        padding: 8px 18px;
+        border-radius: 30px;
+        font-weight: 600;
+    }
+    
+    .summary-alert i {
+        font-size: 1.1rem;
+    }
+    
+    .progress {
+        height: 10px;
+        border-radius: 10px;
+        background-color: #e9ecef;
+    }
+    
+    .progress-bar {
+        border-radius: 10px;
+        transition: width 0.5s ease;
+    }
+    
     /* Responsive */
     @media (max-width: 1200px) {
         .stations-table {
             min-width: 1400px;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .summary-alert .badge {
+            font-size: 0.85rem;
+            padding: 6px 12px;
+        }
+        .summary-alert strong {
+            font-size: 0.95rem;
         }
     }
 </style>
@@ -406,7 +448,10 @@
                 </div>
                 <h5>Langkah 2: Upload Gambar</h5>
                 <p class="text-muted small mb-0">
-                    Setelah grup dibuat, upload gambar dan atur status untuk setiap lawan dalam grup.
+                    Setelah grup IDU dibuat, upload gambar dan atur status untuk masing masing stasiun lawan.
+                </p>
+                <p class="text-muted small mb-0 mt-1">
+                    Data capture remote site berupa Capture Current Status, Radio Configuration, Modem Port Setting, TX Power Setting, dan Current Metering, Equipment Configuration.
                 </p>
             </div>
         </div>
@@ -419,7 +464,7 @@
     
     <form method="GET" action="{{ url_for('user_operator_stasiun') }}" class="row g-3" id="filterForm">
         <!-- Pencarian Nama Stasiun -->
-        <div class="col-md-4">
+        <div class="col-md-3">
             <label for="search_stasiun" class="form-label">
                 <i class="bi bi-search"></i> Nama Stasiun
             </label>
@@ -427,7 +472,7 @@
                    class="form-control" 
                    id="search_stasiun" 
                    name="search_stasiun" 
-                   value="{{ search_params.search_stasiun }}"
+                   value="{{ request.args.get('search_stasiun', '') }}"
                    placeholder="Cari nama stasiun...">
         </div>
         
@@ -437,54 +482,116 @@
                 <i class="bi bi-geo-alt"></i> Kota/Kabupaten
             </label>
             <select class="form-select" id="kota" name="kota">
-                <option value="all">Semua Kota/kab/Kab</option>
+                <option value="all" {% if selected_kota == 'all' %}selected{% endif %}>Semua Kota/Kab</option>
                 {% for kota in kota_list %}
-                <option value="{{ kota }}" {% if search_params.kota == kota %}selected{% endif %}>
+                <option value="{{ kota }}" {% if selected_kota == kota %}selected{% endif %}>
                     {{ kota|title }}
                 </option>
                 {% endfor %}
             </select>
         </div>
         
+        <!-- Filter Status Kelengkapan Lawan (2 Opsi) -->
+        <div class="col-md-3">
+            <label for="status_lengkap" class="form-label">
+                <i class="bi bi-check2-circle"></i> Kelengkapan Status Lawan
+            </label>
+            <select class="form-select" id="status_lengkap" name="status_lengkap">
+                <option value="all" {% if selected_status_lengkap == 'all' %}selected{% endif %}>Semua </option>
+                <option value="belum_lengkap" {% if selected_status_lengkap == 'belum_lengkap' %}selected{% endif %}>
+                    Belum Lengkap (Masih ada status kosong)
+                </option>
+                <option value="lengkap" {% if selected_status_lengkap == 'lengkap' %}selected{% endif %}>
+                    Sudah Lengkap (Semua status terisi)
+                </option>
+            </select>
+        </div>
+        
         <!-- Filter Per Page -->
-        <div class="col-md-2">
+        <div class="col-md-3">
             <label for="per_page" class="form-label">
                 <i class="bi bi-list"></i> Tampilkan
             </label>
             <select class="form-select" id="per_page" name="per_page">
-                {% for option in allowed_per_page %}
-                <option value="{{ option }}" {% if search_params.per_page == option %}selected{% endif %}>
-                    {{ option }}
+                {% for option in [10, 20, 50, 100] %}
+                <option value="{{ option }}" {% if request.args.get('per_page', '20')|int == option %}selected{% endif %}>
+                    {{ option }} data
                 </option>
                 {% endfor %}
             </select>
         </div>
         
         <!-- Tombol Aksi -->
-        <div class="col-md-3 d-flex align-items-end">
-            <button type="submit" class="btn btn-primary w-100 me-2">
+        <div class="col-12 d-flex justify-content-end gap-2 mt-3">
+            <button type="submit" class="btn btn-primary px-4">
                 <i class="bi bi-search"></i> Cari
             </button>
-            <a href="{{ url_for('user_operator_stasiun') }}" class="btn btn-outline-secondary w-100">
-                <i class="bi bi-arrow-clockwise"></i> Reset
+            <a href="{{ url_for('user_operator_stasiun') }}" class="btn btn-outline-secondary px-4">
+                <i class="bi bi-arrow-clockwise"></i> Reset Filter
             </a>
         </div>
     </form>
     
     <!-- Info Pencarian Aktif -->
-    {% if search_params.search_stasiun or search_params.kota != 'all' %}
+    {% if request.args.get('search_stasiun') or (request.args.get('kota') and request.args.get('kota') != 'all') or (request.args.get('status_lengkap') and request.args.get('status_lengkap') != 'all') %}
     <div class="alert alert-info mt-3 mb-0 py-2">
         <i class="bi bi-info-circle"></i> 
         <strong>Filter aktif:</strong>
-        {% if search_params.search_stasiun %}
-            <span class="badge bg-info me-2">Nama: "{{ search_params.search_stasiun }}"</span>
+        {% if request.args.get('search_stasiun') %}
+            <span class="badge bg-info me-2">Cari: "{{ request.args.get('search_stasiun') }}"</span>
         {% endif %}
-        {% if search_params.kota and search_params.kota != 'all' %}
-            <span class="badge bg-info me-2">Kota/Kab: {{ search_params.kota|title }}</span>
+        {% if request.args.get('kota') and request.args.get('kota') != 'all' %}
+            <span class="badge bg-info me-2">Kota/Kab: {{ request.args.get('kota')|title }}</span>
+        {% endif %}
+        {% if request.args.get('status_lengkap') and request.args.get('status_lengkap') != 'all' %}
+            <span class="badge bg-info me-2">
+                Kelengkapan:
+                {% if request.args.get('status_lengkap') == 'lengkap' %}
+                    Sudah Lengkap
+                {% else %}
+                    Belum Lengkap
+                {% endif %}
+            </span>
         {% endif %}
         <span class="badge bg-secondary">Menampilkan {{ pagination.total }} data</span>
     </div>
     {% endif %}
+</div>
+
+<!-- Summary Alert -->
+<div class="summary-alert">
+    <div class="d-flex align-items-center flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-pie-chart-fill text-primary me-1" style="font-size: 1.4rem;"></i>
+            <strong style="font-size: 1.2rem; color: #1e3c72;">Status Kelengkapan Data Upload (PERHALAMAN) :</strong>
+        </div>
+        <div class="d-flex gap-3">
+            <span class="badge bg-success px-4 py-2 rounded-pill" style="font-size: 1rem; font-weight: 700; box-shadow: 0 2px 5px rgba(40,167,69,0.3);">
+                <i class="bi bi-check-circle-fill me-2"></i> Lengkap: {{ status_summary.lengkap|default(0) }}
+            </span>
+            <span class="badge bg-warning text-dark px-4 py-2 rounded-pill" style="font-size: 1rem; font-weight: 700; box-shadow: 0 2px 5px rgba(255,193,7,0.3);">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i> Belum Lengkap: {{ status_summary.belum_lengkap|default(0) }}
+            </span>
+        </div>
+    </div>
+</div>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+    <div class="text-muted small">
+        <i class="bi bi-layout-text-window me-1"></i>
+        Menampilkan 
+        <strong>
+            {% set start_item = ((pagination.page - 1) * pagination.per_page) + 1 %}
+            {% set end_item = pagination.page * pagination.per_page %}
+            {{ start_item }} - 
+            {% if end_item > pagination.total %}{{ pagination.total }}{% else %}{{ end_item }}{% endif %}
+        </strong>
+        dari <strong>{{ pagination.total }}</strong> data
+    </div>
+    <div class="text-muted small">
+        <i class="bi bi-book me-1"></i>
+        Halaman <strong>{{ pagination.page }}</strong> dari <strong>{{ pagination.pages }}</strong>
+    </div>
 </div>
 
 <!-- Stations Table -->
@@ -494,41 +601,48 @@
         <h5 class="mb-0">
             <i class="bi bi-table me-2"></i>Data Stasiun
         </h5>
+        <div class="text-muted small">
+            Operator: <strong>{{ operator_name }}</strong>
+        </div>
     </div>
     
     <div class="table-responsive">
         <table class="table table-hover mb-0 stations-table">
             <thead>
                 <tr>
-                    <th class="text-center">No</th>
-                    <th>Nama Stasiun</th>
-                    <th>Kota/Kab</th>
-                    <th>Stasiun Lawan & Status</th>
-                    <th>Freq Tx</th>
-                    <th>Freq Rx</th>
-                    <th>Status Pemeriksaan</th>
-                    <th class="text-center">Aksi</th>
+                    <th style="width: 5%;" class="text-center">No</th>
+                    <th style="width: 20%;">Nama Stasiun</th>
+                    <th style="width: 12%;">Kota/Kab</th>
+                    <th style="width: 30%;">Stasiun Lawan & Status</th>
+                    <th style="width: 8%;">Freq Tx (MHz)</th>
+                    <th style="width: 8%;">Freq Rx (MHz)</th>
+                    <th style="width: 12%;">Status Pemeriksaan</th>
+                    <th style="width: 5%;" class="text-center">Aksi</th>
                 </tr>
             </thead>
             <tbody>
                 {% for station in stations %}
-                <tr>
-                    <td class="text-center align-middle">
-                        {{ loop.index + ((pagination.page - 1) * pagination.per_page) }}
-                    </td>
+                <tr class="{% if station.has_lawan_without_status %}table-warning{% endif %}">
+                    <td class="text-center align-middle">{{ loop.index + (pagination.page - 1) * pagination.per_page }}</td>
+                    
+                    <!-- Nama Stasiun - LENGKAP, tidak dipotong -->
                     <td class="align-middle">
-                        <strong title="{{ station.stasiun_name }}">{{ station.stasiun_name|truncate(20) }}</strong>
+                        <strong title="{{ station.stasiun_name }}">{{ station.stasiun_name }}</strong>
+                        {% if station.has_lawan_without_status %}
+                            <span class="badge bg-warning text-dark ms-1" title="Ada stasiun lawan yang belum diisi status">
+                                <i class="bi bi-exclamation-triangle"></i> Belum Lengkap
+                            </span>
+                        {% endif %}
                     </td>
-                    <td class="align-middle" title="{{ station.kota }}">
-                        {{ station.kota|truncate(15) }}
-                    </td>
+                    
+                    <td class="align-middle">{{ station.kota|title }}</td>
                     
                     <!-- KOLOM STASIUN LAWAN & STATUS -->
                     <td class="align-middle">
                         {% if station.stasiun_lawan_list %}
                             <div class="mb-2">
                                 <span class="badge bg-secondary mb-2">
-                                    {{ station.stasiun_lawan_list|length }} stasiun lawan
+                                    {{ station.stasiun_lawan_list|length }} Stasiun Lawan
                                 </span>
                                 
                                 <div class="mt-1">
@@ -588,7 +702,9 @@
                                                             }}
                                                         </span>
                                                     {% else %}
-                                                        <span class="badge bg-light text-dark" style="padding: 2px 5px; font-size: 10px;">Belum Upload</span>
+                                                        <span class="badge bg-light text-dark border" style="padding: 2px 5px; font-size: 10px;">
+                                                            <i class="bi bi-hourglass-split"></i> Belum Upload
+                                                        </span>
                                                     {% endif %}
                                                 </div>
                                             </div>
@@ -709,11 +825,6 @@
                                     <i class="bi bi-calendar-check"></i> {{ station.checked_at.strftime('%d/%m/%Y') }}
                                 </div>
                                 {% endif %}
-                                {% if station.checked_by_user %}
-                                <div class="inspection-info">
-                                    <i class="bi bi-person-check"></i> {{ station.checked_by_user.username }}
-                                </div>
-                                {% endif %}
                             {% else %}
                                 <span class="inspection-badge belum_diperiksa">
                                     <i class="bi bi-question-circle me-1"></i> Belum Diperiksa
@@ -725,15 +836,11 @@
                     <!-- KOLOM AKSI -->
                     <td class="text-center align-middle">
                         <div class="btn-group btn-group-sm" role="group">
-                            <a href="{{ url_for('user_operator_grup_stasiun', station_id=station.id) }}"
+                            <a href="{{ url_for('user_operator_grup_stasiun', station_id=station.id, next=request.full_path) }}"
                                 class="btn btn-outline-info" title="Kelola Grup IDU">
                                 <i class="bi bi-diagram-3"></i>
                             </a>
-                            <a href="{{ url_for('user_operator_upload', station_id=station.id) }}"
-                                class="btn btn-outline-success" title="Upload Gambar">
-                                <i class="bi bi-upload"></i>
-                            </a>
-                            <a href="{{ url_for('user_operator_detail_stasiun', station_id=station.id) }}"
+                            <a href="{{ url_for('user_operator_detail_stasiun', station_id=station.id, next=request.full_path) }}"
                                 class="btn btn-outline-primary" title="Lihat Detail">
                                 <i class="bi bi-eye"></i>
                             </a>
@@ -758,74 +865,41 @@
             </strong>
             dari <strong>{{ pagination.total }}</strong> data
             | Per halaman <strong>{{ pagination.per_page }}</strong>
+            | Halaman <strong>{{ pagination.page }}</strong> dari <strong>{{ pagination.pages }}</strong>
         </div>
         
         <nav aria-label="Page navigation">
             <ul class="pagination mb-0">
-                <!-- First page -->
                 <li class="page-item {% if pagination.page == 1 %}disabled{% endif %}">
-                    <a class="page-link" 
-                       href="{{ url_for('user_operator_stasiun', 
-                                        page=1, 
-                                        kota=search_params.kota,
-                                        search_stasiun=search_params.search_stasiun,
-                                        per_page=search_params.per_page) }}">
+                    <a class="page-link" href="{{ url_for('user_operator_stasiun', page=1, kota=request.args.get('kota'), search_stasiun=request.args.get('search_stasiun', ''), status_lengkap=request.args.get('status_lengkap'), per_page=pagination.per_page) }}">
                         <i class="bi bi-chevron-double-left"></i>
                     </a>
                 </li>
-                
-                <!-- Previous page -->
                 <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
-                    <a class="page-link" 
-                       href="{{ url_for('user_operator_stasiun', 
-                                        page=pagination.prev_num, 
-                                        kota=search_params.kota,
-                                        search_stasiun=search_params.search_stasiun,
-                                        per_page=search_params.per_page) }}">
+                    <a class="page-link" href="{{ url_for('user_operator_stasiun', page=pagination.prev_num, kota=request.args.get('kota'), search_stasiun=request.args.get('search_stasiun', ''), status_lengkap=request.args.get('status_lengkap'), per_page=pagination.per_page) }}">
                         <i class="bi bi-chevron-left"></i>
                     </a>
                 </li>
-
-                <!-- Page numbers -->
+                
                 {% for page_num in pagination.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}
                     {% if page_num %}
                         <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
-                            <a class="page-link" 
-                               href="{{ url_for('user_operator_stasiun', 
-                                                page=page_num, 
-                                                kota=search_params.kota,
-                                                search_stasiun=search_params.search_stasiun,
-                                                per_page=search_params.per_page) }}">
+                            <a class="page-link" href="{{ url_for('user_operator_stasiun', page=page_num, kota=request.args.get('kota'), search_stasiun=request.args.get('search_stasiun', ''), status_lengkap=request.args.get('status_lengkap'), per_page=pagination.per_page) }}">
                                 {{ page_num }}
                             </a>
                         </li>
                     {% else %}
-                        <li class="page-item disabled">
-                            <span class="page-link">...</span>
-                        </li>
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
                     {% endif %}
                 {% endfor %}
-
-                <!-- Next page -->
+                
                 <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
-                    <a class="page-link" 
-                       href="{{ url_for('user_operator_stasiun', 
-                                        page=pagination.next_num, 
-                                        kota=search_params.kota,
-                                        search_stasiun=search_params.search_stasiun,
-                                        per_page=search_params.per_page) }}">
+                    <a class="page-link" href="{{ url_for('user_operator_stasiun', page=pagination.next_num, kota=request.args.get('kota'), search_stasiun=request.args.get('search_stasiun', ''), status_lengkap=request.args.get('status_lengkap'), per_page=pagination.per_page) }}">
                         <i class="bi bi-chevron-right"></i>
                     </a>
                 </li>
-                
-                <!-- Last page -->
                 <li class="page-item {% if pagination.page == pagination.pages %}disabled{% endif %}">
-                    <a class="page-link" 
-                       href="{{ url_for('user_operator_stasiun', 
-                                        page=pagination.pages, 
-                                        kota=search_params.kota,
-                                        search_stasiun=search_params.search_stasiun,
-                                        per_page=search_params.per_page) }}">
+                    <a class="page-link" href="{{ url_for('user_operator_stasiun', page=pagination.pages, kota=request.args.get('kota'), search_stasiun=request.args.get('search_stasiun', ''), status_lengkap=request.args.get('status_lengkap'), per_page=pagination.per_page) }}">
                         <i class="bi bi-chevron-double-right"></i>
                     </a>
                 </li>
@@ -844,14 +918,14 @@
             </div>
             <h5 class="text-muted mb-3">Tidak ada data stasiun</h5>
             <p class="text-muted mb-4" style="max-width: 400px; margin: 0 auto;">
-                {% if search_params.search_stasiun or search_params.kota != 'all' %}
+                {% if request.args.get('search_stasiun') or request.args.get('kota') != 'all' or request.args.get('status_lengkap') != 'all' %}
                     Hasil pencarian tidak ditemukan. Coba gunakan kata kunci yang berbeda atau reset filter.
                 {% else %}
                     Admin belum menambahkan stasiun untuk operator {{ operator_name }}.
                 {% endif %}
             </p>
             <div class="d-flex justify-content-center gap-2">
-                {% if search_params.search_stasiun or search_params.kota != 'all' %}
+                {% if request.args.get('search_stasiun') or request.args.get('kota') != 'all' or request.args.get('status_lengkap') != 'all' %}
                 <a href="{{ url_for('user_operator_stasiun') }}" class="btn btn-primary">
                     <i class="bi bi-arrow-clockwise me-1"></i>Reset Filter
                 </a>
@@ -871,6 +945,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const perPageSelect = document.getElementById('per_page');
     if (perPageSelect) {
         perPageSelect.addEventListener('change', function() {
+            document.getElementById('filterForm').submit();
+        });
+    }
+    
+    // Auto submit form ketika status_lengkap berubah
+    const statusLengkapSelect = document.getElementById('status_lengkap');
+    if (statusLengkapSelect) {
+        statusLengkapSelect.addEventListener('change', function() {
             document.getElementById('filterForm').submit();
         });
     }

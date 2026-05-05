@@ -36,16 +36,15 @@
         
         :root {
             --operator-color: {% if current_user.operator_type == 'telkom' %}#E1251B
-                             {% elif current_user.operator_type == 'telkomsel' %}#E1251B
-                             {% elif current_user.operator_type == 'indosat' %}#FF6600
-                             {% elif current_user.operator_type == 'xl' %}#7F3F98
-                             {% else %}#4361ee{% endif %};
+                         {% elif current_user.operator_type == 'telkomsel' %}#E1251B
+                         {% elif current_user.operator_type == 'ioh' %}#FF6600
+                         {% elif current_user.operator_type == 'xl smart' %}#7F3F98
+                         {% else %}#4361ee{% endif %};
             --operator-light: {% if current_user.operator_type == 'telkom' %}rgba(225, 37, 27, 0.08)
-                              {% elif current_user.operator_type == 'telkomsel' %}rgba(225, 37, 27, 0.08)
-                              {% elif current_user.operator_type == 'indosat' %}rgba(255, 102, 0, 0.08)
-                              {% elif current_user.operator_type == 'xl' %}rgba(127, 63, 152, 0.08)
-                              {% else %}rgba(67, 97, 238, 0.08){% endif %};
-            
+                          {% elif current_user.operator_type == 'telkomsel' %}rgba(225, 37, 27, 0.08)
+                          {% elif current_user.operator_type == 'ioh' %}rgba(255, 102, 0, 0.08)
+                          {% elif current_user.operator_type == 'xl smart' %}rgba(127, 63, 152, 0.08)
+                          {% else %}rgba(67, 97, 238, 0.08){% endif %};
             --sidebar-width: 280px;
             --navbar-height: 70px;
         }
@@ -87,13 +86,34 @@
             font-size: 1.5rem;
             color: white !important;
             display: flex;
-            align-items: center;
-            gap: 0.75rem;
+            flex-direction: column;
             text-decoration: none;
+            line-height: 1.2;
         }
         
-        .navbar-brand i {
-            font-size: 2rem;
+        .brand-main {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .brand-main img {
+            height: 40px;
+            width: auto;
+        }
+        
+        .brand-main span {
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+        
+        .brand-sub {
+            font-size: 0.65rem;
+            font-weight: 500;
+            opacity: 0.8;
+            margin-top: 2px;
+            letter-spacing: 0.3px;
+            margin-left: 0.5rem;
         }
         
         .navbar-toggle {
@@ -275,7 +295,7 @@
         
         .nav-link {
             padding: 0.6rem 1rem;
-            border-radius: 10px;
+            border-radius: 5px;
             color: #475569;
             font-weight: 500;
             font-size: 0.9rem;
@@ -402,8 +422,8 @@
         .badge-belum_ada { background-color: #94a3b8; color: white; padding: 0.4rem 0.8rem; border-radius: 30px; font-weight: 500; }
         
         .telkom, .telkomsel { background-color: #E1251B; color: white; }
-        .indosat { background-color: #FF6600; color: white; }
-        .xl { background-color: #7F3F98; color: white; }
+        .ioh { background-color: #FF6600; color: white; }
+        .xl-smart { background-color: #7F3F98; color: white; }
 
         /* ===== CARD STYLES ===== */
         .card {
@@ -506,20 +526,54 @@
             font-size: 0.9rem;
             margin-bottom: 1rem;
         }
-        
+
+        /* ===== STEP DETAILS - RAPI ===== */
         .step-details {
             background: #f8fafc;
             border-radius: 12px;
             padding: 1rem;
         }
-        
-        .step-details .d-flex {
-            margin-bottom: 0.5rem;
+
+        .detail-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+            font-size: 0.85rem;
+            line-height: 1.4;
         }
-        
-        .step-details i {
-            color: var(--operator-color);
-            font-size: 0.9rem;
+
+        .detail-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .detail-item i {
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .detail-item span {
+            flex: 1;
+        }
+
+        .detail-item-sub {
+            margin-left: 26px;
+            margin-bottom: 0.75rem;
+            font-size: 0.8rem;
+            color: #475569;
+        }
+
+        .detail-item-sub span {
+            display: block;
+            margin-bottom: 0.25rem;
+            padding-left: 0.5rem;
+        }
+
+        .detail-item-sub span:last-child {
+            margin-bottom: 0;
+        }
+
+        .mt-2 {
+            margin-top: 0.5rem;
         }
 
         /* ===== WORKFLOW ITEM ===== */
@@ -530,6 +584,20 @@
             display: flex;
             align-items: center;
             gap: 1rem;
+            border: 1px solid #e9ecef;
+        }
+        
+        .workflow-number {
+            background: var(--operator-color);
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: white;
         }
 
         /* ===== REGULATION ITEM ===== */
@@ -566,8 +634,11 @@
                     <i class="bi bi-list"></i>
                 </button>
                 <a class="navbar-brand" href="{{ url_for('user_operator_dashboard') }}">
-                    <i class="bi bi-wifi"></i>
-                    <span>SiPaMeL</span>
+                    <div class="brand-main">
+                        <img src="{{ url_for('static', filename='logo3.png') }}" alt="Logo">
+                        <span>SiPaMeL</span>
+                    </div>
+                    <div class="brand-sub">Sistem Pemeriksaan Microwave Link</div>
                 </a>
             </div>
             
@@ -636,18 +707,37 @@
                     <i class="bi bi-broadcast"></i> Daftar Stasiun
                 </a>
             </li>
+            <li class="nav-item">
+        <a class="nav-link {% if request.endpoint == 'user_operator_hasil_laporan' %}active{% endif %}" 
+           href="{{ url_for('user_operator_hasil_laporan') }}">
+            <i class="bi bi-file-text"></i> Hasil Laporan
+        </a>
+    </li>
         </ul>
+        
         
         <div class="sidebar-divider"></div>
         
         <div class="section-title">Bantuan</div>
         <ul class="nav flex-column">
-            <li class="nav-item">
-                <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#helpModal">
-                    <i class="bi bi-question-circle"></i> Panduan 3 Langkah
-                </a>
-            </li>
-        </ul>
+    <li class="nav-item">
+        <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#helpModal"
+           style="background: linear-gradient(135deg, #00b4d8 0%, #0077b6 100%);
+                  color: white;
+                  border-radius: 12px;
+                  margin: 8px 12px;
+                  padding: 12px 16px;
+                  font-weight: bold;
+                  box-shadow: 0 4px 12px rgba(0, 180, 216, 0.4);
+                  transition: all 0.2s ease;
+                  display: flex;
+                  align-items: center;
+                  gap: 10px;">
+            <i class="bi bi-question-circle-fill fs-5"></i>
+            <span> Panduan 2 Langkah</span>
+        </a>
+    </li>
+</ul>
     </div>
 
     <!-- Main Content -->
@@ -678,174 +768,134 @@
         </footer>
     </div>
 
-    <!-- Help Modal - Panduan 3 Langkah -->
-    <div class="modal fade" id="helpModal" tabindex="-1">
-        <div class="modal-dialog modal-xl modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="bi bi-compass-fill me-2"></i>
-                        Panduan Lengkap Aplikasi
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                
-                <div class="modal-body">
-                    <!-- Welcome Text -->
-                    <div class="text-center mb-5">
-                        <h2 class="fw-bold mb-3" style="color: var(--operator-color);">
-                            Panduan Penggunaan Website
-                        </h2>
-                        <p class="text-muted fs-5">Ikuti 3 langkah mudah untuk membantu Anda mengupload capture</p>
-                    </div>
-
-                    <!-- 3 Main Steps -->
-                    <div class="row g-4 mb-5">
-                        <div class="col-lg-4">
-                            <div class="step-card">
-                                <div class="step-number">1</div>
-                                <h4>Atur Grup</h4>
-                                <p class="text-muted">Kelompokkan stasiun lawan dalam satu grup untuk hasil capture yang sama</p>
-                                <div class="step-details">
-                                    <div class="d-flex align-items-center">
-                                        <i class="bi bi-check-circle-fill text-success me-2"></i>
-                                        <span class="small">1 grup = Hasil Capture yang sama</span>
-                                    </div>
-                                    <div class="d-flex align-items-center">
-                                        <i class="bi bi-check-circle-fill text-success me-2"></i>
-                                        <span class="small">Bisa 1 grup berisi banyak lawan</span>
-                                    </div>
-                                    <div class="d-flex align-items-center">
-                                        <i class="bi bi-check-circle-fill text-success me-2"></i>
-                                        <span class="small">Capture berbeda = grup berbeda</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-lg-4">
-                            <div class="step-card">
-                                <div class="step-number">2</div>
-                                <h4>Upload Gambar</h4>
-                                <p class="text-muted">Upload hasil capture dan tentukan status setiap stasiun lawan</p>
-                                <div class="step-details">
-                                    <div class="d-flex align-items-center">
-                                        <i class="bi bi-check-circle-fill text-success me-2"></i>
-                                        <span class="small">1 grup bisa upload lebih dari 1 capture</span>
-                                    </div>
-                                    <div class="d-flex align-items-center">
-                                        <i class="bi bi-check-circle-fill text-success me-2"></i>
-                                        <span class="small">Status tiap lawan bisa berbeda</span>
-                                    </div>
-                                    <div class="d-flex align-items-center">
-                                        <i class="bi bi-check-circle-fill text-success me-2"></i>
-                                        <span class="small">Format: JPG, PNG (maks 5MB)</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-lg-4">
-                            <div class="step-card">
-                                <div class="step-number">3</div>
-                                <h4>Lihat Detail</h4>
-                                <p class="text-muted">Pantau status dan riwayat setiap grup stasiun lawan</p>
-                                <div class="step-details">
-                                    <div class="d-flex align-items-center">
-                                        <i class="bi bi-check-circle-fill text-success me-2"></i>
-                                        <span class="small">Tampilan per grup & per lawan</span>
-                                    </div>
-                                    <div class="d-flex align-items-center">
-                                        <i class="bi bi-check-circle-fill text-success me-2"></i>
-                                        <span class="small">Edit status, hapus dan tambah capture</span>
-                                    </div>
-                                    <div class="d-flex align-items-center">
-                                        <i class="bi bi-check-circle-fill text-success me-2"></i>
-                                        <span class="small">Riwayat upload lengkap</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Workflow Illustration -->
-                    <div class="card mb-5">
-                        <div class="card-body p-4">
-                            <h6 class="fw-bold text-center mb-4">
-                                <i class="bi bi-diagram-3-fill me-2" style="color: var(--operator-color);"></i>
-                                Alur Kerja Sederhana
-                            </h6>
-                            <div class="d-flex flex-column flex-md-row align-items-center justify-content-center gap-3">
-                                <div class="workflow-item">
-                                    <span class="badge rounded-circle" style="background: var(--operator-color); width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;">1</span>
-                                    <span class="fw-semibold">Buat Grup</span>
-                                </div>
-                                <i class="bi bi-arrow-right fs-4 d-none d-md-block" style="color: var(--operator-color);"></i>
-                                <i class="bi bi-arrow-down fs-4 d-md-none" style="color: var(--operator-color);"></i>
-                                
-                                <div class="workflow-item">
-                                    <span class="badge rounded-circle" style="background: var(--operator-color); width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;">2</span>
-                                    <span class="fw-semibold">Upload + Status</span>
-                                </div>
-                                <i class="bi bi-arrow-right fs-4 d-none d-md-block" style="color: var(--operator-color);"></i>
-                                <i class="bi bi-arrow-down fs-4 d-md-none" style="color: var(--operator-color);"></i>
-                                
-                                <div class="workflow-item">
-                                    <span class="badge rounded-circle" style="background: var(--operator-color); width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;">3</span>
-                                    <span class="fw-semibold">Lihat Detail</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Regulations Section -->
-                    <div class="card">
-                        <div class="card-header bg-transparent">
-                            <h6 class="fw-bold mb-0" style="color: var(--operator-color);">
-                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                                Ketentuan Penting
-                            </h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="regulation-item">
-                                <div class="d-flex">
-                                    <div class="regulation-number">1</div>
-                                    <div class="ms-3">
-                                        <strong class="d-block mb-1">Satu grup untuk satu hasil capture</strong>
-                                        <p class="text-muted small mb-0">Jika beberapa stasiun lawan memiliki hasil dokumentasi yang sama (hasil capture yang sama), maka seluruh stasiun lawan tersebut harus dikelompokkan ke dalam satu grup yang sama.</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="regulation-item">
-                                <div class="d-flex">
-                                    <div class="regulation-number">2</div>
-                                    <div class="ms-3">
-                                        <strong class="d-block mb-1">Satu stasiun lawan bisa jadi satu grup tersendiri</strong>
-                                        <p class="text-muted small mb-0">Jika setiap stasiun lawan memiliki hasil capture yang berbeda, maka masing-masing stasiun lawan tersebut harus dibuatkan grup sendiri-sendiri.</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="regulation-item">
-                                <div class="d-flex">
-                                    <div class="regulation-number">3</div>
-                                    <div class="ms-3">
-                                        <strong class="d-block mb-1">Upload gambar per grup</strong>
-                                        <p class="text-muted small mb-0">Stasiun lawan yang belum memiliki grup tidak dapat diunggah hasil capturenya. Pastikan seluruh stasiun lawan telah dikelompokkan ke dalam grup sebelum melakukan proses upload.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="modal-footer border-0 bg-light">
-                    <button type="button" class="btn px-4" style="background: var(--operator-color); color: white;" data-bs-dismiss="modal">
-                        <i class="bi bi-check-lg me-1"></i>Tutup
-                    </button>
-                </div>
+    <!-- Help Modal - Panduan 2 Langkah -->
+<div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="helpModalLabel">
+                    <i class="bi bi-compass-fill me-2"></i>
+                    Panduan Lengkap Aplikasi
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
-        </div>
-    </div>
+
+            <div class="modal-body">
+                <!-- Welcome Text -->
+                <div class="text-center mb-5">
+                    <h2 class="fw-bold mb-3" style="color: var(--operator-color);">
+                        Panduan Penggunaan Website
+                    </h2>
+                    <p class="text-muted fs-5">Ikuti 2 langkah mudah untuk membantu anda mengupload capture</p>
+                </div>
+
+                <!-- 2 Main Steps -->
+                <div class="row g-4 mb-5">
+                    <!-- Step 1: Atur Grup IDU + Upload Capture -->
+                    <div class="col-lg-6">
+                        <div class="step-card">
+                            <div class="step-number">1</div>
+                            <h4>Atur Grup IDU & Upload Capture</h4>
+                            <p class="text-muted">Buat grup IDU pada stasiun lawan, dan upload capture dalam satu IDU</p>
+                            <div class="step-details">
+                                <div class="detail-item">
+                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                    <span><strong>Buat Grup:</strong> 1 grup/IDU = Hasil Capture yang sama</span>
+                                </div>
+                                <div class="detail-item">
+                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                    <span>Bisa 1 grup berisi banyak stasiun lawan</span>
+                                </div>
+                                <div class="detail-item">
+                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                    <span>Capture berbeda = grup berbeda</span>
+                                </div>
+                                <div class="detail-item mt-2">
+                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                    <span><strong>Upload Capture:</strong> Upload Capture berdasarkan grup IDU masing-masing</span>
+                                </div>
+                                <div class="detail-item-sub">
+                                    <span>• Capture Current Status</span>
+                                    <span>• Radio Configuration</span>
+                                    <span>• Modem Port Setting</span>
+                                    <span>• TX Power Setting</span>
+                                    <span>• Current Metering</span>
+                                    <span>• Equipment Configuration</span>
+                                </div>
+                                <div class="detail-item mt-2">
+                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                    <span>Format: JPG, PNG (maks 5MB)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Lihat Detail & Edit Gambar -->
+                    <div class="col-lg-6">
+                        <div class="step-card">
+                            <div class="step-number">2</div>
+                            <h4>Lihat Detail & Edit Capture</h4>
+                            <p class="text-muted">Lihat Capture yang sudah diupload berdasarkan masing masing IDU & Bisa Edit Capture & Status</p>
+                            <div class="step-details">
+                                <div class="detail-item">
+                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                    <span>Tampilan lengkap per grup & per stasiun lawan</span>
+                                </div>
+                                <div class="detail-item">
+                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                    <span><strong>Edit Capture:</strong> Hapus atau tambah capture baru</span>
+                                </div>
+                                <div class="detail-item">
+                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                    <span>Edit status masing-masing stasiun lawan</span>
+                                </div>
+                                <div class="detail-item">
+                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                    <span>Lihat riwayat upload lengkap</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Workflow Illustration - 2 Langkah -->
+                <div class="card mb-4">
+                    <div class="card-body p-4">
+                        <h6 class="fw-bold text-center mb-4">
+                            <i class="bi bi-diagram-3-fill me-2" style="color: var(--operator-color);"></i>
+                            Alur Kerja Sederhana
+                        </h6>
+                        <div class="d-flex flex-column flex-md-row align-items-center justify-content-center gap-3">
+                            <div class="workflow-item">
+                                <span class="workflow-number">1</span>
+                                <div class="text-start ms-2">
+                                    <span class="fw-semibold d-block">Atur Grup & Upload</span>
+                                    <small class="text-muted">Buat grup + upload capture</small>
+                                </div>
+                            </div>
+                            <i class="bi bi-arrow-right fs-4 d-none d-md-block" style="color: var(--operator-color);"></i>
+                            <i class="bi bi-arrow-down fs-4 d-md-none" style="color: var(--operator-color);"></i>
+
+                            <div class="workflow-item">
+                                <span class="workflow-number">2</span>
+                                <div class="text-start ms-2">
+                                    <span class="fw-semibold d-block">Lihat Detail & Edit</span>
+                                    <small class="text-muted">Kelola status & Capture per grup</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div> <!-- /.modal-body -->
+
+            <div class="modal-footer border-0 bg-light">
+                <button type="button" class="btn px-4" style="background: var(--operator-color); color: white;" data-bs-dismiss="modal">
+                    <i class="bi bi-check-lg me-1"></i>Mulai Menggunakan
+                </button>
+            </div>
+        </div> <!-- /.modal-content -->
+    </div> <!-- /.modal-dialog -->
+</div> <!-- /.modal -->
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>

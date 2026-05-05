@@ -69,12 +69,18 @@
             font-size: 1.5rem;
             color: var(--primary) !important;
             display: flex;
-            align-items: center;
-            gap: 0.75rem;
+            flex-direction: column;
             text-decoration: none;
+            line-height: 1.2;
         }
         
-        .navbar-brand i {
+        .brand-main {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .brand-main i {
             font-size: 2rem;
             background: var(--primary-light);
             padding: 0.5rem;
@@ -82,9 +88,18 @@
             color: var(--primary);
         }
         
-        .navbar-brand span {
+        .brand-main span {
             font-weight: 800;
             letter-spacing: -0.5px;
+        }
+        
+        .brand-sub {
+            font-size: 0.65rem;
+            font-weight: 500;
+            color: #64748b;
+            margin-top: 2px;
+            letter-spacing: 0.3px;
+            margin-left: 0.5rem;
         }
         
         /* Tombol toggle untuk mobile */
@@ -432,8 +447,11 @@
                 
                 <!-- Brand -->
                 <a class="navbar-brand" href="{{ url_for('admin_master_dashboard') }}">
-                    <i class="bi bi-wifi"></i>
-                    <span>SiPaMeL</span>
+                    <div class="brand-main">
+                        <img src="{{ url_for('static', filename='logo3.png') }}" alt="Logo" style="height: 40px; width: auto;">
+                        <span>SiPaMeL</span>
+                    </div>
+                    <div class="brand-sub">Sistem Pemeriksaan Microwave Link</div>
                 </a>
             </div>
             
@@ -527,22 +545,30 @@
             </li>
         </ul>
         
-        <!-- Rekap Laporan -->
-        <div class="section-title">Rekap Laporan</div>
-        <ul class="nav flex-column">
-            <li class="nav-item">
-                <a class="nav-link {% if request.endpoint == 'admin_master_rekap_bulanan' %}active{% endif %}" 
-                   href="{{ url_for('admin_master_rekap_bulanan') }}">
-                    <i class="bi bi-calendar-month"></i> Rekap Bulanan
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {% if request.endpoint == 'admin_master_rekap_tahunan' %}active{% endif %}" 
-                   href="{{ url_for('admin_master_rekap_tahunan') }}">
-                    <i class="bi bi-calendar-year"></i> Rekap Tahunan
-                </a>
-            </li>
-        </ul>
+<!-- Rekap Laporan -->
+<div class="section-title">Rekap Laporan</div>
+<ul class="nav flex-column">
+    <li class="nav-item">
+        <a class="nav-link {% if request.endpoint == 'admin_master_rekap_bulanan' %}active{% endif %}" 
+           href="{{ url_for('admin_master_rekap_bulanan') }}">
+            <i class="bi bi-calendar-month"></i> Rekap Bulanan
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if request.endpoint == 'admin_master_rekap_tahunan' %}active{% endif %}" 
+           href="{{ url_for('admin_master_rekap_tahunan') }}">
+            <i class="bi bi-calendar-year"></i> Rekap Tahunan
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if request.endpoint == 'admin_master_hasil_laporan' %}active{% endif %}" 
+           href="{{ url_for('admin_master_hasil_laporan') }}">
+            <i class="bi bi-file-text"></i> Hasil Laporan
+        </a>
+    </li>
+</ul>
+
+
         
         <!-- User Management -->
         <div class="section-title">User Management</div>
@@ -597,7 +623,7 @@
         <!-- Footer -->
         <footer class="footer text-center">
             <span class="text-muted">
-                <i class="bi bi-c-circle me-1"></i> 2026 SiPaMeL - Sistem Pemeriksaan Microwave Link
+                <i class="bi bi-c-circle me-1"></i> 2026 SiPaMeL - Balmon Kelas I Samarinda
             </span>
         </footer>
     </div>
