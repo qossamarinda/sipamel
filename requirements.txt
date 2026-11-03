@@ -17,3 +17,5 @@ pytz==2023.3
 six==1.16.0
 rapidocr-onnxruntime==1.4.4
 opencv-python-headless==4.9.0.80
+rapidfuzz==3.14.6
+

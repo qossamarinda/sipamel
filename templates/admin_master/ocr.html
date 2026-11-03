@@ -264,6 +264,10 @@
 
                 <!-- PREVIEW CONTAINER -->
                 <div id="previewSection" class="d-none mb-3">
+                    <div id="multiFilesList" class="d-none mb-2 p-2 bg-light rounded-3 border d-flex flex-wrap gap-2 align-items-center">
+                        <small class="fw-bold text-muted me-1"><i class="bi bi-images me-1"></i> Berkas:</small>
+                        <div id="fileBadgesContainer" class="d-flex flex-wrap gap-1"></div>
+                    </div>
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <span class="fw-semibold small text-muted">
                             <i class="bi bi-image me-1"></i> Pratinjau Gambar:
@@ -406,6 +410,36 @@
             </div>
 
             <div class="card-body p-4 d-flex flex-column flex-grow-1">
+                <!-- MWLINK INSPECTOR STRUCTURED LINKS TABLE -->
+                <div id="mwlinkInspectorSection" class="d-none mb-3">
+                    <div class="card border border-primary-subtle rounded-3 bg-light shadow-sm">
+                        <div class="card-header bg-white d-flex justify-content-between align-items-center py-2 px-3 border-bottom">
+                            <span class="small fw-bold text-primary">
+                                <i class="bi bi-broadcast me-1"></i> Parameter Link Radio (MWLink Inspector Engine)
+                            </span>
+                            <span class="badge bg-primary rounded-pill px-2" id="mwlinkCountBadge">0 Link</span>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.85rem;">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Slot</th>
+                                            <th>Stasiun Lawan</th>
+                                            <th>Tx RF (MHz)</th>
+                                            <th>Rx RF (MHz)</th>
+                                            <th>BW (MHz)</th>
+                                            <th>Merk / Tipe</th>
+                                            <th class="text-end">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="mwlinkTableBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- SMART DETECTED ENTITIES BAR -->
                 <div id="smartEntitiesSection" class="d-none mb-3 p-3 bg-light rounded-3 border">
                     <div class="d-flex align-items-center justify-content-between mb-2">
@@ -451,6 +485,9 @@
 
 <script>
     let currentImageBlob = null;
+    let selectedImages = [];
+    let currentPreviewIndex = 0;
+    let currentMWLinks = [];
     let rotationDegree = 0;
     let isHighContrast = false;
     let cameraStream = null;
@@ -527,37 +564,72 @@
     dropzone.addEventListener('drop', (e) => {
         e.preventDefault();
         dropzone.classList.remove('dragover');
-        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-            processImageFile(e.dataTransfer.files[0]);
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            processImageFiles(Array.from(e.dataTransfer.files));
         }
     });
 
-    // File input handler
+    // File input handler (supports single or multiple images)
     function handleFileSelect(e) {
-        if (e.target.files && e.target.files[0]) {
-            processImageFile(e.target.files[0]);
+        if (e.target.files && e.target.files.length > 0) {
+            processImageFiles(Array.from(e.target.files));
         }
     }
 
-    // Process file into preview
-    function processImageFile(file) {
-        if (!file.type.startsWith('image/')) {
-            alert('Silakan pilih file gambar yang valid (JPG, PNG, WEBP, BMP)!');
+    // Process multiple or single files
+    function processImageFiles(files) {
+        const imageFiles = files.filter(f => f.type.startsWith('image/'));
+        if (imageFiles.length === 0) {
+            alert('Silakan pilih berkas gambar yang valid (JPG, PNG, WEBP, BMP)!');
             return;
         }
-        currentImageBlob = file;
+
+        selectedImages = imageFiles;
+        currentPreviewIndex = 0;
+        currentImageBlob = selectedImages[0];
         rotationDegree = 0;
         isHighContrast = false;
-        
+
+        renderFileBadges();
+        showPreviewAtIndex(0);
+        btnRunOCR.disabled = false;
+    }
+
+    function renderFileBadges() {
+        const multiBox = document.getElementById('multiFilesList');
+        const container = document.getElementById('fileBadgesContainer');
+        if (selectedImages.length <= 1) {
+            multiBox.classList.add('d-none');
+            return;
+        }
+        multiBox.classList.remove('d-none');
+        container.innerHTML = '';
+        selectedImages.forEach((f, idx) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = `btn btn-sm py-0 px-2 rounded-pill ${idx === currentPreviewIndex ? 'btn-primary' : 'btn-outline-secondary'}`;
+            btn.innerHTML = `<i class="bi bi-image me-1"></i> Gbr ${idx + 1}: ${f.name.length > 18 ? f.name.substring(0, 15) + '...' : f.name}`;
+            btn.onclick = () => showPreviewAtIndex(idx);
+            container.appendChild(btn);
+        });
+    }
+
+    function showPreviewAtIndex(idx) {
+        if (idx < 0 || idx >= selectedImages.length) return;
+        currentPreviewIndex = idx;
+        currentImageBlob = selectedImages[idx];
+        rotationDegree = 0;
+        isHighContrast = false;
+
         const reader = new FileReader();
         reader.onload = function(evt) {
             imagePreview.src = evt.target.result;
             imagePreview.style.transform = 'rotate(0deg)';
             imagePreview.style.filter = 'none';
             previewSection.classList.remove('d-none');
-            btnRunOCR.disabled = false;
         };
-        reader.readAsDataURL(file);
+        reader.readAsDataURL(selectedImages[idx]);
+        renderFileBadges();
     }
 
     // Paste event from clipboard
@@ -627,6 +699,10 @@
 
     function resetImage() {
         currentImageBlob = null;
+        selectedImages = [];
+        currentMWLinks = [];
+        document.getElementById('mwlinkInspectorSection').classList.add('d-none');
+        document.getElementById('multiFilesList').classList.add('d-none');
         imagePreview.src = '';
         previewSection.classList.add('d-none');
         btnRunOCR.disabled = true;
@@ -691,6 +767,35 @@
         }
     }
 
+
+    function fileToBase64Optimized(file, maxDimension = 1600) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    let w = img.width;
+                    let h = img.height;
+                    if (w > maxDimension || h > maxDimension) {
+                        const scale = maxDimension / Math.max(w, h);
+                        w = Math.round(w * scale);
+                        h = Math.round(h * scale);
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = w;
+                    canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, w, h);
+                    resolve(canvas.toDataURL('image/jpeg', 0.90));
+                };
+                img.onerror = reject;
+                img.src = e.target.result;
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+
     // 0. ENGINE RAPIDOCR (ONNX Deep Learning)
     async function runRapidOCR() {
         btnRunOCR.disabled = true;
@@ -704,16 +809,27 @@
         const startTime = Date.now();
 
         try {
-            const imageSource = await getProcessedImageBase64();
+            // Siapkan payload gambar: bisa single atau multiple
+            let imagesPayload = [];
+            if (selectedImages && selectedImages.length > 1) {
+                ocrStatusText.innerText = `Menyiapkan ${selectedImages.length} berkas gambar (MWLink Inspector)...`;
+                for (let f of selectedImages) {
+                    const b64 = await fileToBase64Optimized(f, 1600);
+                    imagesPayload.push(b64);
+                }
+            } else {
+                const singleB64 = await getProcessedImageBase64(1500);
+                imagesPayload.push(singleB64);
+            }
 
-            ocrProgressBar.style.width = '65%';
-            ocrStatusText.innerText = 'RapidOCR sedang mendeteksi & mengenali teks stasiun...';
-            ocrProgressPercent.innerText = '65%';
+            ocrProgressBar.style.width = '60%';
+            ocrStatusText.innerText = 'RapidOCR sedang mendeteksi teks & parameter MW Link...';
+            ocrProgressPercent.innerText = '60%';
 
             const response = await fetch('/api/ocr/rapidocr', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ image: imageSource })
+                body: JSON.stringify({ images: imagesPayload })
             });
 
             if (!response.ok) {
@@ -733,8 +849,12 @@
             ocrOutputText.value = text;
             updateWordStats(text);
 
+            // Render Structured MW Link Table jika ditemukan link
+            currentMWLinks = data.links || [];
+            renderMWLinkTable(currentMWLinks);
+
             const duration = data.elapse ? data.elapse + 's' : (((Date.now() - startTime) / 1000).toFixed(1) + 's');
-            statEngineBadge.innerText = 'Engine: RapidOCR';
+            statEngineBadge.innerText = 'Engine: RapidOCR (MWLink Inspector)';
             statTime.innerText = duration;
             if (data.confidence) {
                 statConfidence.innerText = data.confidence + '%';
@@ -744,9 +864,9 @@
             }
             ocrStats.classList.remove('d-none');
 
-            detectStationParameters(text);
+            detectStationParameters(text, currentMWLinks);
 
-            ocrStatusText.innerText = 'Ekstraksi RapidOCR selesai!';
+            ocrStatusText.innerText = `Ekstraksi RapidOCR selesai! (${currentMWLinks.length} link teridentifikasi)`;
             ocrProgressBar.style.width = '100%';
             ocrProgressPercent.innerText = '100%';
 

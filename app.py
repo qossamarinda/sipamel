@@ -4781,63 +4781,65 @@ threading.Thread(target=_prewarm_rapidocr, daemon=True).start()
 @app.route('/api/ocr/rapidocr', methods=['POST'])
 @login_required
 def api_rapidocr():
-    """Endpoint untuk pemrosesan OCR menggunakan mesin RapidOCR"""
+    """
+    Endpoint pemrosesan OCR menggunakan mesin MWLink_Inspector (RapidOCR).
+    Mendukung single image atau multiple images (misal Port Setting + Radio Configuration).
+    Mengekstrak teks mentah OCR sekaligus 6 parameter microwave link secara terstruktur.
+    """
     try:
         data = request.get_json()
-        if not data or 'image' not in data:
+        if not data:
+            return jsonify({'status': 'error', 'message': 'Data payload tidak ditemukan'}), 400
+
+        raw_images = []
+        if 'images' in data and isinstance(data['images'], list) and data['images']:
+            raw_images = data['images']
+        elif 'image' in data and data['image']:
+            raw_images = [data['image']]
+
+        if not raw_images:
             return jsonify({'status': 'error', 'message': 'Data gambar tidak ditemukan'}), 400
 
-        image_data = data['image']
-        if ',' in image_data:
-            image_data = image_data.split(',')[1]
-
         import base64
+        import tempfile
+        import shutil
         import io
-        import gc
         from PIL import Image
-        import numpy as np
+        from mwlink_ocr_engine import process_microwave_ocr
 
-        image_bytes = base64.b64decode(image_data)
-        image = Image.open(io.BytesIO(image_bytes)).convert('RGB')
-        
-        # Batasi dimensi maksimal 1400px untuk menghemat memori & mempercepat inferensi di cloud server
-        max_dim = 1400
-        if max(image.size) > max_dim:
-            scale = max_dim / max(image.size)
-            new_size = (int(image.size[0] * scale), int(image.size[1] * scale))
-            image = image.resize(new_size, Image.Resampling.LANCZOS)
+        temp_dir = tempfile.mkdtemp()
+        temp_paths = []
+        try:
+            for idx, img_b64 in enumerate(raw_images):
+                if ',' in img_b64:
+                    img_b64 = img_b64.split(',')[1]
+                
+                img_bytes = base64.b64decode(img_b64)
+                img = Image.open(io.BytesIO(img_bytes)).convert('RGB')
+                
+                # Batasi dimensi maksimal 1800px untuk stabilitas memori & kecepatan
+                max_dim = 1800
+                if max(img.size) > max_dim:
+                    scale = max_dim / max(img.size)
+                    img = img.resize((int(img.size[0] * scale), int(img.size[1] * scale)), Image.Resampling.LANCZOS)
+                
+                fpath = os.path.join(temp_dir, f"capture_{idx+1}.jpg")
+                img.save(fpath, format='JPEG', quality=90)
+                temp_paths.append(fpath)
 
-        img_np = np.array(image)
+            station_hint = data.get('station_hint')
+            result_data = process_microwave_ocr(temp_paths, station_name_hint=station_hint)
 
-        engine = get_rapid_ocr()
-        if engine is None:
-            return jsonify({'status': 'error', 'message': 'Mesin RapidOCR tidak dapat diinisialisasi di server. Pastikan dependensi ONNX terpasang.'}), 500
-
-        # use_cls=False melewati klasifikasi rotasi 180 derajat untuk mempercepat inferensi pada tangkapan layar
-        result, elapse = engine(img_np, use_cls=False)
-
-        del img_np, image, image_bytes
-        gc.collect()
-
-        if not result:
             return jsonify({
                 'status': 'success',
-                'text': '',
-                'confidence': 0,
-                'elapse': round(sum(elapse) if elapse else 0, 2)
+                'text': result_data.get('text', ''),
+                'confidence': result_data.get('confidence', 95.0),
+                'links': result_data.get('links', []),
+                'elapse': result_data.get('elapse', 0.0)
             })
+        finally:
+            shutil.rmtree(temp_dir, ignore_errors=True)
 
-        lines = [line[1] for line in result]
-        scores = [float(line[2]) for line in result]
-        avg_confidence = round((sum(scores) / len(scores)) * 100, 1) if scores else 0
-        total_elapse = round(sum(elapse) if elapse else 0, 2)
-
-        return jsonify({
-            'status': 'success',
-            'text': '\n'.join(lines),
-            'confidence': avg_confidence,
-            'elapse': total_elapse
-        })
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
