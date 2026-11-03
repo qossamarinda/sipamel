@@ -654,24 +654,19 @@
         renderFileBadges();
     }
 
-    // Helper: Pindah ke pratinjau gambar setelah paste/unggah
-    function switchToUploadPreview() {
-        const uploadTabBtn = document.getElementById('upload-tab');
-        if (uploadTabBtn) {
-            const tab = bootstrap.Tab.getOrCreateInstance(uploadTabBtn);
-            tab.show();
+    // Helper: Notifikasi dan tampilkan pratinjau setelah paste/unggah
+    function showPasteSuccessFeedback(msg = 'Screenshot berhasil ditempel dari Clipboard!') {
+        const pasteStatus = document.getElementById('pasteStatusText');
+        if (pasteStatus) {
+            pasteStatus.innerHTML = `<span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i> ${msg}</span>`;
+            setTimeout(() => {
+                pasteStatus.innerHTML = '<i class="bi bi-keyboard me-1"></i> Siap menerima screenshot via <strong>Ctrl + V</strong>';
+            }, 4000);
         }
         const previewSection = document.getElementById('previewSection');
         if (previewSection) {
             previewSection.classList.remove('d-none');
             previewSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-        const pasteStatus = document.getElementById('pasteStatusText');
-        if (pasteStatus) {
-            pasteStatus.innerHTML = '<span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i> Screenshot berhasil ditempel dari Clipboard!</span>';
-            setTimeout(() => {
-                pasteStatus.innerHTML = '<i class="bi bi-keyboard me-1"></i> Siap menerima screenshot via <strong>Ctrl + V</strong>';
-            }, 3000);
         }
     }
 
@@ -699,7 +694,7 @@
                         const blob = await item.getType(type);
                         foundImage = true;
                         processImageFile(blob);
-                        switchToUploadPreview();
+                        showPasteSuccessFeedback();
                         return;
                     }
                 }
@@ -742,7 +737,7 @@
             if (imgFiles.length > 0) {
                 e.preventDefault();
                 processImageFiles(imgFiles);
-                switchToUploadPreview();
+                showPasteSuccessFeedback();
                 return;
             }
         }
@@ -756,7 +751,7 @@
                     const fileBlob = item.getAsFile();
                     if (fileBlob) {
                         processImageFile(fileBlob);
-                        switchToUploadPreview();
+                        showPasteSuccessFeedback();
                         return;
                     }
                 }
@@ -834,10 +829,13 @@
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         const img = new Image();
-        img.src = imagePreview.src;
         await new Promise((resolve, reject) => {
-            img.onload = resolve;
-            img.onerror = reject;
+            img.onload = () => resolve();
+            img.onerror = (e) => reject(e || new Error('Gagal memuat gambar'));
+            img.src = imagePreview.src;
+            if (img.complete) {
+                resolve();
+            }
         });
 
         let origW = img.width;
@@ -947,15 +945,37 @@
             ocrStatusText.innerText = 'RapidOCR sedang mendeteksi teks & parameter MW Link...';
             ocrProgressPercent.innerText = '60%';
 
-            const response = await fetch('/api/ocr/rapidocr', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ images: imagesPayload })
-            });
+            // Timeout 25 detik agar tidak menggantung jika server cloud 0.1 CPU overload
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 25000);
+
+            let response;
+            try {
+                response = await fetch('/api/ocr/rapidocr', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ images: imagesPayload }),
+                    signal: controller.signal
+                });
+            } catch (netErr) {
+                clearTimeout(timeoutId);
+                console.warn('RapidOCR server timeout / fetch issue, otomatis fallback ke Tesseract.js di browser:', netErr);
+                ocrStatusText.innerText = 'Server cloud timeout/sibuk (0.1 CPU). Beralih otomatis ke engine Tesseract.js di browser Anda...';
+                ocrProgressBar.style.width = '35%';
+                ocrProgressBar.className = 'progress-bar progress-bar-striped progress-bar-animated bg-warning';
+                await runTesseractOCR();
+                return;
+            }
+            clearTimeout(timeoutId);
 
             if (!response.ok) {
-                if (response.status === 502 || response.status === 504) {
-                    throw new Error('Server cloud Render mengalami timeout / 502 (instance Free 0.1 CPU sedang sibuk). Silakan coba klik sekali lagi, atau gunakan opsi mesin Tesseract.js / Gemini Vision AI jika butuh respons instan.');
+                if (response.status === 502 || response.status === 504 || response.status === 500) {
+                    console.warn(`Render HTTP ${response.status}, beralih otomatis ke Tesseract.js di browser...`);
+                    ocrStatusText.innerText = `Server cloud timeout (${response.status}). Beralih otomatis ke engine Tesseract.js di browser Anda...`;
+                    ocrProgressBar.style.width = '35%';
+                    ocrProgressBar.className = 'progress-bar progress-bar-striped progress-bar-animated bg-warning';
+                    await runTesseractOCR();
+                    return;
                 }
                 const errData = await response.json().catch(() => ({}));
                 throw new Error(errData.message || `HTTP ${response.status}: ${response.statusText}`);

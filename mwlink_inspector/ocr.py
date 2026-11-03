@@ -21,7 +21,7 @@ class Token:
 
 
 _rapid = None
-TARGET_WIDTH = 1920
+TARGET_WIDTH = 1200
 
 def ocr_rapidocr(path: str) -> list[Token]:
     """PP-OCR (PaddleOCR) via ONNX Runtime. Ringan, CPU-only, model sudah terbundel di paket pip."""
@@ -29,12 +29,15 @@ def ocr_rapidocr(path: str) -> list[Token]:
     if _rapid is None:
         from rapidocr_onnxruntime import RapidOCR
         _rapid = RapidOCR(intra_op_num_threads=1, inter_op_num_threads=1)
-    # Normalisasi resolusi: gambar kecil/diperkecil diperbesar dulu (akurasi OCR turun tajam pada teks < ~12 px)
     from PIL import Image
     import numpy as np
     im = Image.open(path).convert("RGB")
-    f = min(2.0, max(1.0, TARGET_WIDTH / im.width))
-    if f > 1.01:
+    f = 1.0
+    if im.width > 1200:
+        f = 1200.0 / im.width
+        im = im.resize((round(im.width * f), round(im.height * f)), Image.LANCZOS)
+    elif im.width < 700:
+        f = min(2.0, 1000.0 / im.width)
         im = im.resize((round(im.width * f), round(im.height * f)), Image.LANCZOS)
     res, _ = _rapid(np.ascontiguousarray(np.array(im)), use_cls=False)   # RapidOCR menganggap ndarray = RGB
     out = []
