@@ -4714,6 +4714,28 @@ def api_ai_chat():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
+# ============================================================================
+# OCR (CAPTURE TO TEXT) ROUTES
+# ============================================================================
+
+@app.route('/admin-master/ocr', methods=['GET'])
+@login_required
+@admin_master_required
+def admin_master_ocr():
+    return render_template('admin_master/ocr.html')
+
+@app.route('/admin-operator/ocr', methods=['GET'])
+@login_required
+@admin_operator_required
+def admin_operator_ocr():
+    return render_template('admin_operator/ocr.html')
+
+@app.route('/user-operator/ocr', methods=['GET'])
+@login_required
+@user_operator_required
+def user_operator_ocr():
+    return render_template('user_operator/ocr.html')
+
 @app.route('/admin-master/users')
 @login_required
 @admin_master_required

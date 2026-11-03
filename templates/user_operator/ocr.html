@@ -1,0 +1,750 @@
+{% extends "user_operator/base.html" %}
+
+{% block title %}OCR (Capture to Text) - SiPaMeL{% endblock %}
+
+{% block styles %}
+<style>
+    /* ===== HEADER CARD ===== */
+    .ocr-header-card {
+        background: linear-gradient(135deg, #0f172a 0%, #0369a1 50%, #0284c7 100%);
+        border-radius: 20px;
+        padding: 2rem 2.2rem;
+        margin-bottom: 2rem;
+        color: white;
+        box-shadow: 0 10px 30px rgba(2, 132, 199, 0.25);
+        position: relative;
+        overflow: hidden;
+    }
+    .ocr-header-card::before {
+        content: '';
+        position: absolute;
+        top: -40%;
+        right: -15%;
+        width: 320px;
+        height: 320px;
+        background: radial-gradient(circle, rgba(56, 189, 248, 0.35) 0%, rgba(2, 132, 199, 0) 70%);
+        border-radius: 50%;
+        pointer-events: none;
+    }
+    .ocr-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(8px);
+        padding: 0.35rem 0.85rem;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        margin-bottom: 0.75rem;
+    }
+    .ocr-badge .pulse-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: #38bdf8;
+        box-shadow: 0 0 10px #38bdf8;
+        animation: pulse-dot 2s infinite;
+    }
+    @keyframes pulse-dot {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(1.3); }
+    }
+
+    /* ===== DRAG & DROP ZONE ===== */
+    .dropzone-container {
+        border: 2px dashed #94a3b8;
+        border-radius: 16px;
+        background: #f8fafc;
+        padding: 2.5rem 1.5rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
+    }
+    .dropzone-container:hover, .dropzone-container.dragover {
+        border-color: #0284c7;
+        background: #f0f9ff;
+        transform: translateY(-2px);
+    }
+    .dropzone-icon {
+        font-size: 3rem;
+        color: #0284c7;
+        margin-bottom: 0.75rem;
+    }
+
+    /* ===== CAMERA VIEW ===== */
+    .camera-container {
+        position: relative;
+        background: #000;
+        border-radius: 16px;
+        overflow: hidden;
+        display: none;
+    }
+    #cameraVideo {
+        width: 100%;
+        max-height: 380px;
+        object-fit: cover;
+        border-radius: 16px;
+    }
+    .camera-controls {
+        position: absolute;
+        bottom: 15px;
+        left: 0;
+        right: 0;
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        z-index: 10;
+    }
+
+    /* ===== IMAGE PREVIEW ===== */
+    .preview-box {
+        position: relative;
+        max-height: 380px;
+        overflow: hidden;
+        border-radius: 14px;
+        background: #0f172a;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .preview-box img {
+        max-width: 100%;
+        max-height: 380px;
+        object-fit: contain;
+        transition: transform 0.3s ease, filter 0.3s ease;
+    }
+
+    /* ===== OUTPUT TEXTAREA ===== */
+    .ocr-output-area {
+        font-family: 'Consolas', 'Courier New', monospace;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        min-height: 340px;
+        resize: vertical;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 12px;
+        padding: 1rem;
+        color: #1e293b;
+    }
+    .ocr-output-area:focus {
+        border-color: #0284c7;
+        box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.15);
+    }
+
+    /* ===== SMART ENTITY BADGES ===== */
+    .entity-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #e0f2fe;
+        color: #0369a1;
+        border: 1px solid #bae6fd;
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-size: 0.82rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .entity-pill:hover {
+        background: #0284c7;
+        color: white;
+        transform: translateY(-1px);
+    }
+
+    /* Tab styling */
+    .nav-tabs .nav-link {
+        font-weight: 600;
+        color: #64748b;
+        border: none;
+        border-bottom: 3px solid transparent;
+        padding: 0.75rem 1.25rem;
+    }
+    .nav-tabs .nav-link.active {
+        color: #0284c7;
+        border-bottom: 3px solid #0284c7;
+        background: transparent;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- HEADER BANNER -->
+<div class="ocr-header-card">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div>
+            <div class="ocr-badge">
+                <span class="pulse-dot"></span>
+                <span>Optical Character Recognition &bull; AI Powered</span>
+            </div>
+            <h2 class="fw-bold mb-2 text-white">
+                <i class="bi bi-camera me-2"></i>OCR (Capture to Text)
+            </h2>
+            <p class="mb-0 text-white-50" style="max-width: 650px;">
+                Ekstraksi teks otomatis dari foto fisik stasiun, lembar izin/ISR, spesifikasi perangkat microwave, atau tangkapan layar <em>(screenshot)</em> secara instan.
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('user_operator_stasiun') }}" class="btn btn-outline-light btn-sm px-3 rounded-pill">
+                <i class="bi bi-broadcast me-1"></i> Data Stasiun
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- LEFT PANEL: IMAGE INPUT & CAPTURE -->
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0 rounded-4 h-100">
+            <div class="card-header bg-white border-0 pt-3 px-4">
+                <ul class="nav nav-tabs card-header-tabs" id="ocrInputTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="upload-tab" data-bs-toggle="tab" data-bs-target="#tabUpload" type="button" role="tab">
+                            <i class="bi bi-cloud-arrow-up me-1"></i> Unggah Gambar
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="camera-tab" data-bs-toggle="tab" data-bs-target="#tabCamera" type="button" role="tab">
+                            <i class="bi bi-camera-video me-1"></i> Kamera Langsung
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="paste-tab" data-bs-toggle="tab" data-bs-target="#tabPaste" type="button" role="tab">
+                            <i class="bi bi-clipboard-check me-1"></i> Paste Screenshot
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="card-body p-4 d-flex flex-column">
+                <div class="tab-content mb-3" id="ocrInputContent">
+                    <!-- TAB 1: UPLOAD -->
+                    <div class="tab-pane fade show active" id="tabUpload" role="tabpanel">
+                        <div class="dropzone-container" id="dropzone" onclick="document.getElementById('fileInput').click()">
+                            <input type="file" id="fileInput" accept="image/*" class="d-none" onchange="handleFileSelect(event)">
+                            <div class="dropzone-icon">
+                                <i class="bi bi-cloud-arrow-up-fill"></i>
+                            </div>
+                            <h6 class="fw-bold mb-1">Klik atau Tarik Gambar ke Sini</h6>
+                            <p class="text-muted small mb-0">Mendukung format JPG, PNG, WEBP, BMP (Maks. 15MB)</p>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: LIVE CAMERA -->
+                    <div class="tab-pane fade" id="tabCamera" role="tabpanel">
+                        <div id="cameraStartView" class="text-center p-4 bg-light rounded-4 border">
+                            <i class="bi bi-camera text-primary fs-1 mb-2"></i>
+                            <h6 class="fw-bold">Gunakan Kamera Perangkat</h6>
+                            <p class="text-muted small mb-3">Ambil foto langsung dokumen atau papan perangkat menggunakan kamera laptop/HP.</p>
+                            <button type="button" class="btn btn-primary rounded-pill px-4" onclick="startCamera()">
+                                <i class="bi bi-camera-video-fill me-1"></i> Nyalakan Kamera
+                            </button>
+                        </div>
+                        <div class="camera-container" id="cameraActiveView">
+                            <video id="cameraVideo" autoplay playsinline></video>
+                            <div class="camera-controls">
+                                <button type="button" class="btn btn-light rounded-pill px-3 shadow" onclick="capturePhoto()">
+                                    <i class="bi bi-circle-fill text-danger me-1"></i> Jepret Foto
+                                </button>
+                                <button type="button" class="btn btn-dark rounded-pill px-3 shadow" onclick="stopCamera()">
+                                    <i class="bi bi-x-circle me-1"></i> Tutup
+                                </button>
+                            </div>
+                        </div>
+                        <canvas id="cameraCanvas" class="d-none"></canvas>
+                    </div>
+
+                    <!-- TAB 3: PASTE CLIPBOARD -->
+                    <div class="tab-pane fade" id="tabPaste" role="tabpanel">
+                        <div class="p-4 text-center bg-light rounded-4 border" style="cursor: pointer;" onclick="document.getElementById('pasteHint').focus()">
+                            <i class="bi bi-clipboard-plus text-primary fs-1 mb-2"></i>
+                            <h6 class="fw-bold">Tempelkan Tangkapan Layar (Clipboard)</h6>
+                            <p class="text-muted small mb-2">
+                                Tekan <strong>Ctrl + V</strong> di halaman ini untuk menempelkan gambar screenshot langsung.
+                            </p>
+                            <input type="text" id="pasteHint" class="form-control text-center mx-auto" style="max-width: 250px;" placeholder="Klik di sini & tekan Ctrl + V">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PREVIEW CONTAINER -->
+                <div id="previewSection" class="d-none mt-2">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="fw-semibold small text-muted">
+                            <i class="bi bi-image me-1"></i> Pratinjau Gambar:
+                        </span>
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-outline-secondary" onclick="rotateImage()" title="Putar 90 Derajat">
+                                <i class="bi bi-arrow-clockwise"></i> Putar
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="toggleContrast()" title="Tingkatkan Kontras">
+                                <i class="bi bi-circle-half"></i> Filter
+                            </button>
+                            <button type="button" class="btn btn-outline-danger" onclick="resetImage()" title="Hapus Gambar">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="preview-box">
+                        <img id="imagePreview" src="" alt="Pratinjau">
+                    </div>
+                </div>
+
+                <!-- SETTINGS & ACTION BUTTON -->
+                <div class="mt-auto pt-3">
+                    <div class="row g-2 align-items-center mb-3">
+                        <div class="col-sm-6">
+                            <label class="form-label small text-muted mb-1 fw-semibold">Bahasa OCR:</label>
+                            <select id="ocrLanguage" class="form-select form-select-sm rounded-3">
+                                <option value="ind+eng" selected>Indonesia + English (Rekomendasi)</option>
+                                <option value="ind">Bahasa Indonesia saja</option>
+                                <option value="eng">English saja</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-6 text-sm-end pt-sm-3">
+                            <span class="badge bg-light text-secondary border">Engine: Tesseract.js v5</span>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn btn-primary btn-lg w-100 rounded-pill shadow-sm fw-semibold" id="btnRunOCR" onclick="runOCR()" disabled>
+                        <i class="bi bi-magic me-2"></i> Ekstraksi Teks Sekarang
+                    </button>
+
+                    <!-- PROGRESS BAR -->
+                    <div id="ocrProgressContainer" class="d-none mt-3">
+                        <div class="d-flex justify-content-between small text-muted mb-1">
+                            <span id="ocrStatusText">Mempersiapkan OCR...</span>
+                            <span id="ocrProgressPercent" class="fw-bold text-primary">0%</span>
+                        </div>
+                        <div class="progress" style="height: 8px; border-radius: 10px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" id="ocrProgressBar" role="progressbar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT PANEL: OCR TEXT OUTPUT -->
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0 rounded-4 h-100 d-flex flex-column">
+            <div class="card-header bg-white border-0 pt-3 px-4 d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-file-text me-1 text-primary"></i> Hasil Teks (Capture to Text)
+                    </h5>
+                    <small class="text-muted">Hasil pembacaan karakter dapat langsung diedit atau disalin</small>
+                </div>
+                <div id="ocrStats" class="d-none">
+                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1 small me-1">
+                        <i class="bi bi-check-circle me-1"></i><span id="statConfidence">0%</span> Akurasi
+                    </span>
+                    <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-1 small">
+                        <i class="bi bi-stopwatch me-1"></i><span id="statTime">0s</span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="card-body p-4 d-flex flex-column flex-grow-1">
+                <!-- SMART DETECTED ENTITIES BAR -->
+                <div id="smartEntitiesSection" class="d-none mb-3 p-3 bg-light rounded-3 border">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="small fw-bold text-primary">
+                            <i class="bi bi-stars me-1"></i> Terdeteksi Parameter Stasiun:
+                        </span>
+                        <small class="text-muted">Klik untuk menyalin nilai</small>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2" id="entityPillsContainer">
+                        <!-- Entity pills injected via JS -->
+                    </div>
+                </div>
+
+                <!-- TEXTAREA -->
+                <textarea id="ocrOutputText" class="form-control ocr-output-area flex-grow-1" placeholder="Hasil ekstraksi teks akan muncul di sini... Anda juga bisa langsung mengetik atau mengedit teks hasil pembacaan."></textarea>
+
+                <!-- TOOLBAR BUTTONS -->
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3 pt-2 border-top">
+                    <div class="small text-muted" id="textStats">
+                        <span id="countWords">0</span> kata &bull; <span id="countChars">0</span> karakter
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-secondary rounded-pill btn-sm px-3" onclick="clearOutput()">
+                            <i class="bi bi-eraser me-1"></i> Bersihkan
+                        </button>
+                        <button type="button" class="btn btn-outline-primary rounded-pill btn-sm px-3" onclick="downloadTxt()">
+                            <i class="bi bi-download me-1"></i> Unduh TXT
+                        </button>
+                        <button type="button" class="btn btn-primary rounded-pill btn-sm px-3 shadow-sm" onclick="copyToClipboard()">
+                            <i class="bi bi-clipboard me-1" id="copyIcon"></i> <span id="copyText">Salin Teks</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Tesseract.js v5 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+<script>
+    let currentImageBlob = null;
+    let rotationDegree = 0;
+    let isHighContrast = false;
+    let cameraStream = null;
+
+    // Element references
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
+    const imagePreview = document.getElementById('imagePreview');
+    const previewSection = document.getElementById('previewSection');
+    const btnRunOCR = document.getElementById('btnRunOCR');
+    const ocrOutputText = document.getElementById('ocrOutputText');
+    const ocrProgressContainer = document.getElementById('ocrProgressContainer');
+    const ocrProgressBar = document.getElementById('ocrProgressBar');
+    const ocrStatusText = document.getElementById('ocrStatusText');
+    const ocrProgressPercent = document.getElementById('ocrProgressPercent');
+    const ocrStats = document.getElementById('ocrStats');
+    const statConfidence = document.getElementById('statConfidence');
+    const statTime = document.getElementById('statTime');
+    const smartEntitiesSection = document.getElementById('smartEntitiesSection');
+    const entityPillsContainer = document.getElementById('entityPillsContainer');
+
+    // Drag and drop handlers
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.classList.add('dragover');
+    });
+    dropzone.addEventListener('dragleave', () => {
+        dropzone.classList.remove('dragover');
+    });
+    dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('dragover');
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            processImageFile(e.dataTransfer.files[0]);
+        }
+    });
+
+    // File input handler
+    function handleFileSelect(e) {
+        if (e.target.files && e.target.files[0]) {
+            processImageFile(e.target.files[0]);
+        }
+    }
+
+    // Process file into preview
+    function processImageFile(file) {
+        if (!file.type.startsWith('image/')) {
+            alert('Silakan pilih file gambar yang valid (JPG, PNG, WEBP, BMP)!');
+            return;
+        }
+        currentImageBlob = file;
+        rotationDegree = 0;
+        isHighContrast = false;
+        
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            imagePreview.src = evt.target.result;
+            imagePreview.style.transform = 'rotate(0deg)';
+            imagePreview.style.filter = 'none';
+            previewSection.classList.remove('d-none');
+            btnRunOCR.disabled = false;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // Paste event from clipboard
+    window.addEventListener('paste', (e) => {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (let item of items) {
+            if (item.type.indexOf('image') !== -1) {
+                const blob = item.getAsFile();
+                processImageFile(blob);
+                const uploadTab = new bootstrap.Tab(document.getElementById('upload-tab'));
+                uploadTab.show();
+                break;
+            }
+        }
+    });
+
+    // Camera features
+    async function startCamera() {
+        try {
+            cameraStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
+            });
+            const video = document.getElementById('cameraVideo');
+            video.srcObject = cameraStream;
+            document.getElementById('cameraStartView').classList.add('d-none');
+            document.getElementById('cameraActiveView').style.display = 'block';
+        } catch (err) {
+            alert('Tidak dapat mengakses kamera: ' + err.message + '\nPastikan izin kamera diaktifkan di browser.');
+        }
+    }
+
+    function stopCamera() {
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(track => track.stop());
+            cameraStream = null;
+        }
+        document.getElementById('cameraActiveView').style.display = 'none';
+        document.getElementById('cameraStartView').classList.remove('d-none');
+    }
+
+    function capturePhoto() {
+        const video = document.getElementById('cameraVideo');
+        const canvas = document.getElementById('cameraCanvas');
+        canvas.width = video.videoWidth || 1280;
+        canvas.height = video.videoHeight || 720;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        canvas.toBlob(blob => {
+            processImageFile(blob);
+            stopCamera();
+            const uploadTab = new bootstrap.Tab(document.getElementById('upload-tab'));
+            uploadTab.show();
+        }, 'image/jpeg', 0.95);
+    }
+
+    // Image adjustment tools
+    function rotateImage() {
+        rotationDegree = (rotationDegree + 90) % 360;
+        imagePreview.style.transform = `rotate(${rotationDegree}deg)`;
+    }
+
+    function toggleContrast() {
+        isHighContrast = !isHighContrast;
+        imagePreview.style.filter = isHighContrast ? 'contrast(160%) grayscale(100%)' : 'none';
+    }
+
+    function resetImage() {
+        currentImageBlob = null;
+        imagePreview.src = '';
+        previewSection.classList.add('d-none');
+        btnRunOCR.disabled = true;
+        fileInput.value = '';
+    }
+
+    // OCR Execution via Tesseract.js
+    async function runOCR() {
+        if (!currentImageBlob && !imagePreview.src) {
+            alert('Silakan pilih atau jepret gambar terlebih dahulu!');
+            return;
+        }
+
+        const lang = document.getElementById('ocrLanguage').value;
+        btnRunOCR.disabled = true;
+        ocrProgressContainer.classList.remove('d-none');
+        ocrProgressBar.style.width = '0%';
+        ocrStatusText.innerText = 'Menginisialisasi Engine OCR...';
+        ocrProgressPercent.innerText = '0%';
+        ocrStats.classList.add('d-none');
+        smartEntitiesSection.classList.add('d-none');
+
+        const startTime = Date.now();
+
+        try {
+            let imageSource = imagePreview.src;
+            if (rotationDegree !== 0 || isHighContrast) {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                img.src = imagePreview.src;
+                await new Promise(res => img.onload = res);
+
+                if (rotationDegree === 90 || rotationDegree === 270) {
+                    canvas.width = img.height;
+                    canvas.height = img.width;
+                } else {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                }
+
+                ctx.translate(canvas.width / 2, canvas.height / 2);
+                ctx.rotate((rotationDegree * Math.PI) / 180);
+                if (isHighContrast) {
+                    ctx.filter = 'contrast(160%) grayscale(100%)';
+                }
+                ctx.drawImage(img, -img.width / 2, -img.height / 2);
+                imageSource = canvas.toDataURL('image/png');
+            }
+
+            const worker = await Tesseract.createWorker(lang, 1, {
+                logger: m => {
+                    if (m.status === 'recognizing text') {
+                        const progress = Math.round((m.progress || 0) * 100);
+                        ocrProgressBar.style.width = progress + '%';
+                        ocrProgressPercent.innerText = progress + '%';
+                        ocrStatusText.innerText = 'Mengenali karakter teks...';
+                    } else if (m.status === 'loading tesseract core') {
+                        ocrStatusText.innerText = 'Memuat modul AI WebAssembly...';
+                    } else if (m.status === 'loading language traineddata') {
+                        ocrStatusText.innerText = 'Mengunduh kamus bahasa (' + lang + ')...';
+                    }
+                }
+            });
+
+            const result = await worker.recognize(imageSource);
+            await worker.terminate();
+
+            const text = result.data.text || '';
+            ocrOutputText.value = text;
+            updateWordStats(text);
+
+            const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+            const confidence = Math.round(result.data.confidence || 0);
+
+            statConfidence.innerText = confidence + '%';
+            statTime.innerText = duration + 's';
+            ocrStats.classList.remove('d-none');
+
+            detectStationParameters(text);
+
+            ocrStatusText.innerText = 'Ekstraksi berhasil diselesaikan!';
+            ocrProgressBar.style.width = '100%';
+            ocrProgressPercent.innerText = '100%';
+
+        } catch (err) {
+            console.error(err);
+            alert('Terjadi kesalahan saat memproses OCR: ' + err.message);
+            ocrStatusText.innerText = 'Gagal memproses gambar.';
+        } finally {
+            btnRunOCR.disabled = false;
+        }
+    }
+
+    ocrOutputText.addEventListener('input', () => {
+        updateWordStats(ocrOutputText.value);
+        detectStationParameters(ocrOutputText.value);
+    });
+
+    function updateWordStats(str) {
+        const words = str.trim() ? str.trim().split(/\s+/).length : 0;
+        const chars = str.length;
+        document.getElementById('countWords').innerText = words;
+        document.getElementById('countChars').innerText = chars;
+    }
+
+    function detectStationParameters(text) {
+        if (!text || text.trim().length === 0) {
+            smartEntitiesSection.classList.add('d-none');
+            return;
+        }
+
+        const found = [];
+
+        const freqMatches = text.match(/\b\d+([.,]\d+)?\s*(GHz|MHz|ghz|mhz)\b/gi);
+        if (freqMatches) {
+            [...new Set(freqMatches)].forEach(f => {
+                found.push({ label: 'Frekuensi: ' + f, val: f, icon: 'bi-broadcast-pin' });
+            });
+        }
+
+        const coordMatches = text.match(/[-+]?[0-9]{1,2}[.,][0-9]{3,7}/g);
+        if (coordMatches && coordMatches.length >= 2) {
+            found.push({ label: 'Koordinat: ' + coordMatches[0] + ', ' + coordMatches[1], val: coordMatches[0] + ', ' + coordMatches[1], icon: 'bi-geo-alt' });
+        }
+
+        const ops = ['TELKOM', 'TELKOMSEL', 'INDOSAT', 'IOH', 'XL SMART', 'XL'];
+        ops.forEach(op => {
+            const regex = new RegExp('\\b' + op + '\\b', 'i');
+            if (regex.test(text)) {
+                found.push({ label: 'Operator: ' + op, val: op, icon: 'bi-building' });
+            }
+        });
+
+        const stationCodeMatches = text.match(/\bTRG\w+/gi);
+        if (stationCodeMatches) {
+            [...new Set(stationCodeMatches)].forEach(st => {
+                found.push({ label: 'Stasiun: ' + st, val: st, icon: 'bi-tag' });
+            });
+        }
+
+        if (found.length > 0) {
+            entityPillsContainer.innerHTML = '';
+            found.slice(0, 8).forEach(item => {
+                const span = document.createElement('span');
+                span.className = 'entity-pill';
+                span.innerHTML = `<i class="bi ${item.icon}"></i> ${item.label}`;
+                span.title = 'Klik untuk menyalin: ' + item.val;
+                span.onclick = () => {
+                    navigator.clipboard.writeText(item.val);
+                    showToast('Disalin: ' + item.val);
+                };
+                entityPillsContainer.appendChild(span);
+            });
+            smartEntitiesSection.classList.remove('d-none');
+        } else {
+            smartEntitiesSection.classList.add('d-none');
+        }
+    }
+
+    function copyToClipboard() {
+        const text = ocrOutputText.value;
+        if (!text) {
+            alert('Belum ada teks untuk disalin!');
+            return;
+        }
+        navigator.clipboard.writeText(text).then(() => {
+            const copyIcon = document.getElementById('copyIcon');
+            const copyText = document.getElementById('copyText');
+            copyIcon.className = 'bi bi-check2 text-success me-1';
+            copyText.innerText = 'Tersalin!';
+            setTimeout(() => {
+                copyIcon.className = 'bi bi-clipboard me-1';
+                copyText.innerText = 'Salin Teks';
+            }, 2000);
+        });
+    }
+
+    function downloadTxt() {
+        const text = ocrOutputText.value;
+        if (!text) {
+            alert('Belum ada teks untuk diunduh!');
+            return;
+        }
+        const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `OCR_SiPaMeL_${new Date().toISOString().slice(0,10)}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    function clearOutput() {
+        ocrOutputText.value = '';
+        updateWordStats('');
+        smartEntitiesSection.classList.add('d-none');
+        ocrStats.classList.add('d-none');
+    }
+
+    function showToast(msg) {
+        const badge = document.createElement('div');
+        badge.style.position = 'fixed';
+        badge.style.bottom = '20px';
+        badge.style.right = '20px';
+        badge.style.background = '#0284c7';
+        badge.style.color = '#fff';
+        badge.style.padding = '8px 16px';
+        badge.style.borderRadius = '20px';
+        badge.style.zIndex = '9999';
+        badge.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+        badge.innerHTML = '<i class="bi bi-check-circle me-1"></i> ' + msg;
+        document.body.appendChild(badge);
+        setTimeout(() => badge.remove(), 2000);
+    }
+</script>
+{% endblock %}

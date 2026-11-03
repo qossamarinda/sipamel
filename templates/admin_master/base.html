@@ -486,6 +486,11 @@
                         </a>
                     </li>
                     <li>
+                        <a class="dropdown-item" href="{{ url_for('admin_master_ocr') }}">
+                            <i class="bi bi-camera"></i> OCR (Capture to text)
+                        </a>
+                    </li>
+                    <li>
                         <a class="dropdown-item" href="{{ url_for('admin_master_manage_users') }}">
                             <i class="bi bi-people"></i> Kelola User
                         </a>
@@ -542,6 +547,13 @@
                 <a class="nav-link {% if request.endpoint == 'admin_master_daftar_stasiun' %}active{% endif %}" 
                    href="{{ url_for('admin_master_daftar_stasiun') }}">
                     <i class="bi bi-broadcast"></i> Daftar Stasiun
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'admin_master_ocr' %}active{% endif %}" 
+                   href="{{ url_for('admin_master_ocr') }}">
+                    <i class="bi bi-camera"></i> OCR (Capture to text)
+                    <span class="badge ms-auto text-white" style="background: linear-gradient(135deg, #0ea5e9, #0284c7); font-size: 0.65rem; padding: 0.25rem 0.5rem; border-radius: 20px;">OCR</span>
                 </a>
             </li>
             <li class="nav-item">
