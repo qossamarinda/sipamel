@@ -219,7 +219,7 @@
                                 <i class="bi bi-cloud-arrow-up-fill"></i>
                             </div>
                             <h6 class="fw-bold mb-1">Klik atau Tarik Gambar ke Sini</h6>
-                            <p class="text-muted small mb-0">Mendukung format JPG, PNG, WEBP, BMP (Maks. 15MB)</p>
+                            <p class="text-muted small mb-1">Mendukung format JPG, PNG, WEBP, BMP (Maks. 15MB)</p><span class="badge bg-secondary-subtle text-secondary border px-2 py-1"><i class="bi bi-clipboard me-1"></i> Bisa langsung tekan Ctrl + V untuk paste screenshot</span>
                         </div>
                     </div>
 
@@ -249,13 +249,26 @@
 
                     <!-- TAB 3: PASTE CLIPBOARD -->
                     <div class="tab-pane fade" id="tabPaste" role="tabpanel">
-                        <div class="p-4 text-center bg-light rounded-4 border" style="cursor: pointer;" onclick="document.getElementById('pasteHint').focus()">
-                            <i class="bi bi-clipboard-plus text-primary fs-1 mb-2"></i>
-                            <h6 class="fw-bold">Tempelkan Tangkapan Layar (Clipboard)</h6>
-                            <p class="text-muted small mb-2">
-                                Tekan <strong>Ctrl + V</strong> di halaman ini untuk menempelkan gambar screenshot langsung.
+                        <div class="p-4 text-center bg-light rounded-4 border border-2 border-primary border-opacity-25" id="pasteTargetBox" tabindex="0" style="outline: none;">
+                            <div class="mb-3">
+                                <span class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-circle" style="width: 60px; height: 60px;">
+                                    <i class="bi bi-clipboard2-check-fill fs-2"></i>
+                                </span>
+                            </div>
+                            <h6 class="fw-bold text-dark mb-1">Tempelkan Tangkapan Layar (Clipboard)</h6>
+                            <p class="text-muted small mb-3">
+                                Salin gambar perangkat radio (misal dengan <strong>Win + Shift + S</strong> atau <strong>PrintScreen</strong>),<br>
+                                lalu klik tombol di bawah atau tekan <strong>Ctrl + V</strong> di mana saja pada layar ini.
                             </p>
-                            <input type="text" id="pasteHint" class="form-control text-center mx-auto" style="max-width: 250px;" placeholder="Klik di sini & tekan Ctrl + V">
+                            <div class="d-flex justify-content-center gap-2 mb-2">
+                                <button type="button" class="btn btn-primary rounded-pill px-4 shadow-sm fw-semibold" onclick="pasteFromClipboard()">
+                                    <i class="bi bi-clipboard2-plus me-1"></i> Tempel dari Clipboard Sekarang
+                                </button>
+                            </div>
+                            <div id="pasteStatusText" class="small text-muted mt-2">
+                                <i class="bi bi-keyboard me-1"></i> Siap menerima screenshot via <strong>Ctrl + V</strong>
+                            </div>
+                            <input type="text" id="pasteHint" class="form-control form-control-sm text-center mx-auto mt-2" style="max-width: 320px; opacity: 0.6;" placeholder="Atau klik di sini lalu tekan Ctrl + V">
                         </div>
                     </div>
                 </div>
@@ -639,42 +652,118 @@
         renderFileBadges();
     }
 
-    // Paste event from clipboard (Ctrl + V anywhere or inside paste box)
-    window.addEventListener('paste', (e) => {
-        // Jangan intercept jika user sedang mengetik atau mengedit di textarea hasil OCR
-        const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
-        if (activeTag === 'textarea' && document.activeElement.id === 'ocrOutputText') {
+    // Helper: Pindah ke pratinjau gambar setelah paste/unggah
+    function switchToUploadPreview() {
+        const uploadTabBtn = document.getElementById('upload-tab');
+        if (uploadTabBtn) {
+            const tab = bootstrap.Tab.getOrCreateInstance(uploadTabBtn);
+            tab.show();
+        }
+        const previewSection = document.getElementById('previewSection');
+        if (previewSection) {
+            previewSection.classList.remove('d-none');
+            previewSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        const pasteStatus = document.getElementById('pasteStatusText');
+        if (pasteStatus) {
+            pasteStatus.innerHTML = '<span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i> Screenshot berhasil ditempel dari Clipboard!</span>';
+            setTimeout(() => {
+                pasteStatus.innerHTML = '<i class="bi bi-keyboard me-1"></i> Siap menerima screenshot via <strong>Ctrl + V</strong>';
+            }, 3000);
+        }
+    }
+
+    // Direct Button: Tempel dari Clipboard via navigator.clipboard API
+    async function pasteFromClipboard() {
+        const pasteStatus = document.getElementById('pasteStatusText');
+        try {
+            if (!navigator.clipboard || !navigator.clipboard.read) {
+                const hint = document.getElementById('pasteHint');
+                if (hint) hint.focus();
+                alert('Silakan tekan tombol keyboard Ctrl + V untuk menempelkan screenshot.');
+                return;
+            }
+
+            if (pasteStatus) {
+                pasteStatus.innerHTML = '<span class="text-primary"><i class="bi bi-hourglass-split me-1"></i> Membaca clipboard...</span>';
+            }
+
+            const clipboardItems = await navigator.clipboard.read();
+            let foundImage = false;
+
+            for (const item of clipboardItems) {
+                for (const type of item.types) {
+                    if (type.startsWith('image/')) {
+                        const blob = await item.getType(type);
+                        foundImage = true;
+                        processImageFile(blob);
+                        switchToUploadPreview();
+                        return;
+                    }
+                }
+            }
+
+            if (!foundImage) {
+                alert('Tidak ada gambar di clipboard saat ini.\n\nSilakan ambil screenshot terlebih dahulu (misal: tombol Win + Shift + S atau PrintScreen), lalu klik tombol ini lagi.');
+                if (pasteStatus) {
+                    pasteStatus.innerHTML = '<span class="text-warning"><i class="bi bi-exclamation-triangle me-1"></i> Tidak ditemukan gambar di clipboard</span>';
+                    setTimeout(() => {
+                        pasteStatus.innerHTML = '<i class="bi bi-keyboard me-1"></i> Siap menerima screenshot via <strong>Ctrl + V</strong>';
+                    }, 3000);
+                }
+            }
+        } catch (err) {
+            console.warn('Clipboard read permission/error:', err);
+            const hint = document.getElementById('pasteHint');
+            if (hint) hint.focus();
+            alert('Akses clipboard otomatis dibatasi oleh browser.\n\nSilakan tekan tombol keyboard Ctrl + V secara langsung di halaman ini.');
+            if (pasteStatus) {
+                pasteStatus.innerHTML = '<span class="text-muted"><i class="bi bi-keyboard me-1"></i> Silakan tekan <strong>Ctrl + V</strong> langsung di halaman</span>';
+            }
+        }
+    }
+
+    // Universal Paste Event Handler (Ctrl + V di window, document, atau input)
+    function handleGlobalPaste(e) {
+        // Jangan potong teks jika pengguna sedang mengetik/mengedit di textarea teks OCR
+        const activeEl = document.activeElement;
+        if (activeEl && activeEl.id === 'ocrOutputText' && activeEl.tagName.toLowerCase() === 'textarea') {
             return;
         }
 
-        const items = (e.clipboardData || e.originalEvent?.clipboardData)?.items;
-        if (!items) return;
+        const clipboard = e.clipboardData || window.clipboardData || e.originalEvent?.clipboardData;
+        if (!clipboard) return;
 
-        for (let item of items) {
-            if (item.type && item.type.indexOf('image') !== -1) {
+        // 1. Periksa berkas gambar di clipboard
+        if (clipboard.files && clipboard.files.length > 0) {
+            const imgFiles = Array.from(clipboard.files).filter(f => (f.type && f.type.startsWith('image/')) || f instanceof Blob);
+            if (imgFiles.length > 0) {
                 e.preventDefault();
-                const blob = item.getAsFile();
-                if (blob) {
-                    processImageFile(blob);
-                    
-                    // Pindah ke tab Unggah Gambar & aktifkan pratinjau
-                    const uploadTabBtn = document.getElementById('upload-tab');
-                    if (uploadTabBtn) {
-                        const tab = new bootstrap.Tab(uploadTabBtn);
-                        tab.show();
-                    }
-
-                    // Feedback visual di kotak petunjuk paste jika ada
-                    const pasteHint = document.getElementById('pasteHint');
-                    if (pasteHint) {
-                        pasteHint.value = '✅ Gambar berhasil ditempel!';
-                        setTimeout(() => { pasteHint.value = ''; }, 2500);
-                    }
-                }
-                break;
+                processImageFiles(imgFiles);
+                switchToUploadPreview();
+                return;
             }
         }
-    });
+
+        // 2. Periksa items di clipboard (format bitmap dari Win+Shift+S / Snipping Tool / Copy Image)
+        if (clipboard.items && clipboard.items.length > 0) {
+            for (let i = 0; i < clipboard.items.length; i++) {
+                const item = clipboard.items[i];
+                if (item.type && item.type.startsWith('image/')) {
+                    e.preventDefault();
+                    const fileBlob = item.getAsFile();
+                    if (fileBlob) {
+                        processImageFile(fileBlob);
+                        switchToUploadPreview();
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    window.addEventListener('paste', handleGlobalPaste);
+    document.addEventListener('paste', handleGlobalPaste);
 
     // Camera features
     async function startCamera() {
