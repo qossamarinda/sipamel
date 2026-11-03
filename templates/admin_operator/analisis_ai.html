@@ -1,0 +1,1120 @@
+{% extends "admin_operator/base.html" %}
+
+{% block title %}Pusat Analisis AI - SiPaMeL{% endblock %}
+
+{% block styles %}
+<style>
+    /* ===== AI HEADER ===== */
+    .ai-header-card {
+        background: linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4338ca 100%);
+        border-radius: 20px;
+        padding: 2rem 2.2rem;
+        margin-bottom: 2rem;
+        color: white;
+        box-shadow: 0 10px 30px rgba(67, 56, 202, 0.25);
+        position: relative;
+        overflow: hidden;
+    }
+    .ai-header-card::before {
+        content: '';
+        position: absolute;
+        top: -40%;
+        right: -20%;
+        width: 320px;
+        height: 320px;
+        background: radial-gradient(circle, rgba(168, 85, 247, 0.4) 0%, rgba(99, 102, 241, 0) 70%);
+        border-radius: 50%;
+        pointer-events: none;
+    }
+    .ai-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(8px);
+        padding: 0.35rem 0.85rem;
+        border-radius: 30px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        margin-bottom: 0.75rem;
+    }
+    .ai-badge .pulse-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: #4ade80;
+        box-shadow: 0 0 10px #4ade80;
+        animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.4; transform: scale(0.85); }
+    }
+    .ai-header-title {
+        font-size: 1.85rem;
+        font-weight: 800;
+        margin-bottom: 0.4rem;
+        letter-spacing: -0.5px;
+    }
+    .ai-header-subtitle {
+        color: rgba(255, 255, 255, 0.85);
+        font-size: 0.95rem;
+        max-width: 780px;
+        margin-bottom: 0;
+        line-height: 1.5;
+    }
+
+    /* ===== FILTER BAR ===== */
+    .filter-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+        border: 1px solid rgba(0,0,0,0.04);
+    }
+
+    /* ===== STATS GRID ===== */
+    .ai-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.25rem;
+        margin-bottom: 2rem;
+    }
+    .ai-stat-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1.4rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+        border: 1px solid rgba(0,0,0,0.04);
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .ai-stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    }
+    .ai-stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+    }
+    .ai-stat-card.card-blue::before { background: #4f46e5; }
+    .ai-stat-card.card-green::before { background: #10b981; }
+    .ai-stat-card.card-purple::before { background: #8b5cf6; }
+    .ai-stat-card.card-amber::before { background: #f59e0b; }
+
+    .ai-stat-title {
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #64748b;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.35rem;
+    }
+    .ai-stat-value {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.1;
+        margin-bottom: 0.3rem;
+    }
+    .ai-stat-desc {
+        font-size: 0.8rem;
+        color: #64748b;
+        margin-bottom: 0;
+    }
+
+    /* ===== NAV TABS ===== */
+    .ai-nav-tabs {
+        border-bottom: 2px solid #e2e8f0;
+        margin-bottom: 1.75rem;
+        gap: 0.5rem;
+    }
+    .ai-nav-tabs .nav-link {
+        border: none;
+        color: #64748b;
+        font-weight: 600;
+        padding: 0.8rem 1.25rem;
+        border-radius: 12px 12px 0 0;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .ai-nav-tabs .nav-link:hover {
+        color: #4338ca;
+        background: #f1f5f9;
+    }
+    .ai-nav-tabs .nav-link.active {
+        color: #4338ca;
+        background: white;
+        border-bottom: 3px solid #4338ca;
+        font-weight: 700;
+    }
+
+    /* ===== CONTENT CARDS ===== */
+    .content-box {
+        background: white;
+        border-radius: 16px;
+        padding: 1.75rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+        border: 1px solid rgba(0,0,0,0.04);
+        margin-bottom: 2rem;
+    }
+    .content-box-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.25rem;
+        padding-bottom: 0.85rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .content-box-header h5 {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* ===== OPERATOR CARDS ===== */
+    .op-benchmark-card {
+        border-radius: 14px;
+        border: 1px solid #e2e8f0;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+        background: #fafafa;
+        transition: all 0.25s ease;
+    }
+    .op-benchmark-card:hover {
+        background: white;
+        border-color: #cbd5e1;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.05);
+    }
+
+    /* ===== CHAT ASSISTANT ===== */
+    .ai-chat-window {
+        background: #f8fafc;
+        border-radius: 16px;
+        border: 1px solid #e2e8f0;
+        height: 480px;
+        overflow-y: auto;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    .chat-bubble {
+        max-width: 82%;
+        padding: 1rem 1.25rem;
+        border-radius: 16px;
+        font-size: 0.92rem;
+        line-height: 1.55;
+    }
+    .chat-bubble.assistant {
+        background: white;
+        color: #1e293b;
+        align-self: flex-start;
+        border-bottom-left-radius: 4px;
+        box-shadow: 0 3px 12px rgba(0,0,0,0.04);
+        border: 1px solid #e2e8f0;
+    }
+    .chat-bubble.user {
+        background: linear-gradient(135deg, #4338ca 0%, #4f46e5 100%);
+        color: white;
+        align-self: flex-end;
+        border-bottom-right-radius: 4px;
+        box-shadow: 0 4px 15px rgba(67, 56, 202, 0.25);
+    }
+    .quick-prompt-btn {
+        background: #f1f5f9;
+        border: 1px solid #cbd5e1;
+        color: #334155;
+        border-radius: 20px;
+        padding: 0.4rem 0.85rem;
+        font-size: 0.82rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        display: inline-block;
+        margin: 0.25rem 0.25rem 0.25rem 0;
+    }
+    .quick-prompt-btn:hover {
+        background: #e0e7ff;
+        color: #4338ca;
+        border-color: #c7d2fe;
+    }
+
+    /* ===== PRINT STYLES ===== */
+    @media print {
+        .sidebar, .navbar, .filter-card, .ai-nav-tabs, .chat-input-area, .btn-print-hide {
+            display: none !important;
+        }
+        .main-content { margin-left: 0 !important; width: 100% !important; padding: 0 !important; }
+        .tab-pane { display: block !important; opacity: 1 !important; margin-bottom: 2rem; }
+    }
+
+    @media (max-width: 992px) {
+        .ai-stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 576px) {
+        .ai-stats-grid { grid-template-columns: 1fr; }
+        .ai-header-card { padding: 1.5rem; }
+        .ai-header-title { font-size: 1.4rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- AI Header Banner -->
+<div class="ai-header-card fade-in-up">
+    <div class="ai-badge">
+        <span class="pulse-dot"></span>
+        <span>SiPaMeL AI Engine • Balmon Samarinda</span>
+    </div>
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+            <h2 class="ai-header-title">
+                <i class="bi bi-robot me-2"></i>Pusat Analisis & Intelijen AI
+            </h2>
+            <p class="ai-header-subtitle">
+                Analisis prediktif, evaluasi kepatuhan stasiun microwave link, deteksi anomali dokumentasi foto, dan asisten cerdas berbasis data real-time database.
+            </p>
+        </div>
+        <div class="d-flex gap-2 btn-print-hide">
+            <button onclick="window.print()" class="btn btn-outline-light btn-sm px-3 rounded-pill">
+                <i class="bi bi-printer me-1"></i> Cetak Laporan
+            </button>
+            <a href="{{ url_for('admin_master_analisis_ai') }}" class="btn btn-light btn-sm px-3 rounded-pill text-primary fw-bold">
+                <i class="bi bi-arrow-clockwise me-1"></i> Refresh Data
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="filter-card fade-in-up">
+    <form method="GET" action="{{ url_for('admin_master_analisis_ai') }}" class="row g-3 align-items-end">
+        <div class="col-md-4">
+            <label class="form-label small fw-bold text-muted mb-1">
+                <i class="bi bi-funnel me-1"></i> Filter Operator
+            </label>
+            <select name="operator" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="all" {% if analytics.selected_operator == 'all' %}selected{% endif %}>Semua Operator (4 Operator)</option>
+                {% for op in analytics.operators_list %}
+                <option value="{{ op }}" {% if analytics.selected_operator == op %}selected{% endif %}>
+                    {{ op|upper }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label small fw-bold text-muted mb-1">
+                <i class="bi bi-geo-alt me-1"></i> Filter Wilayah (Kota/Kabupaten)
+            </label>
+            <select name="kota" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="all" {% if analytics.selected_kota == 'all' %}selected{% endif %}>Semua Wilayah</option>
+                {% for k in analytics.kota_list %}
+                <option value="{{ k }}" {% if analytics.selected_kota == k %}selected{% endif %}>{{ k }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4 d-flex gap-2">
+            <button type="submit" class="btn btn-primary btn-sm flex-grow-1 rounded-pill">
+                <i class="bi bi-search me-1"></i> Terapkan Filter
+            </button>
+            <a href="{{ url_for('admin_master_analisis_ai') }}" class="btn btn-outline-secondary btn-sm rounded-pill" title="Reset Filter">
+                <i class="bi bi-x-circle"></i>
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- 4 Key AI Scorecards -->
+<div class="ai-stats-grid">
+    <!-- Card 1: Compliance Health Score -->
+    <div class="ai-stat-card card-purple">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <div class="ai-stat-title">Skor Kesehatan Sistem</div>
+                <div class="ai-stat-value text-primary">{{ analytics.summary.compliance_score }}%</div>
+                <p class="ai-stat-desc">
+                    Grade <strong class="text-{{ analytics.summary.health_color }}">{{ analytics.summary.health_grade }}</strong> ({{ analytics.summary.health_label }})
+                </p>
+            </div>
+            <div class="badge bg-{{ analytics.summary.health_color }}-subtle text-{{ analytics.summary.health_color }} fs-6 p-2 rounded-circle">
+                <i class="bi bi-shield-check fs-4"></i>
+            </div>
+        </div>
+        <div class="progress mt-2" style="height: 6px;">
+            <div class="progress-bar bg-primary" role="progressbar" style="width: {{ analytics.summary.compliance_score }}%"></div>
+        </div>
+    </div>
+
+    <!-- Card 2: Inspection Progress -->
+    <div class="ai-stat-card card-green">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <div class="ai-stat-title">Verifikasi Lapangan</div>
+                <div class="ai-stat-value text-success">{{ analytics.summary.checked_stations }} <small class="fs-6 text-muted">/ {{ analytics.summary.total_stations }}</small></div>
+                <p class="ai-stat-desc">
+                    <strong>{{ analytics.summary.inspection_rate }}%</strong> telah diperiksa resmi
+                </p>
+            </div>
+            <div class="badge bg-success-subtle text-success fs-6 p-2 rounded-circle">
+                <i class="bi bi-check2-circle fs-4"></i>
+            </div>
+        </div>
+        <div class="progress mt-2" style="height: 6px;">
+            <div class="progress-bar bg-success" role="progressbar" style="width: {{ analytics.summary.inspection_rate }}%"></div>
+        </div>
+    </div>
+
+    <!-- Card 3: Photo Documentation Rate -->
+    <div class="ai-stat-card card-blue">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <div class="ai-stat-title">Dokumentasi Foto</div>
+                <div class="ai-stat-value text-info">{{ analytics.summary.stations_with_photos }} <small class="fs-6 text-muted">/ {{ analytics.summary.total_stations }}</small></div>
+                <p class="ai-stat-desc">
+                    <strong>{{ analytics.summary.photo_rate }}%</strong> stasiun memiliki bukti foto
+                </p>
+            </div>
+            <div class="badge bg-info-subtle text-info fs-6 p-2 rounded-circle">
+                <i class="bi bi-images fs-4"></i>
+            </div>
+        </div>
+        <div class="progress mt-2" style="height: 6px;">
+            <div class="progress-bar bg-info" role="progressbar" style="width: {{ analytics.summary.photo_rate }}%"></div>
+        </div>
+    </div>
+
+    <!-- Card 4: Anomalies Detected -->
+    <div class="ai-stat-card card-amber">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <div class="ai-stat-title">Temuan & Anomali</div>
+                <div class="ai-stat-value text-warning">
+                    {{ analytics.anomalies.ready_to_verify.count + analytics.anomalies.checked_no_photo.count + analytics.anomalies.blank_stations.count }}
+                </div>
+                <p class="ai-stat-desc">
+                    <span class="text-info fw-bold">{{ analytics.anomalies.ready_to_verify.count }} Siap Verifikasi</span> • 
+                    <span class="text-danger fw-bold">{{ analytics.anomalies.blank_stations.count }} Nihil</span>
+                </p>
+            </div>
+            <div class="badge bg-warning-subtle text-warning fs-6 p-2 rounded-circle">
+                <i class="bi bi-exclamation-triangle fs-4"></i>
+            </div>
+        </div>
+        <div class="progress mt-2" style="height: 6px;">
+            <div class="progress-bar bg-warning" role="progressbar" style="width: 75%"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Strategic Recommendations Banner -->
+{% if analytics.recommendations %}
+<div class="content-box border-start border-4 border-primary fade-in-up">
+    <div class="content-box-header">
+        <h5>
+            <i class="bi bi-lightbulb text-warning"></i>
+            Rekomendasi Tindakan Strategis AI
+        </h5>
+        <span class="badge bg-primary rounded-pill px-3">{{ analytics.recommendations|length }} Rekomendasi Terhitung</span>
+    </div>
+    <div class="row g-3">
+        {% for rec in analytics.recommendations %}
+        <div class="col-md-6">
+            <div class="p-3 rounded-3 bg-light h-100 border">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="badge bg-{{ rec.badge_class }}">{{ rec.badge }}</span>
+                    <h6 class="fw-bold mb-0 text-dark">{{ rec.title }}</h6>
+                </div>
+                <p class="text-muted small mb-0">{{ rec.desc }}</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Tabs Navigation -->
+<ul class="nav ai-nav-tabs" id="aiTab" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="benchmark-tab" data-bs-toggle="tab" data-bs-target="#benchmark" type="button" role="tab">
+            <i class="bi bi-bar-chart-line"></i> Kinerja & Benchmark Operator
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="anomalies-tab" data-bs-toggle="tab" data-bs-target="#anomalies" type="button" role="tab">
+            <i class="bi bi-search"></i> Deteksi Anomali
+            <span class="badge bg-danger rounded-pill ms-1">{{ analytics.anomalies.ready_to_verify.count }}</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="territory-tab" data-bs-toggle="tab" data-bs-target="#territory" type="button" role="tab">
+            <i class="bi bi-geo-alt"></i> Prioritas Wilayah (Kota/Kab)
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="sitelawan-tab" data-bs-toggle="tab" data-bs-target="#sitelawan" type="button" role="tab">
+            <i class="bi bi-diagram-3-fill text-primary"></i> Detail Site & Site Lawan
+            <span class="badge bg-primary rounded-pill ms-1">{{ analytics.summary.total_stations }}</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="assistant-tab" data-bs-toggle="tab" data-bs-target="#assistant" type="button" role="tab">
+            <i class="bi bi-chat-dots-fill text-primary"></i> Asisten AI Interaktif
+            <span class="badge bg-success-subtle text-success ms-1">Online</span>
+        </button>
+    </li>
+</ul>
+
+<!-- Tabs Content -->
+<div class="tab-content" id="aiTabContent">
+    <!-- TAB 1: Operator Benchmark -->
+    <div class="tab-pane fade show active" id="benchmark" role="tabpanel">
+        <div class="content-box">
+            <div class="content-box-header">
+                <h5><i class="bi bi-trophy text-warning"></i> Matriks Perbandingan Kepatuhan Operator</h5>
+                <small class="text-muted">Kalkulasi bobot: 50% verifikasi status + 50% dokumentasi foto fisik</small>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Operator</th>
+                            <th class="text-center">Total Stasiun</th>
+                            <th class="text-center">Diperiksa</th>
+                            <th class="text-center">Ada Foto</th>
+                            <th class="text-center">Total Foto</th>
+                            <th style="min-width: 140px;">Kepatuhan AI</th>
+                            <th class="text-center">Grade</th>
+                            <th>Insight Analis AI</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for op in analytics.operators_matrix %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="rounded-circle p-2 d-flex align-items-center justify-content-center" 
+                                         style="width: 38px; height: 38px; background: {{ op.color }}15; color: {{ op.color }};">
+                                        <i class="bi {{ op.icon }} fs-5"></i>
+                                    </div>
+                                    <div>
+                                        <strong class="text-dark">{{ op.name }}</strong>
+                                        <div class="small text-muted">{{ op.unchecked }} belum diperiksa</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-center fw-bold">{{ op.total }}</td>
+                            <td class="text-center">
+                                <span class="badge bg-success-subtle text-success">{{ op.checked }} ({{ op.inspection_rate }}%)</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-info-subtle text-info">{{ op.with_uploads }} ({{ op.photo_rate }}%)</span>
+                            </td>
+                            <td class="text-center text-muted font-monospace">{{ op.total_photos|default('0') }}</td>
+                            <td>
+                                <div class="d-flex justify-content-between align-items-center small mb-1">
+                                    <span class="fw-bold">{{ op.score }}%</span>
+                                </div>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar bg-{{ op.grade_class }}" style="width: {{ op.score }}%"></div>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-{{ op.grade_class }} fs-6 px-2 py-1">Grade {{ op.grade }}</span>
+                            </td>
+                            <td>
+                                <small class="text-secondary">{{ op.insight }}</small>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: Deteksi Anomali -->
+    <div class="tab-pane fade" id="anomalies" role="tabpanel">
+        <div class="row g-4">
+            <!-- Anomali A: Ready to verify -->
+            <div class="col-lg-6">
+                <div class="content-box h-100">
+                    <div class="content-box-header">
+                        <h5>
+                            <i class="bi bi-lightning-charge text-info"></i>
+                            Stasiun Siap Diverifikasi ({{ analytics.anomalies.ready_to_verify.count }})
+                        </h5>
+                        <span class="badge bg-info-subtle text-info">Quick Wins</span>
+                    </div>
+                    <p class="text-muted small mb-3">{{ analytics.anomalies.ready_to_verify.desc }}</p>
+
+                    {% if analytics.anomalies.ready_to_verify.station_list %}
+                    <div class="list-group list-group-flush border rounded-3 overflow-hidden">
+                        {% for s in analytics.anomalies.ready_to_verify.station_list %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center p-3">
+                            <div>
+                                <h6 class="mb-1 text-dark fw-bold">{{ s.name }}</h6>
+                                <div class="small text-muted">
+                                    <span class="badge bg-light text-dark border me-1">{{ s.operator }}</span>
+                                    <i class="bi bi-geo-alt me-1"></i>{{ s.kota }}
+                                </div>
+                            </div>
+                            <a href="{{ url_for('admin_operator_detail_stasiun', station_id=s.id) }}" class="btn btn-sm btn-outline-primary rounded-pill">
+                                Verifikasi <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-success small mb-0">
+                        <i class="bi bi-check-circle me-1"></i> Tidak ada backlog stasiun siap verifikasi.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Anomali B: Checked no photo & Blank -->
+            <div class="col-lg-6">
+                <!-- Checked no photo -->
+                <div class="content-box mb-4">
+                    <div class="content-box-header">
+                        <h5>
+                            <i class="bi bi-exclamation-triangle text-warning"></i>
+                            Pemeriksaan Tanpa Bukti Foto ({{ analytics.anomalies.checked_no_photo.count }})
+                        </h5>
+                        <span class="badge bg-warning-subtle text-warning">Risiko Audit</span>
+                    </div>
+                    <p class="text-muted small mb-3">{{ analytics.anomalies.checked_no_photo.desc }}</p>
+
+                    {% if analytics.anomalies.checked_no_photo.station_list %}
+                    <div class="list-group list-group-flush border rounded-3 overflow-hidden">
+                        {% for s in analytics.anomalies.checked_no_photo.station_list %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center p-3">
+                            <div>
+                                <h6 class="mb-1 text-dark fw-bold">{{ s.name }}</h6>
+                                <div class="small text-muted">
+                                    <span class="badge bg-light text-dark border me-1">{{ s.operator }}</span>
+                                    <i class="bi bi-calendar-check me-1"></i>Diperiksa: {{ s.checked_at }}
+                                </div>
+                            </div>
+                            <a href="{{ url_for('admin_operator_detail_stasiun', station_id=s.id) }}" class="btn btn-sm btn-outline-warning rounded-pill">
+                                Periksa <i class="bi bi-pencil"></i>
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-success small mb-0">
+                        <i class="bi bi-check-circle me-1"></i> Seluruh stasiun yang telah diperiksa memiliki bukti foto lengkap.
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Blank Stations -->
+                <div class="content-box">
+                    <div class="content-box-header">
+                        <h5>
+                            <i class="bi bi-shield-x text-danger"></i>
+                            Stasiun Nihil Dokumentasi ({{ analytics.anomalies.blank_stations.count }})
+                        </h5>
+                        <span class="badge bg-danger-subtle text-danger">Prioritas Lapangan</span>
+                    </div>
+                    <p class="text-muted small mb-3">{{ analytics.anomalies.blank_stations.desc }}</p>
+
+                    {% if analytics.anomalies.blank_stations.station_list %}
+                    <div class="list-group list-group-flush border rounded-3 overflow-hidden">
+                        {% for s in analytics.anomalies.blank_stations.station_list %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center p-2 px-3">
+                            <div>
+                                <div class="fw-bold text-dark small">{{ s.name }}</div>
+                                <div class="text-muted" style="font-size: 0.75rem;">{{ s.operator }} • {{ s.kota }}</div>
+                            </div>
+                            <a href="{{ url_for('admin_operator_detail_stasiun', station_id=s.id) }}" class="btn btn-sm btn-light border py-0 px-2 small">
+                                Detail
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: Prioritas Wilayah -->
+    <div class="tab-pane fade" id="territory" role="tabpanel">
+        <div class="content-box">
+            <div class="content-box-header">
+                <h5><i class="bi bi-geo-alt-fill text-danger"></i> Matriks Urgensi Wilayah & Rute Inspeksi</h5>
+                <small class="text-muted">Urutan prioritas berdasarkan volume stasiun belum diperiksa</small>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Wilayah / Kota / Kabupaten</th>
+                            <th class="text-center">Total Stasiun</th>
+                            <th class="text-center">Sudah Diperiksa</th>
+                            <th class="text-center">Belum Diperiksa</th>
+                            <th class="text-center">Stasiun Berfoto</th>
+                            <th style="min-width: 140px;">Progress Verifikasi</th>
+                            <th class="text-center">Urgensi AI</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in analytics.territory_matrix %}
+                        <tr>
+                            <td>
+                                <strong class="text-dark"><i class="bi bi-building me-2 text-primary"></i>{{ t.city }}</strong>
+                            </td>
+                            <td class="text-center fw-bold">{{ t.total }}</td>
+                            <td class="text-center text-success fw-bold">{{ t.checked }}</td>
+                            <td class="text-center text-danger fw-bold">{{ t.unchecked }}</td>
+                            <td class="text-center text-info">{{ t.with_photos }}</td>
+                            <td>
+                                <div class="d-flex justify-content-between align-items-center small mb-1">
+                                    <span>{{ t.inspection_rate }}%</span>
+                                </div>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar bg-{{ 'success' if t.inspection_rate >= 70 else 'warning' if t.inspection_rate >= 50 else 'danger' }}" 
+                                         style="width: {{ t.inspection_rate }}%"></div>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-{{ t.urgency_class }} px-2 py-1">
+                                    Prioritas {{ t.urgency }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 4: Detail Site & Site Lawan (Microwave Link Matrix) -->
+    <div class="tab-pane fade" id="sitelawan" role="tabpanel">
+        <!-- Metric Cards for Microwave Links -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+                    <div class="small text-muted fw-bold text-uppercase">Total Stasiun (Site)</div>
+                    <div class="fs-4 fw-bold text-primary">{{ analytics.summary.total_stations }} <small class="fs-6 text-muted">Site</small></div>
+                    <div class="small text-muted">Stasiun microwave terdaftar</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+                    <div class="small text-muted fw-bold text-uppercase">Tautan Stasiun Lawan</div>
+                    <div class="fs-4 fw-bold text-success">{{ "{:,}".format(analytics.links_summary.total_links) }} <small class="fs-6 text-muted">Link</small></div>
+                    <div class="small text-muted">Koneksi microwave aktif</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+                    <div class="small text-muted fw-bold text-uppercase">Rata-Rata Tautan / Site</div>
+                    <div class="fs-4 fw-bold text-info">{{ analytics.links_summary.avg_links }} <small class="fs-6 text-muted">Link / Site</small></div>
+                    <div class="small text-muted">Kepadatan jaringan link</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+                    <div class="small text-muted fw-bold text-uppercase">Hub Link Terbesar</div>
+                    {% if analytics.links_summary.top_hub_sites %}
+                    <div class="fs-6 fw-bold text-dark text-truncate" title="{{ analytics.links_summary.top_hub_sites[0].name }}">
+                        {{ analytics.links_summary.top_hub_sites[0].name }}
+                    </div>
+                    <div class="small text-warning fw-bold">{{ analytics.links_summary.top_hub_sites[0].opponents_count }} Stasiun Lawan</div>
+                    {% else %}
+                    <div class="fs-6 fw-bold text-muted">-</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="content-box">
+            <div class="content-box-header flex-wrap gap-2">
+                <div>
+                    <h5><i class="bi bi-diagram-3-fill text-primary"></i> Matriks Detail Site & Stasiun Lawan</h5>
+                    <small class="text-muted">Daftar lengkap seluruh site, operator, wilayah, status, dan rincian stasiun lawan beserta frekuensi TX/RX</small>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span id="siteCountDisplay" class="badge bg-primary px-3 py-2 rounded-pill">Menampilkan {{ analytics.detailed_stations|length }} Site</span>
+                </div>
+            </div>
+
+            <!-- Filter & Search Bar -->
+            <div class="row g-2 mb-3 p-3 bg-light rounded-3 border">
+                <div class="col-md-5">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" id="siteSearchInput" class="form-control border-start-0" 
+                               placeholder="Cari nama site atau stasiun lawan (cth: MELAK, KAHALA, LABANAN)..." 
+                               onkeyup="filterSiteTable()">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select id="siteFilterOp" class="form-select" onchange="filterSiteTable()">
+                        <option value="all">Semua Operator ({{ analytics.summary.total_stations }})</option>
+                        {% for op in analytics.operators_matrix %}
+                        <option value="{{ op.key }}">{{ op.name }} ({{ op.total }} site • {{ "{:,}".format(op.total_links) }} link)</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select id="siteFilterKota" class="form-select" onchange="filterSiteTable()">
+                        <option value="all">Semua Wilayah</option>
+                        {% for k in analytics.kota_list %}
+                        <option value="{{ k }}">{{ k }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select id="siteFilterStatus" class="form-select" onchange="filterSiteTable()">
+                        <option value="all">Semua Status</option>
+                        <option value="sudah_diperiksa">Sudah Diperiksa</option>
+                        <option value="belum_diperiksa">Belum Diperiksa</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Table of Detailed Stations and Opponents -->
+            <div class="table-responsive" style="max-height: 650px; overflow-y: auto;">
+                <table class="table table-hover align-middle mb-0" id="siteOpponentTable">
+                    <thead class="table-light sticky-top">
+                        <tr>
+                            <th class="text-center" style="width: 50px;">No</th>
+                            <th style="min-width: 200px;">Nama Site (Stasiun)</th>
+                            <th style="min-width: 140px;">Operator</th>
+                            <th style="min-width: 140px;">Wilayah</th>
+                            <th class="text-center" style="min-width: 120px;">Status</th>
+                            <th class="text-center" style="width: 80px;">Foto</th>
+                            <th class="text-center" style="width: 100px;">Jml Link</th>
+                            <th style="min-width: 320px;">Stasiun Lawan & Frekuensi (TX / RX)</th>
+                            <th class="text-center" style="width: 90px;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="siteOpponentTableBody">
+                        {% for s in analytics.detailed_stations %}
+                        <tr class="site-row" 
+                            data-name="{{ s.name|lower }}" 
+                            data-operator="{{ s.operator|lower }}" 
+                            data-kota="{{ s.kota|lower }}" 
+                            data-status="{{ s.status }}"
+                            data-opponents="{% for opp in s.opponents %}{{ opp.nama|lower }} {% endfor %}">
+                            <td class="text-center text-muted small fw-bold row-num">{{ loop.index }}</td>
+                            <td>
+                                <strong class="text-dark d-block">{{ s.name }}</strong>
+                                <small class="text-muted font-monospace" style="font-size: 0.75rem;">ID: #{{ s.id }}</small>
+                            </td>
+                            <td>
+                                <span class="badge border py-1 px-2" style="background: {{ s.operator_color }}15; color: {{ s.operator_color }};">
+                                    <i class="bi {{ s.operator_icon }} me-1"></i>{{ s.operator_name }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="text-secondary small"><i class="bi bi-geo-alt me-1 text-danger"></i>{{ s.kota }}</span>
+                            </td>
+                            <td class="text-center">
+                                {% if s.status == 'sudah_diperiksa' %}
+                                <span class="badge bg-success-subtle text-success border border-success-subtle py-1 px-2">
+                                    <i class="bi bi-check2-circle me-1"></i>Terperiksa
+                                </span>
+                                {% else %}
+                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle py-1 px-2">
+                                    <i class="bi bi-clock me-1"></i>Belum
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if s.photos_count > 0 %}
+                                <span class="badge bg-info-subtle text-info border border-info-subtle">{{ s.photos_count }} foto</span>
+                                {% else %}
+                                <span class="badge bg-light text-muted border">0 foto</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-primary-subtle text-primary fw-bold fs-6 px-2 py-1">
+                                    {{ s.opponents_count }} Link
+                                </span>
+                            </td>
+                            <td>
+                                {% if s.opponents %}
+                                <div class="d-flex flex-column gap-1">
+                                    {% for opp in s.opponents[:3] %}
+                                    <div class="d-flex align-items-center justify-content-between p-1 px-2 rounded bg-light border small font-monospace" style="font-size: 0.78rem;">
+                                        <div class="text-truncate me-2" title="{{ opp.nama }}">
+                                            <i class="bi bi-arrow-left-right text-primary me-1"></i><strong>{{ opp.nama }}</strong>
+                                        </div>
+                                        <div class="text-muted text-nowrap" style="font-size: 0.72rem;">
+                                            {% if opp.freq_tx != '-' %}TX: {{ opp.freq_tx }} MHz{% endif %}
+                                            {% if opp.freq_rx != '-' %} | RX: {{ opp.freq_rx }} MHz{% endif %}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+
+                                    {% if s.opponents|length > 3 %}
+                                    <div class="collapse" id="opp_collapse_{{ s.id }}">
+                                        <div class="d-flex flex-column gap-1 mt-1">
+                                            {% for opp in s.opponents[3:] %}
+                                            <div class="d-flex align-items-center justify-content-between p-1 px-2 rounded bg-light border small font-monospace" style="font-size: 0.78rem;">
+                                                <div class="text-truncate me-2" title="{{ opp.nama }}">
+                                                    <i class="bi bi-arrow-left-right text-primary me-1"></i><strong>{{ opp.nama }}</strong>
+                                                </div>
+                                                <div class="text-muted text-nowrap" style="font-size: 0.72rem;">
+                                                    {% if opp.freq_tx != '-' %}TX: {{ opp.freq_tx }} MHz{% endif %}
+                                                    {% if opp.freq_rx != '-' %} | RX: {{ opp.freq_rx }} MHz{% endif %}
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <a class="small text-primary text-decoration-none fw-bold mt-1" data-bs-toggle="collapse" href="#opp_collapse_{{ s.id }}" role="button">
+                                        <i class="bi bi-chevron-down me-1"></i>+{{ s.opponents|length - 3 }} link stasiun lawan lainnya
+                                    </a>
+                                    {% endif %}
+                                </div>
+                                {% else %}
+                                <span class="text-muted small fst-italic">Tidak ada link lawan terdaftar</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <a href="{{ url_for('admin_operator_detail_stasiun', station_id=s.id) }}" class="btn btn-sm btn-outline-primary rounded-pill px-2 py-1" title="Lihat Detail Stasiun">
+                                    <i class="bi bi-eye"></i> Detail
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 5: Asisten AI Interaktif -->
+    <div class="tab-pane fade" id="assistant" role="tabpanel">
+        <div class="content-box">
+            <div class="content-box-header">
+                <div>
+                    <h5>
+                        <i class="bi bi-robot text-primary"></i>
+                        SiPaMeL AI Analyst Assistant
+                    </h5>
+                    <small class="text-muted">Tanyakan apa pun tentang analisis kepatuhan stasiun, performa operator, dan rekomendasi pemeriksaan.</small>
+                </div>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill">
+                    <i class="bi bi-stars me-1"></i> Intelligence Assistant
+                </span>
+            </div>
+
+            <!-- Quick Prompts -->
+            <div class="mb-3">
+                <small class="text-muted d-block mb-1 fw-bold">Pertanyaan Cepat:</small>
+                <button type="button" class="quick-prompt-btn" onclick="sendQuickPrompt('buat analisa sampai detail jumlah, nama site, dan site lawan')">
+                    🌐 Detail Jumlah, Site & Lawan
+                </button>
+                <button type="button" class="quick-prompt-btn" onclick="sendQuickPrompt('Berikan ringkasan eksekutif kepatuhan monitoring')">
+                    📊 Ringkasan Eksekutif
+                </button>
+                <button type="button" class="quick-prompt-btn" onclick="sendQuickPrompt('Bagaimana performa Telkomsel vs Indosat Ooredoo?')">
+                    ⚔️ Telkomsel vs IOH
+                </button>
+                <button type="button" class="quick-prompt-btn" onclick="sendQuickPrompt('Tampilkan stasiun yang siap diverifikasi (quick wins)')">
+                    ⚡ Stasiun Siap Verifikasi
+                </button>
+                <button type="button" class="quick-prompt-btn" onclick="sendQuickPrompt('Wilayah mana yang memiliki urgensi inspeksi tertinggi?')">
+                    📍 Prioritas Wilayah & Rute
+                </button>
+                <button type="button" class="quick-prompt-btn" onclick="sendQuickPrompt('Apa rekomendasi taktis untuk menaikkan skor kepatuhan?')">
+                    🎯 Rekomendasi Taktis
+                </button>
+            </div>
+
+            <!-- Chat Window -->
+            <div class="ai-chat-window" id="chatWindow">
+                <div class="chat-bubble assistant">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="bi bi-robot text-primary fs-5"></i>
+                        <strong>SiPaMeL AI Analyst</strong>
+                        <span class="badge bg-light text-muted border ms-auto" style="font-size: 0.7rem;">Sistem Aktif</span>
+                    </div>
+                    <p class="mb-2">Halo! Saya adalah <strong>SiPaMeL AI Analyst</strong> resmi Balai Monitor Spektrum Frekuensi Radio Kelas I Samarinda.</p>
+                    <p class="mb-0">Saya siap menganalisis data <strong>{{ analytics.summary.total_stations }} stasiun microwave link</strong>, perbandingan operator, serta deteksi anomali. Silakan klik salah satu pertanyaan cepat di atas atau ketik pertanyaan Anda di bawah ini!</p>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="chat-input-area mt-3">
+                <form id="aiChatForm" onsubmit="handleChatSubmit(event)">
+                    <div class="input-group">
+                        <input type="text" id="userMessageInput" class="form-control form-control-lg border-primary-subtle" 
+                               placeholder="Ketik pertanyaan untuk analisis AI (misal: analisis performa Telkomsel)..." 
+                               autocomplete="off" required>
+                        <button type="submit" class="btn btn-primary btn-lg px-4" id="sendBtn">
+                            <i class="bi bi-send-fill me-1"></i> Tanya AI
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+    function sendQuickPrompt(promptText) {
+        document.getElementById('userMessageInput').value = promptText;
+        // Pindah ke tab asisten jika belum
+        const triggerEl = document.querySelector('#assistant-tab');
+        bootstrap.Tab.getInstance(triggerEl)?.show() || new bootstrap.Tab(triggerEl).show();
+        handleChatSubmit(new Event('submit'));
+    }
+
+    function appendMessage(role, content) {
+        const chatWindow = document.getElementById('chatWindow');
+        const bubble = document.createElement('div');
+        bubble.className = `chat-bubble ${role} fade-in-up`;
+        
+        if (role === 'assistant') {
+            // Render markdown jika library marked tersedia
+            let htmlContent = content;
+            if (typeof marked !== 'undefined') {
+                htmlContent = marked.parse(content);
+            }
+            bubble.innerHTML = `
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <i class="bi bi-robot text-primary fs-5"></i>
+                    <strong>SiPaMeL AI Analyst</strong>
+                </div>
+                <div>${htmlContent}</div>
+            `;
+        } else {
+            bubble.textContent = content;
+        }
+        
+        chatWindow.appendChild(bubble);
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    async function handleChatSubmit(e) {
+        if (e) e.preventDefault();
+        const input = document.getElementById('userMessageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const message = input.value.trim();
+        if (!message) return;
+
+        // Tampilkan pesan user
+        appendMessage('user', message);
+        input.value = '';
+        input.disabled = true;
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menganalisis...';
+
+        // Placeholder bubble loading
+        const chatWindow = document.getElementById('chatWindow');
+        const loadingBubble = document.createElement('div');
+        loadingBubble.className = 'chat-bubble assistant text-muted';
+        loadingBubble.id = 'tempLoadingBubble';
+        loadingBubble.innerHTML = '<i class="bi bi-gear-wide-connected spin me-2"></i> AI sedang menganalisis data database...';
+        chatWindow.appendChild(loadingBubble);
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+
+        try {
+            const response = await fetch('/api/ai-chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ message: message })
+            });
+            const data = await response.json();
+            
+            // Hapus loading bubble
+            const tempBubble = document.getElementById('tempLoadingBubble');
+            if (tempBubble) tempBubble.remove();
+
+            if (data.status === 'success') {
+                appendMessage('assistant', data.reply);
+            } else {
+                appendMessage('assistant', '⚠️ Maaf, terjadi kendala saat memproses permintaan: ' + (data.message || 'Silakan coba lagi.'));
+            }
+        } catch (error) {
+            const tempBubble = document.getElementById('tempLoadingBubble');
+            if (tempBubble) tempBubble.remove();
+            appendMessage('assistant', '⚠️ Gagal terhubung ke layanan AI. Pastikan server aktif.');
+        } finally {
+            input.disabled = false;
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = '<i class="bi bi-send-fill me-1"></i> Tanya AI';
+            input.focus();
+        }
+    }
+
+    // Filter live table Stasiun & Stasiun Lawan
+    function filterSiteTable() {
+        const searchInput = document.getElementById('siteSearchInput');
+        const filterOp = document.getElementById('siteFilterOp');
+        const filterKota = document.getElementById('siteFilterKota');
+        const filterStatus = document.getElementById('siteFilterStatus');
+        
+        const searchVal = (searchInput ? searchInput.value : '').toLowerCase().trim();
+        const opVal = (filterOp ? filterOp.value : 'all').toLowerCase();
+        const kotaVal = (filterKota ? filterKota.value : 'all').toLowerCase();
+        const statusVal = (filterStatus ? filterStatus.value : 'all');
+        
+        const rows = document.querySelectorAll('#siteOpponentTableBody tr.site-row');
+        let visibleCount = 0;
+        
+        rows.forEach(row => {
+            const name = row.getAttribute('data-name') || '';
+            const operator = row.getAttribute('data-operator') || '';
+            const kota = row.getAttribute('data-kota') || '';
+            const status = row.getAttribute('data-status') || '';
+            const opponents = row.getAttribute('data-opponents') || '';
+            
+            let matchSearch = true;
+            if (searchVal) {
+                matchSearch = name.includes(searchVal) || opponents.includes(searchVal) || kota.includes(searchVal);
+            }
+            
+            let matchOp = (opVal === 'all' || operator === opVal);
+            let matchKota = (kotaVal === 'all' || kota === kotaVal);
+            let matchStatus = (statusVal === 'all' || status === statusVal);
+            
+            if (matchSearch && matchOp && matchKota && matchStatus) {
+                row.style.display = '';
+                visibleCount++;
+                const numCell = row.querySelector('.row-num');
+                if (numCell) numCell.textContent = visibleCount;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        const countDisplay = document.getElementById('siteCountDisplay');
+        if (countDisplay) {
+            countDisplay.textContent = `Menampilkan ${visibleCount} Site`;
+        }
+    }
+</script>
+{% endblock %}

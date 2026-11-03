@@ -30,3 +30,9 @@ static/uploads/
 
 # Runtime
 instance/
+
+
+# Binaries / Tools
+cloudflared.exe
+
+mingit/

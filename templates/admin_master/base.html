@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     
     <!-- ===== FAVICON ===== -->
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo1.png') }}">
-    <link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='logo1.png') }}">
-    <link rel="apple-touch-icon" href="{{ url_for('static', filename='logo1.png') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo3.png') }}">
+    <link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='logo3.png') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='logo3.png') }}">
     
     <title>{% block title %}Admin Master{% endblock %} - SiPaMeL</title>
     
@@ -476,6 +476,11 @@
                         </a>
                     </li>
                     <li>
+                        <a class="dropdown-item" href="{{ url_for('admin_master_analisis_ai') }}">
+                            <i class="bi bi-robot text-primary"></i> Analisis AI
+                        </a>
+                    </li>
+                    <li>
                         <a class="dropdown-item" href="{{ url_for('admin_master_daftar_stasiun') }}">
                             <i class="bi bi-broadcast"></i> Daftar Stasiun
                         </a>
@@ -513,6 +518,13 @@
                 <a class="nav-link {% if request.endpoint == 'admin_master_dashboard' %}active{% endif %}" 
                    href="{{ url_for('admin_master_dashboard') }}">
                     <i class="bi bi-speedometer2"></i> Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'admin_master_analisis_ai' %}active{% endif %}" 
+                   href="{{ url_for('admin_master_analisis_ai') }}">
+                    <i class="bi bi-robot text-primary"></i> Analisis AI
+                    <span class="badge ms-auto text-white" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); font-size: 0.65rem; padding: 0.25rem 0.5rem; border-radius: 20px;">AI Cerdas</span>
                 </a>
             </li>
         </ul>

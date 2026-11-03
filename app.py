@@ -1,3 +1,10 @@
+import sys
+if sys.platform == 'win32':
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    if hasattr(sys.stderr, 'reconfigure'):
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory, session, current_app, send_file, make_response
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -31,6 +38,7 @@ import tempfile
 import zipfile
 from docx.enum.section import WD_ORIENT
 import re
+from ai_analytics import get_ai_analytics_data, process_ai_query
 
 # Load environment variables
 load_dotenv()
@@ -117,6 +125,7 @@ def upload_pdf_to_local(file, operator, nomor_ba):
         return None, "Format file harus PDF"
     
     try:
+         # Buat struktur folder: pdf_uploads/[operator]/[tahun]/[bulan]/
         pdf_folder = app.config['PDF_UPLOAD_FOLDER']
         operator_folder = os.path.join(pdf_folder, operator)
         year = datetime.now().strftime('%Y')
@@ -125,11 +134,11 @@ def upload_pdf_to_local(file, operator, nomor_ba):
         
         os.makedirs(bulan_folder, exist_ok=True)
         
+         # Buat nama file unik
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         safe_filename = secure_filename(file.filename)
-        
-        # ===== INI PERUBAHAN PENTING =====
-        # Bersihkan nomor_ba untuk nama file (ganti slash dengan underscore)
+
+         # Bersihkan nomor BA untuk nama file
         clean_nomor_ba = re.sub(r'[\\/*?:"<>|/]', '_', nomor_ba)
         clean_nomor_ba = clean_nomor_ba.replace('/', '_').replace('\\', '_')
         clean_nomor_ba = clean_nomor_ba.replace(' ', '_')
@@ -142,7 +151,7 @@ def upload_pdf_to_local(file, operator, nomor_ba):
         
         file.save(filepath)
         
-        # Update route serve_pdf_file juga perlu diubah
+        # Buat URL untuk mengakses file
         pdf_url = url_for('serve_pdf_file', operator=operator, year=year, month=month, filename=filename, _external=True)
         
         print(f"✅ PDF saved locally: {filepath}")
@@ -4620,6 +4629,90 @@ def admin_master_dashboard():
                          operators=OPERATORS,
                          kota_list=kota_list,
                          current_date=current_date)
+
+# ============================================================================
+# AI ANALYTICS & CHAT ROUTES
+# ============================================================================
+
+@app.route('/analisis-ai')
+@login_required
+def analisis_ai():
+    """Universal redirector to AI analytics based on user role"""
+    if current_user.role == 'admin_master':
+        return redirect(url_for('admin_master_analisis_ai'))
+    elif current_user.role == 'admin_operator':
+        return redirect(url_for('admin_operator_analisis_ai'))
+    elif current_user.role == 'user_operator':
+        return redirect(url_for('user_operator_analisis_ai'))
+    return redirect(url_for('index'))
+
+@app.route('/admin-master/analisis-ai')
+@login_required
+@admin_master_required
+def admin_master_analisis_ai():
+    selected_operator = request.args.get('operator', 'all')
+    selected_kota = request.args.get('kota', 'all')
+    
+    analytics = get_ai_analytics_data(
+        db, Stasiun, StasiunLawan, UploadGambar, HasilLaporan,
+        OPERATORS, KOTA_LIST,
+        target_operator=selected_operator,
+        target_kota=selected_kota
+    )
+    return render_template('admin_master/analisis_ai.html', analytics=analytics)
+
+@app.route('/admin-operator/analisis-ai')
+@login_required
+@admin_operator_required
+def admin_operator_analisis_ai():
+    default_op = current_user.operator_type if current_user.operator_type else 'all'
+    selected_operator = request.args.get('operator', default_op)
+    selected_kota = request.args.get('kota', 'all')
+    
+    analytics = get_ai_analytics_data(
+        db, Stasiun, StasiunLawan, UploadGambar, HasilLaporan,
+        OPERATORS, KOTA_LIST,
+        target_operator=selected_operator,
+        target_kota=selected_kota
+    )
+    return render_template('admin_operator/analisis_ai.html', analytics=analytics)
+
+@app.route('/user-operator/analisis-ai')
+@login_required
+@user_operator_required
+def user_operator_analisis_ai():
+    default_op = current_user.operator_type if current_user.operator_type else 'all'
+    selected_operator = request.args.get('operator', default_op)
+    selected_kota = request.args.get('kota', 'all')
+    
+    analytics = get_ai_analytics_data(
+        db, Stasiun, StasiunLawan, UploadGambar, HasilLaporan,
+        OPERATORS, KOTA_LIST,
+        target_operator=selected_operator,
+        target_kota=selected_kota
+    )
+    return render_template('user_operator/analisis_ai.html', analytics=analytics)
+
+@app.route('/api/ai-chat', methods=['POST'])
+@login_required
+def api_ai_chat():
+    try:
+        data = request.get_json() or {}
+        user_message = data.get('message', '').strip()
+        if not user_message:
+            return jsonify({'status': 'error', 'message': 'Pesan tidak boleh kosong'}), 400
+
+        target_op = current_user.operator_type if current_user.role != 'admin_master' else 'all'
+        analytics = get_ai_analytics_data(
+            db, Stasiun, StasiunLawan, UploadGambar, HasilLaporan,
+            OPERATORS, KOTA_LIST,
+            target_operator=target_op
+        )
+        
+        result = process_ai_query(user_message, analytics)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 @app.route('/admin-master/users')
 @login_required
@@ -10285,4 +10378,11 @@ if __name__ == '__main__':
     print("Initializing database...")
     init_database()
     print("Application is running on http://localhost:5000")
+    
+    # Otomatis buka browser ke tampilan web
+    if os.environ.get('WERKZEUG_RUN_MAIN') == 'true' or not app.debug:
+        import threading
+        import webbrowser
+        threading.Timer(1.5, lambda: webbrowser.open('http://localhost:5000')).start()
+        
     app.run(debug=True, host='0.0.0.0', port=5000)
