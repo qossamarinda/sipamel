@@ -5,6 +5,14 @@ if sys.platform == 'win32':
     if hasattr(sys.stderr, 'reconfigure'):
         sys.stderr.reconfigure(encoding='utf-8', errors='replace')
 
+# Import RapidOCR early to initialize ONNX runtime & OpenMP threads
+try:
+    from rapidocr_onnxruntime import RapidOCR
+    RAPID_OCR_AVAILABLE = True
+except Exception as _e:
+    RAPID_OCR_AVAILABLE = False
+    print(f"RapidOCR not available: {_e}")
+
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory, session, current_app, send_file, make_response
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -4735,6 +4743,68 @@ def admin_operator_ocr():
 @user_operator_required
 def user_operator_ocr():
     return render_template('user_operator/ocr.html')
+
+rapid_ocr_instance = None
+
+def get_rapid_ocr():
+    global rapid_ocr_instance
+    if rapid_ocr_instance is None:
+        try:
+            from rapidocr_onnxruntime import RapidOCR
+            rapid_ocr_instance = RapidOCR()
+        except Exception as e:
+            print(f"Error initializing RapidOCR: {e}")
+    return rapid_ocr_instance
+
+@app.route('/api/ocr/rapidocr', methods=['POST'])
+@login_required
+def api_rapidocr():
+    """Endpoint untuk pemrosesan OCR menggunakan mesin RapidOCR"""
+    try:
+        data = request.get_json()
+        if not data or 'image' not in data:
+            return jsonify({'status': 'error', 'message': 'Data gambar tidak ditemukan'}), 400
+
+        image_data = data['image']
+        if ',' in image_data:
+            image_data = image_data.split(',')[1]
+
+        import base64
+        import io
+        from PIL import Image
+        import numpy as np
+
+        image_bytes = base64.b64decode(image_data)
+        image = Image.open(io.BytesIO(image_bytes)).convert('RGB')
+        img_np = np.array(image)
+
+        engine = get_rapid_ocr()
+        if engine is None:
+            return jsonify({'status': 'error', 'message': 'Mesin RapidOCR tidak dapat diinisialisasi di server'}), 500
+
+        result, elapse = engine(img_np)
+
+        if not result:
+            return jsonify({
+                'status': 'success',
+                'text': '',
+                'confidence': 0,
+                'elapse': round(sum(elapse) if elapse else 0, 2)
+            })
+
+        lines = [line[1] for line in result]
+        scores = [float(line[2]) for line in result]
+        avg_confidence = round((sum(scores) / len(scores)) * 100, 1) if scores else 0
+        total_elapse = round(sum(elapse) if elapse else 0, 2)
+
+        return jsonify({
+            'status': 'success',
+            'text': '\n'.join(lines),
+            'confidence': avg_confidence,
+            'elapse': total_elapse
+        })
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 @app.route('/admin-master/users')
 @login_required

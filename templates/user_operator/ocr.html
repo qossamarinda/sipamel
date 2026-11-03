@@ -167,13 +167,13 @@
         <div>
             <div class="ocr-badge">
                 <span class="pulse-dot"></span>
-                <span>Optical Character Recognition &bull; AI Powered</span>
+                <span>Multi-Engine OCR &bull; RapidOCR &bull; AI Powered</span>
             </div>
             <h2 class="fw-bold mb-2 text-white">
                 <i class="bi bi-camera me-2"></i>OCR (Capture to Text)
             </h2>
             <p class="mb-0 text-white-50" style="max-width: 650px;">
-                Ekstraksi teks otomatis dari foto fisik stasiun, lembar izin/ISR, spesifikasi perangkat microwave, atau tangkapan layar dengan pilihan mesin OCR fleksibel.
+                Ekstraksi teks otomatis dari foto fisik stasiun, lembar izin/ISR, spesifikasi perangkat microwave, atau tangkapan layar dengan pilihan mesin OCR fleksibel (RapidOCR, Tesseract, Gemini Vision, OCR.space).
             </p>
         </div>
         <div class="d-flex gap-2">
@@ -291,7 +291,8 @@
                                 <i class="bi bi-cpu text-primary me-1"></i> Mesin OCR:
                             </label>
                             <select id="ocrEngineSelector" class="form-select form-select-sm rounded-3 fw-semibold shadow-sm" onchange="handleEngineChange()">
-                                <option value="tesseract" selected>⚡ Tesseract.js (Lokal Cepat)</option>
+                                <option value="rapidocr" selected>🚀 RapidOCR (Cepat & Akurat)</option>
+                                <option value="tesseract">⚡ Tesseract.js (Lokal Browser)</option>
                                 <option value="gemini">✨ Google Gemini Vision AI</option>
                                 <option value="ocrspace">🌐 OCR.space Cloud API</option>
                             </select>
@@ -306,6 +307,11 @@
                                 <option value="eng">English saja</option>
                             </select>
                         </div>
+                    </div>
+
+                    <!-- RAPIDOCR INFO NOTE -->
+                    <div id="rapidocrNote" class="form-text small text-muted mb-3">
+                        <i class="bi bi-check-circle-fill text-success me-1"></i> <strong>RapidOCR:</strong> Menggunakan model Deep Learning PaddleOCR + ONNX Runtime. Sangat cepat dan optimal untuk tangkapan layar perangkat telekomunikasi.
                     </div>
 
                     <!-- GEMINI AI EXTRA CONFIG (Appears only if Gemini is selected) -->
@@ -385,8 +391,11 @@
                     <small class="text-muted">Hasil pembacaan karakter dapat langsung diedit atau disalin</small>
                 </div>
                 <div id="ocrStats" class="d-none">
-                    <span class="badge bg-info-subtle text-info border border-info-subtle rounded-pill px-2 py-1 small me-1" id="statEngineBadge">
-                        Engine: Tesseract
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-1 small me-1" id="statEngineBadge">
+                        Engine: RapidOCR
+                    </span>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1 small me-1" id="statConfidenceBadge">
+                        <i class="bi bi-check-circle me-1"></i><span id="statConfidence">0%</span> Akurasi
                     </span>
                     <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-1 small">
                         <i class="bi bi-stopwatch me-1"></i><span id="statTime">0s</span>
@@ -457,12 +466,15 @@
     const ocrProgressPercent = document.getElementById('ocrProgressPercent');
     const ocrStats = document.getElementById('ocrStats');
     const statEngineBadge = document.getElementById('statEngineBadge');
+    const statConfidence = document.getElementById('statConfidence');
+    const statConfidenceBadge = document.getElementById('statConfidenceBadge');
     const statTime = document.getElementById('statTime');
     const smartEntitiesSection = document.getElementById('smartEntitiesSection');
     const entityPillsContainer = document.getElementById('entityPillsContainer');
 
     // Engine settings sections
     const ocrEngineSelector = document.getElementById('ocrEngineSelector');
+    const rapidocrNote = document.getElementById('rapidocrNote');
     const geminiConfigSection = document.getElementById('geminiConfigSection');
     const ocrspaceConfigSection = document.getElementById('ocrspaceConfigSection');
     const geminiApiKeyInput = document.getElementById('geminiApiKey');
@@ -478,10 +490,13 @@
     // Handle Engine Switching
     function handleEngineChange() {
         const selected = ocrEngineSelector.value;
+        rapidocrNote.classList.add('d-none');
         geminiConfigSection.classList.add('d-none');
         ocrspaceConfigSection.classList.add('d-none');
 
-        if (selected === 'gemini') {
+        if (selected === 'rapidocr') {
+            rapidocrNote.classList.remove('d-none');
+        } else if (selected === 'gemini') {
             geminiConfigSection.classList.remove('d-none');
         } else if (selected === 'ocrspace') {
             ocrspaceConfigSection.classList.remove('d-none');
@@ -652,12 +667,79 @@
         }
 
         const engine = ocrEngineSelector.value;
-        if (engine === 'gemini') {
+        if (engine === 'rapidocr') {
+            await runRapidOCR();
+        } else if (engine === 'gemini') {
             await runGeminiOCR();
         } else if (engine === 'ocrspace') {
             await runOCRSpace();
         } else {
             await runTesseractOCR();
+        }
+    }
+
+    // 0. ENGINE RAPIDOCR (ONNX Deep Learning)
+    async function runRapidOCR() {
+        btnRunOCR.disabled = true;
+        ocrProgressContainer.classList.remove('d-none');
+        ocrProgressBar.style.width = '30%';
+        ocrStatusText.innerText = 'Mengirim gambar ke Engine RapidOCR...';
+        ocrProgressPercent.innerText = '30%';
+        ocrStats.classList.add('d-none');
+        smartEntitiesSection.classList.add('d-none');
+
+        const startTime = Date.now();
+
+        try {
+            const imageSource = await getProcessedImageBase64();
+
+            ocrProgressBar.style.width = '65%';
+            ocrStatusText.innerText = 'RapidOCR sedang mendeteksi & mengenali teks stasiun...';
+            ocrProgressPercent.innerText = '65%';
+
+            const response = await fetch('/api/ocr/rapidocr', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: imageSource })
+            });
+
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(errData.message || `HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            if (data.status !== 'success') {
+                throw new Error(data.message || 'Gagal memproses gambar dengan RapidOCR');
+            }
+
+            const text = data.text || 'Tidak ada teks yang dapat dikenali.';
+            ocrOutputText.value = text;
+            updateWordStats(text);
+
+            const duration = data.elapse ? data.elapse + 's' : (((Date.now() - startTime) / 1000).toFixed(1) + 's');
+            statEngineBadge.innerText = 'Engine: RapidOCR';
+            statTime.innerText = duration;
+            if (data.confidence) {
+                statConfidence.innerText = data.confidence + '%';
+                statConfidenceBadge.classList.remove('d-none');
+            } else {
+                statConfidenceBadge.classList.add('d-none');
+            }
+            ocrStats.classList.remove('d-none');
+
+            detectStationParameters(text);
+
+            ocrStatusText.innerText = 'Ekstraksi RapidOCR selesai!';
+            ocrProgressBar.style.width = '100%';
+            ocrProgressPercent.innerText = '100%';
+
+        } catch (err) {
+            console.error(err);
+            alert('Kesalahan RapidOCR:\n' + err.message);
+            ocrStatusText.innerText = 'Gagal memproses RapidOCR.';
+        } finally {
+            btnRunOCR.disabled = false;
         }
     }
 
@@ -702,6 +784,10 @@
             const duration = ((Date.now() - startTime) / 1000).toFixed(1);
             statEngineBadge.innerText = 'Engine: Tesseract.js';
             statTime.innerText = duration + 's';
+            if (result.data.confidence) {
+                statConfidence.innerText = Math.round(result.data.confidence) + '%';
+                statConfidenceBadge.classList.remove('d-none');
+            }
             ocrStats.classList.remove('d-none');
 
             detectStationParameters(text);
@@ -790,6 +876,7 @@
             const duration = ((Date.now() - startTime) / 1000).toFixed(1);
             statEngineBadge.innerText = 'Engine: Gemini AI';
             statTime.innerText = duration + 's';
+            statConfidenceBadge.classList.add('d-none');
             ocrStats.classList.remove('d-none');
 
             detectStationParameters(text);
@@ -859,6 +946,7 @@
             const duration = ((Date.now() - startTime) / 1000).toFixed(1);
             statEngineBadge.innerText = 'Engine: OCR.space';
             statTime.innerText = duration + 's';
+            statConfidenceBadge.classList.add('d-none');
             ocrStats.classList.remove('d-none');
 
             detectStationParameters(parsedText);
