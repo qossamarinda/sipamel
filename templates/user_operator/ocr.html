@@ -1018,6 +1018,81 @@
         }
     }
 
+    // Render MWLink Inspector Structured Table
+    function renderMWLinkTable(links) {
+        const section = document.getElementById('mwlinkInspectorSection');
+        const tbody = document.getElementById('mwlinkTableBody');
+        const badge = document.getElementById('mwlinkCountBadge');
+        if (!section || !tbody) return;
+
+        if (!links || links.length === 0) {
+            section.classList.add('d-none');
+            tbody.innerHTML = '';
+            return;
+        }
+
+        tbody.innerHTML = '';
+        if (badge) badge.innerText = `${links.length} Link Teridentifikasi`;
+
+        links.forEach((link, idx) => {
+            const tr = document.createElement('tr');
+            
+            const slotVal = (link.slot !== null && link.slot !== undefined) ? `Slot ${link.slot}` : '-';
+            const lawanVal = link.stasiun_lawan ? `<span class="fw-bold text-dark">${escapeHtml(link.stasiun_lawan)}</span>` : '<span class="text-muted fst-italic">Tidak terdeteksi</span>';
+            const txVal = link.tx_rf ? `<span class="badge bg-light text-dark border font-monospace">${Number(link.tx_rf).toFixed(2)}</span>` : '-';
+            const rxVal = link.rx_rf ? `<span class="badge bg-light text-dark border font-monospace">${Number(link.rx_rf).toFixed(2)}</span>` : '-';
+            const bwVal = link.bw_mhz ? `<span class="badge bg-info-subtle text-info-emphasis border border-info-subtle">${link.bw_mhz} MHz</span>` : '-';
+            const merkVal = link.merk_tipe ? `<span class="badge bg-secondary-subtle text-secondary border">${escapeHtml(link.merk_tipe)}</span>` : '-';
+
+            tr.innerHTML = `
+                <td class="fw-semibold text-primary">${slotVal}</td>
+                <td>${lawanVal}</td>
+                <td>${txVal}</td>
+                <td>${rxVal}</td>
+                <td>${bwVal}</td>
+                <td>${merkVal}</td>
+                <td class="text-end">
+                    <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 rounded-pill" title="Salin parameter link ini" onclick="copyLinkRow(${idx})">
+                        <i class="bi bi-clipboard me-1"></i> Salin
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        section.classList.remove('d-none');
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function copyLinkRow(idx) {
+        if (!currentMWLinks || !currentMWLinks[idx]) return;
+        const l = currentMWLinks[idx];
+        const parts = [];
+        if (l.stn_name) parts.push(`Stasiun: ${l.stn_name}`);
+        if (l.slot !== null && l.slot !== undefined) parts.push(`Slot: ${l.slot}`);
+        if (l.stasiun_lawan) parts.push(`Lawan: ${l.stasiun_lawan}`);
+        if (l.tx_rf) parts.push(`Tx: ${l.tx_rf} MHz`);
+        if (l.rx_rf) parts.push(`Rx: ${l.rx_rf} MHz`);
+        if (l.bw_mhz) parts.push(`BW: ${l.bw_mhz} MHz`);
+        if (l.merk_tipe) parts.push(`Perangkat: ${l.merk_tipe}`);
+
+        const text = parts.join(' | ');
+        navigator.clipboard.writeText(text).then(() => {
+            alert('Parameter Link Disalin:\n' + text);
+        }).catch(() => {
+            prompt('Salin teks link:', text);
+        });
+    }
+
+
     // 1. ENGINE TESSERACT.JS
     async function runTesseractOCR() {
         const lang = document.getElementById('ocrLanguage').value;
@@ -1253,13 +1328,28 @@
     }
 
     // Smart Entity Detection for SiPaMeL
-    function detectStationParameters(text) {
-        if (!text || text.trim().length === 0) {
+    function detectStationParameters(text, links = []) {
+        if ((!text || text.trim().length === 0) && (!links || links.length === 0)) {
             smartEntitiesSection.classList.add('d-none');
             return;
         }
 
         const found = [];
+
+        // Tambahkan pill dari link yang berhasil diidentifikasi RapidOCR
+        if (links && links.length > 0) {
+            links.forEach(l => {
+                if (l.stasiun_lawan) {
+                    found.push({ label: 'Lawan: ' + l.stasiun_lawan, val: l.stasiun_lawan, icon: 'bi-broadcast' });
+                }
+                if (l.tx_rf) {
+                    found.push({ label: 'Tx: ' + l.tx_rf + ' MHz', val: String(l.tx_rf), icon: 'bi-broadcast-pin' });
+                }
+                if (l.rx_rf) {
+                    found.push({ label: 'Rx: ' + l.rx_rf + ' MHz', val: String(l.rx_rf), icon: 'bi-broadcast-pin' });
+                }
+            });
+        }
 
         // 1. Frequencies
         const freqMatches = text.match(/\b\d+([.,]\d+)?\s*(GHz|MHz|ghz|mhz)\b/gi);
