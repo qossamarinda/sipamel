@@ -1,4 +1,13 @@
 import sys
+import os
+
+# Limit CPU threads for ONNX runtime & math libraries to prevent memory exhaustion / cgroups throttling in cloud containers
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
+
 if sys.platform == 'win32':
     if hasattr(sys.stdout, 'reconfigure'):
         sys.stdout.reconfigure(encoding='utf-8', errors='replace')
@@ -4751,10 +4760,23 @@ def get_rapid_ocr():
     if rapid_ocr_instance is None:
         try:
             from rapidocr_onnxruntime import RapidOCR
-            rapid_ocr_instance = RapidOCR()
+            rapid_ocr_instance = RapidOCR(
+                intra_op_num_threads=1,
+                inter_op_num_threads=1
+            )
         except Exception as e:
             print(f"Error initializing RapidOCR: {e}")
     return rapid_ocr_instance
+
+# Pre-warm RapidOCR asynchronously at server startup so first request has zero cold-start delay
+import threading
+def _prewarm_rapidocr():
+    try:
+        get_rapid_ocr()
+    except Exception as e:
+        print(f"RapidOCR prewarm notice: {e}")
+
+threading.Thread(target=_prewarm_rapidocr, daemon=True).start()
 
 @app.route('/api/ocr/rapidocr', methods=['POST'])
 @login_required
@@ -4771,18 +4793,31 @@ def api_rapidocr():
 
         import base64
         import io
+        import gc
         from PIL import Image
         import numpy as np
 
         image_bytes = base64.b64decode(image_data)
         image = Image.open(io.BytesIO(image_bytes)).convert('RGB')
+        
+        # Batasi dimensi maksimal 1400px untuk menghemat memori & mempercepat inferensi di cloud server
+        max_dim = 1400
+        if max(image.size) > max_dim:
+            scale = max_dim / max(image.size)
+            new_size = (int(image.size[0] * scale), int(image.size[1] * scale))
+            image = image.resize(new_size, Image.Resampling.LANCZOS)
+
         img_np = np.array(image)
 
         engine = get_rapid_ocr()
         if engine is None:
-            return jsonify({'status': 'error', 'message': 'Mesin RapidOCR tidak dapat diinisialisasi di server'}), 500
+            return jsonify({'status': 'error', 'message': 'Mesin RapidOCR tidak dapat diinisialisasi di server. Pastikan dependensi ONNX terpasang.'}), 500
 
-        result, elapse = engine(img_np)
+        # use_cls=False melewati klasifikasi rotasi 180 derajat untuk mempercepat inferensi pada tangkapan layar
+        result, elapse = engine(img_np, use_cls=False)
+
+        del img_np, image, image_bytes
+        gc.collect()
 
         if not result:
             return jsonify({
