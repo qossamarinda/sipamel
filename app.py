@@ -328,6 +328,15 @@ login_manager.refresh_view = 'login'
 login_manager.needs_refresh_message = 'Sesi Anda telah berakhir, silakan login kembali.'
 login_manager.needs_refresh_message_category = 'warning'
 
+@login_manager.unauthorized_handler
+def unauthorized_callback():
+    if request.path.startswith('/api/') or request.is_json or request.headers.get('Accept') == 'application/json':
+        return jsonify({
+            'status': 'error',
+            'message': 'Sesi login Anda telah berakhir. Silakan login kembali.'
+        }), 401
+    return redirect(url_for('login', next=request.url))
+
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -10736,14 +10745,14 @@ _STATION_OCR_CACHE = {}
 @app.route('/api/stasiun/<int:station_id>/ocr-scan-uploads', methods=['POST'])
 @login_required
 def api_ocr_scan_station_uploads(station_id):
-    """Jalankan RapidOCR langsung pada gambar-gambar capture terupload stasiun ini"""
+    """Jalankan RapidOCR langsung pada gambar-gambar capture terupload stasiun ini dengan optimasi Cloudinary"""
     try:
         data = request.get_json(silent=True) or {}
         force_rescan = request.args.get('force') == '1' or data.get('force', False)
         
         station = Stasiun.query.get_or_404(station_id)
-        # Ambil semua gambar capture terupload stasiun ini, urutkan dari ID awal (Port & Radio Setting)
-        uploads = UploadGambar.query.filter_by(stasiun_id=station_id).order_by(UploadGambar.id.asc()).limit(8).all()
+        # Ambil gambar capture terupload stasiun ini (urutkan ID asc, ambil max 4 untuk kecepatan & hemat RAM)
+        uploads = UploadGambar.query.filter_by(stasiun_id=station_id).order_by(UploadGambar.id.asc()).limit(4).all()
         if not uploads:
             return jsonify({'status': 'error', 'message': 'Belum ada capturean yang diunggah untuk stasiun ini pada menu galeri stasiun.'}), 404
 
@@ -10760,9 +10769,7 @@ def api_ocr_scan_station_uploads(station_id):
                     'cached': True
                 })
 
-        import urllib.request
-        import tempfile
-        import shutil
+        import tempfile, shutil, requests, gc
         from mwlink_ocr_engine import process_microwave_ocr
 
         temp_dir = tempfile.mkdtemp()
@@ -10770,12 +10777,23 @@ def api_ocr_scan_station_uploads(station_id):
         try:
             for idx, up in enumerate(uploads):
                 if up.cloudinary_url:
+                    img_url = up.cloudinary_url
+                    # Optimasi Cloudinary: ubah resolusi ke max width 1200 & compress ke jpeg agar unduhan super cepat (< 100KB)
+                    if '/image/upload/' in img_url and '/w_' not in img_url:
+                        img_url = img_url.replace('/image/upload/', '/image/upload/w_1200,c_limit,q_auto,f_jpg/')
+                    
                     fpath = os.path.join(temp_dir, f"upload_{idx+1}.jpg")
-                    urllib.request.urlretrieve(up.cloudinary_url, fpath)
-                    temp_paths.append(fpath)
+                    try:
+                        r_img = requests.get(img_url, timeout=12, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+                        if r_img.status_code == 200:
+                            with open(fpath, 'wb') as f_out:
+                                f_out.write(r_img.content)
+                            temp_paths.append(fpath)
+                    except Exception as err_dl:
+                        print(f"Peringatan: Gagal unduh {img_url}: {err_dl}")
 
             if not temp_paths:
-                return jsonify({'status': 'error', 'message': 'Tidak dapat mengunduh gambar capture terupload.'}), 400
+                return jsonify({'status': 'error', 'message': 'Tidak dapat mengunduh gambar capture terupload dari Cloudinary.'}), 400
 
             result_data = process_microwave_ocr(temp_paths, station_name_hint=station.stasiun_name)
             links = result_data.get('links', [])
@@ -10786,6 +10804,8 @@ def api_ocr_scan_station_uploads(station_id):
                 'text': result_data.get('text', '')
             }
 
+            gc.collect()
+
             return jsonify({
                 'status': 'success',
                 'links': links,
@@ -10795,7 +10815,9 @@ def api_ocr_scan_station_uploads(station_id):
         finally:
             shutil.rmtree(temp_dir, ignore_errors=True)
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        import traceback
+        print(f"Error in api_ocr_scan_station_uploads: {traceback.format_exc()}")
+        return jsonify({'status': 'error', 'message': f"Gagal membaca capturean stasiun: {str(e)}"}), 500
 
 if __name__ == '__main__':
     print("Starting Station Monitoring System...")

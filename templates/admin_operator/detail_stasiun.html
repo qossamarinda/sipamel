@@ -2241,10 +2241,27 @@ async function isiDariHasilOCR(forceRescan = false) {
         try {
             const resp = await fetch(`/api/stasiun/${stationId}/ocr-scan-uploads`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                 body: JSON.stringify({ force: forceRescan })
             });
-            const res = await resp.json();
+
+            // Baca respon sebagai teks terlebih dahulu untuk mencegah SyntaxError "Unexpected end of JSON input"
+            const textResp = await resp.text();
+            let res = null;
+            try {
+                res = JSON.parse(textResp);
+            } catch (parseErr) {
+                cancelOcrProgress();
+                if (resp.status === 401 || textResp.includes('/login') || textResp.includes('login-card')) {
+                    alert('Sesi login Anda telah berakhir. Silakan login kembali di tab baru, lalu ulangi tombol ini.');
+                } else if (resp.status === 502 || resp.status === 504 || !textResp.trim()) {
+                    alert(`Server Render sedang memuat ulang atau memproses data (HTTP ${resp.status}). Silakan coba klik sekali lagi dalam beberapa detik.`);
+                } else {
+                    alert(`Gagal membaca capturean stasiun (HTTP ${resp.status}):
+${textResp.substring(0, 150)}`);
+                }
+                return;
+            }
             if (resp.ok && res.status === 'success' && res.links && res.links.length > 0) {
                 finishOcrProgress(true);
                 ocrLinks = res.links;
@@ -2565,12 +2582,33 @@ function applyQuickOcrResults() {
     }
 }
 
-async function scanDariGambarTerupload() {
+async function scanDariGambarTerupload(forceRescan = false) {
     const stationId = '{{ station.id }}';
     showOcrToast('Sedang memindai gambar terupload stasiun ini dengan RapidOCR...');
     try {
-        const resp = await fetch(`/api/stasiun/${stationId}/ocr-scan-uploads`, { method: 'POST' });
-        const res = await resp.json();
+        const resp = await fetch(`/api/stasiun/${stationId}/ocr-scan-uploads`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({ force: forceRescan })
+            });
+
+            // Baca respon sebagai teks terlebih dahulu untuk mencegah SyntaxError "Unexpected end of JSON input"
+            const textResp = await resp.text();
+            let res = null;
+            try {
+                res = JSON.parse(textResp);
+            } catch (parseErr) {
+                cancelOcrProgress();
+                if (resp.status === 401 || textResp.includes('/login') || textResp.includes('login-card')) {
+                    alert('Sesi login Anda telah berakhir. Silakan login kembali di tab baru, lalu ulangi tombol ini.');
+                } else if (resp.status === 502 || resp.status === 504 || !textResp.trim()) {
+                    alert(`Server Render sedang memuat ulang atau memproses data (HTTP ${resp.status}). Silakan coba klik sekali lagi dalam beberapa detik.`);
+                } else {
+                    alert(`Gagal membaca capturean stasiun (HTTP ${resp.status}):
+${textResp.substring(0, 150)}`);
+                }
+                return;
+            }
         if (!resp.ok || res.status !== 'success' || !res.links || res.links.length === 0) {
             throw new Error(res.message || 'Tidak ada link yang terdeteksi pada gambar terupload.');
         }
