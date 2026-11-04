@@ -281,13 +281,15 @@
                                                         {% if latest_status %}
                                                             <span class="badge bg-{{ 
                                                                 'success' if latest_status.status == 'aktif' else
-                                                                'danger' if latest_status.status == 'tidak_aktif' else
+                                                                'secondary' if latest_status.status == 'tidak_aktif' else
+                                                                'danger' if latest_status.status == 'tidak_berizin' else
                                                                 'info' if latest_status.status == 'tidak_sesuai' else
                                                                 'secondary'
                                                             }}" style="padding: 2px 5px; font-size: 10px;">
                                                                 {{ 
                                                                     'Aktif' if latest_status.status == 'aktif' else
                                                                     'Tidak Aktif' if latest_status.status == 'tidak_aktif' else
+                                                                    'Tidak Berizin' if latest_status.status == 'tidak_berizin' else
                                                                     'Tidak Sesuai' if latest_status.status == 'tidak_sesuai' else
                                                                     latest_status.status
                                                                 }}

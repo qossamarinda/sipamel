@@ -153,7 +153,8 @@
     }
     
     .lawan-row.aktif { border-left-color: #28a745; }
-    .lawan-row.tidak_aktif { border-left-color: #dc3545; }
+    .lawan-row.tidak_aktif { border-left-color: #6c757d; }
+    .lawan-row.tidak_berizin { border-left-color: #dc3545; }
     .lawan-row.tidak_sesuai { border-left-color: #17a2b8; }
     .lawan-row.belum_ada { border-left-color: #6c757d; }
     
@@ -176,7 +177,8 @@
     }
     
     .status-aktif { background: #28a745; color: white; }
-    .status-tidak_aktif { background: #dc3545; color: white; }
+    .status-tidak_aktif { background: #6c757d; color: white; }
+    .status-tidak_berizin { background: #dc3545; color: white; }
     .status-tidak_sesuai { background: #17a2b8; color: white; }
     .status-belum_ada { background: #6c757d; color: white; }
     
@@ -690,13 +692,15 @@
                                                     {% if latest_status %}
                                                         <span class="badge bg-{{ 
                                                             'success' if latest_status.status == 'aktif' else
-                                                            'danger' if latest_status.status == 'tidak_aktif' else
+                                                            'secondary' if latest_status.status == 'tidak_aktif' else
+                                                            'danger' if latest_status.status == 'tidak_berizin' else
                                                             'info' if latest_status.status == 'tidak_sesuai' else
                                                             'secondary'
                                                         }}" style="padding: 2px 5px; font-size: 10px;">
                                                             {{ 
                                                                 'Aktif' if latest_status.status == 'aktif' else
                                                                 'Tidak Aktif' if latest_status.status == 'tidak_aktif' else
+                                                                'Tidak Berizin' if latest_status.status == 'tidak_berizin' else
                                                                 'Tidak Sesuai' if latest_status.status == 'tidak_sesuai' else
                                                                 latest_status.status
                                                             }}

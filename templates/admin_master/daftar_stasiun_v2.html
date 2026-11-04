@@ -299,7 +299,9 @@
                                                             {% if latest_status.status == 'aktif' %}
                                                                 <span class="badge bg-success" style="padding: 2px 5px; font-size: 10px;">Aktif</span>
                                                             {% elif latest_status.status == 'tidak_aktif' %}
-                                                                <span class="badge bg-danger" style="padding: 2px 5px; font-size: 10px;">Tidak Aktif</span>
+                                                                <span class="badge bg-secondary" style="padding: 2px 5px; font-size: 10px;">Tidak Aktif</span>
+                                                            {% elif latest_status.status == 'tidak_berizin' %}
+                                                                <span class="badge bg-danger" style="padding: 2px 5px; font-size: 10px;">Tidak Berizin</span>
                                                             {% elif latest_status.status == 'tidak_sesuai' %}
                                                                 <span class="badge bg-info" style="padding: 2px 5px; font-size: 10px;">Tidak Sesuai</span>
                                                             {% else %}

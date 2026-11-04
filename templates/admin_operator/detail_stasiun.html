@@ -567,6 +567,12 @@
 }
 
 .opponent-status.tidak_aktif { 
+    background: #e2e3e5 !important; 
+    color: #41464b !important; 
+    border: 1px solid #d3d6d8;
+}
+
+.opponent-status.tidak_berizin { 
     background: #f8d7da !important; 
     color: #721c24 !important; 
     border: 1px solid #f5c6cb;
@@ -677,8 +683,15 @@
 }
 
 .status-item.tidak_aktif { 
+    background: #e2e3e5 !important; 
+    color: #41464b !important; 
+    border: 1px solid #d3d6d8;
+}
+
+.status-item.tidak_berizin { 
     background: #f8d7da !important; 
     color: #721c24 !important; 
+    border: 1px solid #f5c6cb;
 }
 
 .status-item.tidak_sesuai { 
@@ -1044,8 +1057,8 @@
                                 <div class="opponent-pemeriksaan-section mt-2 pt-2" style="border-top: 1px dashed #dee2e6;">
                                     <div class="d-flex justify-content-between align-items-center mb-1">
                                         <span class="text-muted" style="font-size: 0.8rem;">Hasil Pemeriksaan:</span>
-                                        <span class="badge {% if opponent.hasil_pemeriksaan == 'Tidak Sesuai Parameter Teknis' or opponent.hasil_pemeriksaan == 'Tidak Aktif' %}bg-danger-subtle text-danger border border-danger-subtle{% elif opponent.hasil_pemeriksaan == 'Tidak Berizin' %}bg-warning-subtle text-warning-emphasis border border-warning-subtle{% elif opponent.hasil_pemeriksaan == 'Belum Diperiksa' %}bg-secondary-subtle text-secondary border{% else %}bg-success-subtle text-success border border-success-subtle{% endif %} px-2 py-1" style="font-size: 0.75rem;" id="badgeHasil_{{ opponent.id }}">
-                                            <i class="bi {% if opponent.hasil_pemeriksaan == 'Tidak Sesuai Parameter Teknis' or opponent.hasil_pemeriksaan == 'Tidak Aktif' %}bi-x-circle{% elif opponent.hasil_pemeriksaan == 'Tidak Berizin' %}bi-shield-exclamation{% elif opponent.hasil_pemeriksaan == 'Belum Diperiksa' %}bi-hourglass{% else %}bi-check-circle{% endif %} me-1"></i>
+                                        <span class="badge {% if opponent.hasil_pemeriksaan == 'Tidak Berizin' or opponent.hasil_pemeriksaan == 'Tidak Sesuai Parameter Teknis' %}bg-danger-subtle text-danger border border-danger-subtle{% elif opponent.hasil_pemeriksaan == 'Tidak Aktif' %}bg-secondary-subtle text-secondary border border-secondary-subtle{% elif opponent.hasil_pemeriksaan == 'Belum Diperiksa' %}bg-secondary-subtle text-secondary border{% else %}bg-success-subtle text-success border border-success-subtle{% endif %} px-2 py-1" style="font-size: 0.75rem;" id="badgeHasil_{{ opponent.id }}">
+                                            <i class="bi {% if opponent.hasil_pemeriksaan == 'Tidak Berizin' %}bi-shield-x{% elif opponent.hasil_pemeriksaan == 'Tidak Sesuai Parameter Teknis' %}bi-exclamation-triangle{% elif opponent.hasil_pemeriksaan == 'Tidak Aktif' %}bi-dash-circle{% elif opponent.hasil_pemeriksaan == 'Belum Diperiksa' %}bi-hourglass{% else %}bi-check-circle{% endif %} me-1"></i>
                                             {{ opponent.hasil_pemeriksaan or 'Sesuai ISR' }}
                                         </span>
                                     </div>
