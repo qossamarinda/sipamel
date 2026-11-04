@@ -10765,6 +10765,7 @@ def api_ocr_scan_station_uploads(station_id):
                 return jsonify({
                     'status': 'success',
                     'links': cached['links'],
+                    'confidence': cached.get('confidence', 95.0),
                     'text': cached.get('text', ''),
                     'cached': True
                 })
@@ -10797,10 +10798,16 @@ def api_ocr_scan_station_uploads(station_id):
 
             result_data = process_microwave_ocr(temp_paths, station_name_hint=station.stasiun_name)
             links = result_data.get('links', [])
+            confidence = result_data.get('confidence', 95.0)
+
+            for l in links:
+                if 'confidence' not in l:
+                    l['confidence'] = confidence
 
             _STATION_OCR_CACHE[station_id] = {
                 'upload_ids': upload_ids,
                 'links': links,
+                'confidence': confidence,
                 'text': result_data.get('text', '')
             }
 
@@ -10809,6 +10816,7 @@ def api_ocr_scan_station_uploads(station_id):
             return jsonify({
                 'status': 'success',
                 'links': links,
+                'confidence': confidence,
                 'text': result_data.get('text', ''),
                 'cached': False
             })

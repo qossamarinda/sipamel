@@ -501,6 +501,9 @@ def process_microwave_ocr(image_paths: List[str], station_name_hint: Optional[st
     links = inspect_microwave_images(image_paths, station_name_hint=station_name_hint, precomputed_tokens=tokens_by_file)
     elapse = round(time.time() - t0, 2)
 
+    for l in links:
+        l['confidence'] = avg_conf
+
     return {
         'text': full_text,
         'confidence': avg_conf,
