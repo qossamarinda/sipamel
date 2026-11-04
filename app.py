@@ -10718,6 +10718,46 @@ def api_update_stasiun_lawan_parameter(lawan_id):
         db.session.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
 
+
+@app.route('/api/stasiun/<int:station_id>/ocr-scan-uploads', methods=['POST'])
+@login_required
+def api_ocr_scan_station_uploads(station_id):
+    """Jalankan RapidOCR pada gambar-gambar terupload stasiun ini"""
+    try:
+        station = Stasiun.query.get_or_404(station_id)
+        # Ambil gambar-gambar terupload stasiun ini
+        uploads = UploadGambar.query.filter_by(stasiun_id=station_id).order_by(UploadGambar.uploaded_at.desc()).limit(3).all()
+        if not uploads:
+            return jsonify({'status': 'error', 'message': 'Belum ada gambar yang diunggah untuk stasiun ini.'}), 404
+
+        import urllib.request
+        import tempfile
+        import shutil
+        from mwlink_ocr_engine import process_microwave_ocr
+
+        temp_dir = tempfile.mkdtemp()
+        temp_paths = []
+        try:
+            for idx, up in enumerate(uploads):
+                if up.cloudinary_url:
+                    fpath = os.path.join(temp_dir, f"upload_{idx+1}.jpg")
+                    urllib.request.urlretrieve(up.cloudinary_url, fpath)
+                    temp_paths.append(fpath)
+
+            if not temp_paths:
+                return jsonify({'status': 'error', 'message': 'Tidak dapat mengunduh gambar terupload.'}), 400
+
+            result_data = process_microwave_ocr(temp_paths, station_name_hint=station.stasiun_name)
+            return jsonify({
+                'status': 'success',
+                'links': result_data.get('links', []),
+                'text': result_data.get('text', '')
+            })
+        finally:
+            shutil.rmtree(temp_dir, ignore_errors=True)
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
 if __name__ == '__main__':
     print("Starting Station Monitoring System...")
     print("Initializing database...")

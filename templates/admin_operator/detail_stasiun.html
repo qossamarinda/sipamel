@@ -1659,9 +1659,39 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="text-dark fw-bold small d-flex align-items-center" style="font-size: 0.85rem;">
                                 <i class="bi bi-sliders me-2 text-primary"></i> Data Parameter Teknis (ISR vs Hasil Pemeriksaan)
                             </div>
-                            <button type="button" class="btn btn-outline-secondary btn-sm px-3 rounded-pill" onclick="samakanDenganISR()" style="font-size: 0.78rem;">
-                                <i class="bi bi-arrow-repeat me-1"></i> Samakan dengan ISR
-                            </button>
+                            <div class="d-flex align-items-center gap-2">
+                                <!-- TOMBOL ISI DARI HASIL OCR (Di samping kiri Samakan dengan ISR) -->
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-outline-primary btn-sm px-3 fw-semibold shadow-sm" onclick="isiDariHasilOCR()" id="btnIsiDariOCR" style="font-size: 0.78rem;" title="Isi frekuensi Tx, Rx, BW, dan Merk Perangkat dari hasil pemindaian OCR">
+                                        <i class="bi bi-camera me-1"></i> Isi dari Hasil OCR
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm dropdown-toggle dropdown-toggle-split shadow-sm" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.78rem;">
+                                        <span class="visually-hidden">Pilihan OCR</span>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3 small">
+                                        <li>
+                                            <a class="dropdown-item py-2" href="javascript:void(0)" onclick="isiDariHasilOCR()">
+                                                <i class="bi bi-lightning-charge text-warning me-2"></i> Gunakan Hasil OCR Terakhir
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item py-2" href="javascript:void(0)" onclick="bukaQuickOcrModal()">
+                                                <i class="bi bi-camera-fill text-primary me-2"></i> Scan Screenshot Baru (Paste Ctrl+V / Upload)
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item py-2" href="javascript:void(0)" onclick="scanDariGambarTerupload()">
+                                                <i class="bi bi-images text-success me-2"></i> Scan Gambar Terupload Stasiun Ini
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <!-- TOMBOL SAMAKAN DENGAN ISR -->
+                                <button type="button" class="btn btn-outline-secondary btn-sm px-3 rounded-pill fw-semibold shadow-sm" onclick="samakanDenganISR()" style="font-size: 0.78rem;">
+                                    <i class="bi bi-arrow-repeat me-1"></i> Samakan dengan ISR
+                                </button>
+                            </div>
                         </div>
 
                         <div class="table-responsive">
@@ -1740,6 +1770,84 @@ document.addEventListener('DOMContentLoaded', function() {
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================================ -->
+<!-- MODAL QUICK OCR SCAN (Untuk Isi Parameter dari Screenshot)                   -->
+<!-- ============================================================================ -->
+<div class="modal fade" id="quickOcrModal" tabindex="-1" aria-labelledby="quickOcrModalLabel" aria-hidden="true" style="z-index: 1065;">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-dark text-white py-3 px-4">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-camera-fill fs-5 me-2 text-warning"></i>
+                    <div>
+                        <h6 class="modal-title fw-bold mb-0" id="quickOcrModalLabel">Scan Parameter dari Screenshot (RapidOCR)</h6>
+                        <small class="text-white-50">Ekstraksi otomatis Tx, Rx, BW, dan Merk Perangkat</small>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <!-- Dropzone / Paste Area -->
+                <div id="quickOcrDropzone" class="border border-2 border-dashed rounded-3 p-4 text-center bg-light" style="cursor: pointer;" onclick="document.getElementById('quickOcrFileInput').click()">
+                    <i class="bi bi-cloud-arrow-up fs-1 text-primary mb-2 d-block"></i>
+                    <strong class="d-block text-dark mb-1">Klik untuk Upload atau Tempel Gambar (Ctrl + V)</strong>
+                    <span class="text-muted small">Tangkapan layar Radio Configuration / Port Setting / LCT</span>
+                    <input type="file" id="quickOcrFileInput" accept="image/*" class="d-none" onchange="handleQuickOcrFileSelect(this.files)">
+                </div>
+
+                <!-- Preview Area -->
+                <div id="quickOcrPreviewContainer" class="d-none mt-3 text-center position-relative">
+                    <img id="quickOcrPreviewImg" src="" class="img-fluid rounded-3 border shadow-sm" style="max-height: 200px;">
+                    <div class="mt-2 small text-muted" id="quickOcrFileName"></div>
+                </div>
+
+                <!-- Progress / Status -->
+                <div id="quickOcrStatusArea" class="d-none mt-3">
+                    <div class="d-flex align-items-center mb-1">
+                        <span class="spinner-border spinner-border-sm text-primary me-2"></span>
+                        <span class="small fw-semibold text-primary" id="quickOcrStatusText">Sedang mendeteksi parameter...</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" style="width: 75%;"></div>
+                    </div>
+                </div>
+
+                <!-- Detected Result Summary -->
+                <div id="quickOcrResultArea" class="d-none mt-3 border rounded-3 p-3 bg-success bg-opacity-10 border-success-subtle">
+                    <div class="fw-bold small text-success mb-2 d-flex align-items-center">
+                        <i class="bi bi-check-circle-fill me-2"></i> Parameter Berhasil Dikenali:
+                    </div>
+                    <div class="row g-2 small">
+                        <div class="col-6">
+                            <span class="text-muted">Tx:</span> <strong id="quickOcrResultTx" class="font-monospace text-dark">-</strong> MHz
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted">Rx:</span> <strong id="quickOcrResultRx" class="font-monospace text-dark">-</strong> MHz
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted">Bandwidth:</span> <strong id="quickOcrResultBw" class="font-monospace text-dark">-</strong> MHz
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted">Merk:</span> <strong id="quickOcrResultTipe" class="text-dark">-</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light px-4 py-2 border-top d-flex justify-content-between">
+                <button type="button" class="btn btn-secondary btn-sm px-3 rounded-pill" data-bs-dismiss="modal">Batal</button>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-primary btn-sm px-3 rounded-pill" id="btnRunQuickOCR" onclick="runQuickOCR()" disabled>
+                        <i class="bi bi-cpu me-1"></i> Scan dengan RapidOCR
+                    </button>
+                    <button type="button" class="btn btn-success btn-sm px-3 rounded-pill d-none" id="btnApplyQuickOCR" onclick="applyQuickOcrResults()">
+                        <i class="bi bi-check-lg me-1"></i> Terapkan ke Form
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -1866,6 +1974,274 @@ async function submitPeriksaParameter(e) {
         btn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Simpan Hasil Pemeriksaan';
     }
 }
+
+// ============================================================================
+// LOGIKA FITUR ISI DARI HASIL OCR
+// ============================================================================
+let quickOcrModalInstance = null;
+let currentQuickOcrImageBase64 = null;
+let detectedQuickOcrLink = null;
+
+function flashFieldHighlight(fieldId) {
+    const el = document.getElementById(fieldId);
+    if (!el) return;
+    el.style.transition = 'all 0.3s ease';
+    el.style.backgroundColor = '#d1e7dd';
+    el.style.borderColor = '#198754';
+    setTimeout(() => {
+        el.style.backgroundColor = '';
+        el.style.borderColor = '';
+    }, 2000);
+}
+
+function showOcrToast(msg) {
+    let toast = document.getElementById('ocrActionToast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'ocrActionToast';
+        toast.style.position = 'fixed';
+        toast.style.bottom = '25px';
+        toast.style.right = '25px';
+        toast.style.zIndex = '99999';
+        toast.style.backgroundColor = '#0d6efd';
+        toast.style.color = '#fff';
+        toast.style.padding = '12px 24px';
+        toast.style.borderRadius = '50px';
+        toast.style.boxShadow = '0 10px 30px rgba(0,0,0,0.25)';
+        toast.style.fontSize = '0.86rem';
+        toast.style.fontWeight = '600';
+        toast.style.transition = 'all 0.4s ease';
+        document.body.appendChild(toast);
+    }
+    toast.innerText = msg;
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateY(0)';
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(20px)';
+    }, 3800);
+}
+
+function isiDariHasilOCR() {
+    let ocrLinks = [];
+    try {
+        const raw = localStorage.getItem('sipamel_last_ocr_links');
+        if (raw) {
+            ocrLinks = JSON.parse(raw);
+        }
+    } catch (e) {
+        console.warn('Gagal membaca localStorage:', e);
+    }
+
+    if (!ocrLinks || ocrLinks.length === 0) {
+        bukaQuickOcrModal();
+        return;
+    }
+
+    const lawanNama = (document.getElementById('modalStationLawan').innerText || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    let matched = null;
+
+    if (ocrLinks.length === 1) {
+        matched = ocrLinks[0];
+    } else {
+        for (const l of ocrLinks) {
+            const cand = (l.stasiun_lawan || l.lawan || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            if (cand && (lawanNama.includes(cand) || cand.includes(lawanNama))) {
+                matched = l;
+                break;
+            }
+        }
+        if (!matched) {
+            matched = ocrLinks[0];
+        }
+    }
+
+    applyOCRValuesToForm(matched);
+}
+
+function applyOCRValuesToForm(link) {
+    if (!link) return;
+
+    let appliedCount = 0;
+
+    // 1. Frekuensi Tx
+    if (link.tx_rf !== undefined && link.tx_rf !== null) {
+        document.getElementById('edit_hasil_tx').value = link.tx_rf;
+        flashFieldHighlight('edit_hasil_tx');
+        appliedCount++;
+    }
+
+    // 2. Frekuensi Rx
+    if (link.rx_rf !== undefined && link.rx_rf !== null) {
+        document.getElementById('edit_hasil_rx').value = link.rx_rf;
+        flashFieldHighlight('edit_hasil_rx');
+        appliedCount++;
+    }
+
+    // 3. Bandwidth
+    const rawBw = link.bw_mhz !== undefined ? link.bw_mhz : link.bandwidth;
+    if (rawBw !== undefined && rawBw !== null) {
+        let bwVal = String(rawBw).trim();
+        const isrBw = (document.getElementById('val_isr_bw').innerText || '').trim();
+        if (isrBw.length >= 5 && Number(bwVal) < 1000) {
+            bwVal = String(Math.round(Number(bwVal) * 1000));
+        }
+        document.getElementById('edit_hasil_bw').value = bwVal;
+        flashFieldHighlight('edit_hasil_bw');
+        appliedCount++;
+    }
+
+    // 4. Merk / Tipe Perangkat
+    const rawTipe = link.merk_tipe || link.perangkat || link.equip_info;
+    if (rawTipe) {
+        let tipeStr = typeof rawTipe === 'object' ? (rawTipe.full_name || rawTipe.model || 'NEC') : String(rawTipe);
+        document.getElementById('edit_hasil_tipe').value = tipeStr;
+        flashFieldHighlight('edit_hasil_tipe');
+        appliedCount++;
+    }
+
+    // Bandingkan dengan Nilai ISR
+    const txIsr = (document.getElementById('val_isr_tx').innerText || '').trim();
+    const rxIsr = (document.getElementById('val_isr_rx').innerText || '').trim();
+    const txHasil = (document.getElementById('edit_hasil_tx').value || '').trim();
+    const rxHasil = (document.getElementById('edit_hasil_rx').value || '').trim();
+
+    if (txIsr && rxIsr && txHasil && rxHasil) {
+        if (Number(txIsr) === Number(txHasil) && Number(rxIsr) === Number(rxHasil)) {
+            document.getElementById('editHasilPemeriksaan').value = 'Sesuai ISR';
+        } else {
+            document.getElementById('editHasilPemeriksaan').value = 'Tidak Sesuai Parameter Teknis';
+        }
+    }
+
+    showOcrToast(`✓ ${appliedCount} parameter (Tx, Rx, BW, Merk) berhasil diisi dari hasil OCR!`);
+}
+
+function bukaQuickOcrModal() {
+    const modalEl = document.getElementById('quickOcrModal');
+    if (!quickOcrModalInstance) {
+        quickOcrModalInstance = new bootstrap.Modal(modalEl);
+    }
+
+    // Reset view
+    currentQuickOcrImageBase64 = null;
+    detectedQuickOcrLink = null;
+    document.getElementById('quickOcrPreviewContainer').classList.add('d-none');
+    document.getElementById('quickOcrStatusArea').classList.add('d-none');
+    document.getElementById('quickOcrResultArea').classList.add('d-none');
+    document.getElementById('btnRunQuickOCR').disabled = true;
+    document.getElementById('btnApplyQuickOCR').classList.add('d-none');
+    document.getElementById('quickOcrFileInput').value = '';
+
+    quickOcrModalInstance.show();
+}
+
+function handleQuickOcrFileSelect(files) {
+    if (!files || files.length === 0) return;
+    const file = files[0];
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        currentQuickOcrImageBase64 = e.target.result;
+        document.getElementById('quickOcrPreviewImg').src = currentQuickOcrImageBase64;
+        document.getElementById('quickOcrFileName').innerText = file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+        document.getElementById('quickOcrPreviewContainer').classList.remove('d-none');
+        document.getElementById('btnRunQuickOCR').disabled = false;
+    };
+    reader.readAsDataURL(file);
+}
+
+// Global Paste Listener untuk Quick OCR Modal
+document.addEventListener('paste', function(e) {
+    const quickModalEl = document.getElementById('quickOcrModal');
+    if (!quickModalEl || !quickModalEl.classList.contains('show')) return;
+
+    if (e.clipboardData && e.clipboardData.items) {
+        for (let i = 0; i < e.clipboardData.items.length; i++) {
+            const item = e.clipboardData.items[i];
+            if (item.type.indexOf('image') !== -1) {
+                const blob = item.getAsFile();
+                handleQuickOcrFileSelect([blob]);
+                e.preventDefault();
+                break;
+            }
+        }
+    }
+});
+
+async function runQuickOCR() {
+    if (!currentQuickOcrImageBase64) return;
+
+    const btn = document.getElementById('btnRunQuickOCR');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Memproses...';
+    document.getElementById('quickOcrStatusArea').classList.remove('d-none');
+    document.getElementById('quickOcrResultArea').classList.add('d-none');
+
+    try {
+        const resp = await fetch('/api/ocr/rapidocr', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                images: [currentQuickOcrImageBase64],
+                station_hint: document.getElementById('modalStationInduk').innerText
+            })
+        });
+
+        const data = await resp.json();
+        if (!resp.ok || data.status !== 'success') {
+            throw new Error(data.message || 'Gagal memproses gambar dengan RapidOCR');
+        }
+
+        const links = data.links || [];
+        if (links.length === 0) {
+            throw new Error('Tidak ada parameter microwave link yang terdeteksi pada gambar ini.');
+        }
+
+        localStorage.setItem('sipamel_last_ocr_links', JSON.stringify(links));
+        detectedQuickOcrLink = links[0];
+
+        // Tampilkan hasil di modal
+        document.getElementById('quickOcrResultTx').innerText = detectedQuickOcrLink.tx_rf || '-';
+        document.getElementById('quickOcrResultRx').innerText = detectedQuickOcrLink.rx_rf || '-';
+        document.getElementById('quickOcrResultBw').innerText = detectedQuickOcrLink.bw_mhz || '-';
+        document.getElementById('quickOcrResultTipe').innerText = detectedQuickOcrLink.merk_tipe || '-';
+        document.getElementById('quickOcrResultArea').classList.remove('d-none');
+        document.getElementById('btnApplyQuickOCR').classList.remove('d-none');
+
+    } catch (err) {
+        alert('Kesalahan OCR:
+' + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-cpu me-1"></i> Scan Ulang';
+        document.getElementById('quickOcrStatusArea').classList.add('d-none');
+    }
+}
+
+function applyQuickOcrResults() {
+    if (!detectedQuickOcrLink) return;
+    applyOCRValuesToForm(detectedQuickOcrLink);
+    if (quickOcrModalInstance) {
+        quickOcrModalInstance.hide();
+    }
+}
+
+async function scanDariGambarTerupload() {
+    const stationId = '{{ station.id }}';
+    showOcrToast('Sedang memindai gambar terupload stasiun ini dengan RapidOCR...');
+    try {
+        const resp = await fetch(`/api/stasiun/${stationId}/ocr-scan-uploads`, { method: 'POST' });
+        const res = await resp.json();
+        if (!resp.ok || res.status !== 'success' || !res.links || res.links.length === 0) {
+            throw new Error(res.message || 'Tidak ada link yang terdeteksi pada gambar terupload.');
+        }
+        localStorage.setItem('sipamel_last_ocr_links', JSON.stringify(res.links));
+        isiDariHasilOCR();
+    } catch (e) {
+        alert('Gagal memindai gambar terupload: ' + e.message + '\n\nSilakan gunakan opsi "Scan Screenshot Baru" untuk mengunggah capture langsung.');
+    }
+}
+
 </script>
 
 {% endblock %}

@@ -990,6 +990,12 @@
 
             // Render Structured MW Link Table jika ditemukan link
             currentMWLinks = data.links || [];
+            try {
+                localStorage.setItem('sipamel_last_ocr_links', JSON.stringify(currentMWLinks));
+                localStorage.setItem('sipamel_last_ocr_time', new Date().toISOString());
+            } catch (e) {
+                console.warn('LocalStorage save error:', e);
+            }
             renderMWLinkTable(currentMWLinks);
 
             const duration = data.elapse ? data.elapse + 's' : (((Date.now() - startTime) / 1000).toFixed(1) + 's');
