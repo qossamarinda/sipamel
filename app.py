@@ -5644,6 +5644,18 @@ def build_stasiun_lawan_dict(lawan, station, latest_status=None, status_history=
     hasil_longitude = lawan.hasil_longitude if lawan.hasil_longitude is not None else (lawan.longitude or '116.71388889')
     hasil_latitude = lawan.hasil_latitude if lawan.hasil_latitude is not None else (lawan.latitude or '-0.97194444')
 
+    # Tentukan hasil pemeriksaan:
+    # Jika status operasional lawan adalah tidak_aktif, maka hasil pemeriksaan diselaraskan menjadi 'Tidak Aktif'
+    if lawan.hasil_pemeriksaan:
+        hasil_pemeriksaan = lawan.hasil_pemeriksaan
+        if hasil_pemeriksaan == 'Sesuai ISR' and latest_status and latest_status.status == 'tidak_aktif':
+            hasil_pemeriksaan = 'Tidak Aktif'
+    else:
+        if latest_status and latest_status.status == 'tidak_aktif':
+            hasil_pemeriksaan = 'Tidak Aktif'
+        else:
+            hasil_pemeriksaan = 'Sesuai ISR'
+
     return {
         'id': lawan.id,
         'nama': lawan.nama_stasiun_lawan,
@@ -5669,7 +5681,8 @@ def build_stasiun_lawan_dict(lawan, station, latest_status=None, status_history=
         'freq_rx': lawan.freq_rx,
         'bw_mhz': isr_bw_mhz,
         'tipe_perangkat': isr_tipe_perangkat,
-        'hasil_pemeriksaan': lawan.hasil_pemeriksaan or 'Sesuai ISR',
+        'hasil_pemeriksaan': hasil_pemeriksaan,
+        'status_lawan': latest_status.status if latest_status else None,
         'metode_pemeriksaan': lawan.metode_pemeriksaan or 'Pemeriksaan melalui Remote Site',
         'tanggal_pemeriksaan': lawan.tanggal_pemeriksaan.strftime('%Y-%m-%d') if lawan.tanggal_pemeriksaan else None,
         'catatan_pemeriksaan': lawan.catatan_pemeriksaan or '',
@@ -10700,10 +10713,18 @@ def api_update_stasiun_lawan_parameter(lawan_id):
         
         lawan.updated_at = datetime.utcnow()
 
-        # Update status operasional jika diubah
+        # Update status operasional jika diubah atau diselaraskan dengan hasil pemeriksaan
         status_val = data.get('status_lawan')
+        if not status_val:
+            if data.get('hasil_pemeriksaan') == 'Tidak Aktif':
+                status_val = 'tidak_aktif'
+            elif data.get('hasil_pemeriksaan') in ['Sesuai ISR', 'Tidak Sesuai Parameter Teknis']:
+                latest_st = StatusUpdate.query.filter_by(stasiun_lawan_id=lawan.id).order_by(StatusUpdate.created_at.desc()).first()
+                if latest_st and latest_st.status == 'tidak_aktif':
+                    status_val = 'aktif'
+
         if status_val and status_val in ['aktif', 'tidak_aktif', 'tidak_sesuai', 'belum_ada']:
-            catatan = data.get('catatan_pemeriksaan') or f"Status diperbarui oleh {current_user.username}"
+            catatan = data.get('catatan_pemeriksaan') or f"Status diperbarui menjadi {status_val} oleh {current_user.username}"
             new_update = StatusUpdate(
                 stasiun_lawan_id=lawan.id,
                 status=status_val,
@@ -10714,7 +10735,7 @@ def api_update_stasiun_lawan_parameter(lawan_id):
             db.session.add(new_update)
 
         # Update status stasiun induk jika diperiksa
-        if station and data.get('hasil_pemeriksaan') in ['Sesuai ISR', 'Tidak Sesuai Parameter Teknis']:
+        if station and data.get('hasil_pemeriksaan') in ['Sesuai ISR', 'Tidak Sesuai Parameter Teknis', 'Tidak Aktif']:
             station.status_pemeriksaan = 'sudah_diperiksa'
             station.checked_at = datetime.utcnow()
             station.checked_by = current_user.id

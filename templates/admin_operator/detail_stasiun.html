@@ -1044,8 +1044,8 @@
                                 <div class="opponent-pemeriksaan-section mt-2 pt-2" style="border-top: 1px dashed #dee2e6;">
                                     <div class="d-flex justify-content-between align-items-center mb-1">
                                         <span class="text-muted" style="font-size: 0.8rem;">Hasil Pemeriksaan:</span>
-                                        <span class="badge {% if opponent.hasil_pemeriksaan == 'Tidak Sesuai Parameter Teknis' %}bg-danger-subtle text-danger border border-danger-subtle{% elif opponent.hasil_pemeriksaan == 'Belum Diperiksa' %}bg-secondary-subtle text-secondary border{% else %}bg-success-subtle text-success border border-success-subtle{% endif %} px-2 py-1" style="font-size: 0.75rem;" id="badgeHasil_{{ opponent.id }}">
-                                            <i class="bi {% if opponent.hasil_pemeriksaan == 'Tidak Sesuai Parameter Teknis' %}bi-x-circle{% elif opponent.hasil_pemeriksaan == 'Belum Diperiksa' %}bi-hourglass{% else %}bi-check-circle{% endif %} me-1"></i>
+                                        <span class="badge {% if opponent.hasil_pemeriksaan == 'Tidak Sesuai Parameter Teknis' or opponent.hasil_pemeriksaan == 'Tidak Aktif' %}bg-danger-subtle text-danger border border-danger-subtle{% elif opponent.hasil_pemeriksaan == 'Belum Diperiksa' %}bg-secondary-subtle text-secondary border{% else %}bg-success-subtle text-success border border-success-subtle{% endif %} px-2 py-1" style="font-size: 0.75rem;" id="badgeHasil_{{ opponent.id }}">
+                                            <i class="bi {% if opponent.hasil_pemeriksaan == 'Tidak Sesuai Parameter Teknis' or opponent.hasil_pemeriksaan == 'Tidak Aktif' %}bi-x-circle{% elif opponent.hasil_pemeriksaan == 'Belum Diperiksa' %}bi-hourglass{% else %}bi-check-circle{% endif %} me-1"></i>
                                             {{ opponent.hasil_pemeriksaan or 'Sesuai ISR' }}
                                         </span>
                                     </div>
@@ -1064,6 +1064,7 @@
                                         data-id-sims="{{ opponent.id_sims }}"
                                         data-kota="{{ station.kota|title }}"
                                         data-hasil-pemeriksaan="{{ opponent.hasil_pemeriksaan }}"
+                                        data-status-lawan="{{ opponent.latest_status or opponent.status_lawan or '' }}"
                                         data-metode-pemeriksaan="{{ opponent.metode_pemeriksaan }}"
                                         data-tanggal-pemeriksaan="{{ opponent.tanggal_pemeriksaan or '' }}"
                                         data-sertifikat="{{ opponent.sertifikat_perangkat }}"
@@ -1622,6 +1623,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <select class="form-select form-select-sm" id="editHasilPemeriksaan" name="hasil_pemeriksaan" required>
                                     <option value="Sesuai ISR">Sesuai ISR</option>
                                     <option value="Tidak Sesuai Parameter Teknis">Tidak Sesuai Parameter Teknis</option>
+                                    <option value="Tidak Aktif">Tidak Aktif</option>
                                     <option value="Belum Diperiksa">Belum Diperiksa</option>
                                 </select>
                             </div>
@@ -1923,7 +1925,13 @@ function openPeriksaModalFromBtn(btn) {
     document.getElementById('cardIdSimsKota').innerText = (d.idSims || '-') + ' / ' + (d.kota || '-').toLowerCase();
     
     // Status & metode
-    document.getElementById('editHasilPemeriksaan').value = d.hasilPemeriksaan || 'Sesuai ISR';
+    let hasilVal = d.hasilPemeriksaan;
+    if (!hasilVal || hasilVal === 'None') {
+        hasilVal = (d.statusLawan === 'tidak_aktif') ? 'Tidak Aktif' : 'Sesuai ISR';
+    } else if (d.statusLawan === 'tidak_aktif' && (hasilVal === 'Sesuai ISR' || hasilVal === '')) {
+        hasilVal = 'Tidak Aktif';
+    }
+    document.getElementById('editHasilPemeriksaan').value = hasilVal;
     document.getElementById('editMetodePemeriksaan').value = d.metodePemeriksaan || 'Pemeriksaan melalui Remote Site';
     
     if (d.tanggalPemeriksaan) {
@@ -2006,6 +2014,7 @@ async function submitPeriksaParameter(e) {
     const lawanId = document.getElementById('editLawanId').value;
     const payload = {
         hasil_pemeriksaan: document.getElementById('editHasilPemeriksaan').value,
+        status_lawan: (document.getElementById('editHasilPemeriksaan').value === 'Tidak Aktif') ? 'tidak_aktif' : undefined,
         metode_pemeriksaan: document.getElementById('editMetodePemeriksaan').value,
         tanggal_pemeriksaan: document.getElementById('editTanggalPemeriksaan').value,
         sertifikat_perangkat: document.getElementById('editSertifikatPerangkat').value,
