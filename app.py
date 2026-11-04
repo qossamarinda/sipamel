@@ -5270,10 +5270,7 @@ def admin_master_tambah_data():
                          operators=OPERATORS,
                          kota_list=KOTA_LIST)
 
-@app.route('/admin-master/daftar-stasiun')
-@login_required
-@admin_master_required
-def admin_master_daftar_stasiun():
+def _handle_admin_master_daftar_stasiun(template_name='admin_master/daftar_stasiun.html'):
     operator = request.args.get('operator', 'all')
     kota = request.args.get('kota', 'all')
     search_stasiun = request.args.get('search_stasiun', '').strip()
@@ -5342,7 +5339,7 @@ def admin_master_daftar_stasiun():
             if not found:
                 selected_kota = 'all'
         
-        return render_template('admin_master/daftar_stasiun.html',
+        return render_template(template_name,
                              stations=[],
                              pagination=pagination,
                              operators=OPERATORS,
@@ -5542,7 +5539,7 @@ def admin_master_daftar_stasiun():
         if not found:
             selected_kota = 'all'
     
-    return render_template('admin_master/daftar_stasiun.html',
+    return render_template(template_name,
                          stations=stations,
                          pagination=pagination,
                          operators=OPERATORS,
@@ -5553,6 +5550,18 @@ def admin_master_daftar_stasiun():
                          selected_status_lengkap=status_lengkap,
                          status_summary=status_summary,
                          status_options=STATUS_OPTIONS)
+
+@app.route('/admin-master/daftar-stasiun')
+@login_required
+@admin_master_required
+def admin_master_daftar_stasiun():
+    return _handle_admin_master_daftar_stasiun('admin_master/daftar_stasiun.html')
+
+@app.route('/admin-master/daftar-stasiun-v2')
+@login_required
+@admin_master_required
+def admin_master_daftar_stasiun_v2():
+    return _handle_admin_master_daftar_stasiun('admin_master/daftar_stasiun_v2.html')
 
 @app.route('/admin-master/stasiun/<int:station_id>')
 @login_required
@@ -6362,10 +6371,7 @@ def admin_operator_tambah_data():
                          kota_list=KOTA_LIST,
                          operator=operator)
 
-@app.route('/admin-operator/daftar-stasiun')
-@login_required
-@admin_operator_required
-def admin_operator_daftar_stasiun():
+def _handle_admin_operator_daftar_stasiun(template_name='admin_operator/daftar_stasiun.html'):
     operator = current_user.operator_type
     kota = request.args.get('kota', 'all')
     search_stasiun = request.args.get('search_stasiun', '').strip()
@@ -6420,7 +6426,7 @@ def admin_operator_daftar_stasiun():
         if not kota_list_operator:
             kota_list_operator = KOTA_LIST
         
-        return render_template('admin_operator/daftar_stasiun.html',
+        return render_template(template_name,
                              stations=[],
                              pagination=pagination,
                              operator=operator,
@@ -6628,7 +6634,7 @@ def admin_operator_daftar_stasiun():
         if not found:
             selected_kota_normalized = 'all'
     
-    return render_template('admin_operator/daftar_stasiun.html',
+    return render_template(template_name,
                          stations=stations,
                          pagination=pagination,
                          operator=operator,
@@ -6639,6 +6645,18 @@ def admin_operator_daftar_stasiun():
                          selected_status_update=status_update_filter,
                          status_summary=status_summary,
                          status_options=STATUS_OPTIONS)
+
+@app.route('/admin-operator/daftar-stasiun')
+@login_required
+@admin_operator_required
+def admin_operator_daftar_stasiun():
+    return _handle_admin_operator_daftar_stasiun('admin_operator/daftar_stasiun.html')
+
+@app.route('/admin-operator/daftar-stasiun-v2')
+@login_required
+@admin_operator_required
+def admin_operator_daftar_stasiun_v2():
+    return _handle_admin_operator_daftar_stasiun('admin_operator/daftar_stasiun_v2.html')
                          
 @app.route('/admin-operator/stasiun/<int:station_id>')
 @login_required
@@ -8626,10 +8644,7 @@ def user_operator_dashboard():
                          kota_list=kota_list,
                          status_options=STATUS_OPTIONS)
 
-@app.route('/user-operator/stasiun')
-@login_required
-@user_operator_required
-def user_operator_stasiun():
+def _handle_user_operator_stasiun(template_name='user_operator/stasiun.html'):
     """Daftar stasiun dengan filter kelengkapan status lawan (2 opsi) - OPTIMIZED"""
     operator = current_user.operator_type
     kota = request.args.get('kota', 'all')
@@ -8681,7 +8696,7 @@ def user_operator_stasiun():
         if not kota_list_operator:
             kota_list_operator = KOTA_LIST
         
-        return render_template('user_operator/stasiun.html',
+        return render_template(template_name,
                              stations=[],
                              pagination=pagination,
                              operator=operator,
@@ -8833,7 +8848,7 @@ def user_operator_stasiun():
         if not found:
             selected_kota_normalized = 'all'
     
-    return render_template('user_operator/stasiun.html',
+    return render_template(template_name,
                          stations=stations,
                          pagination=pagination,
                          operator=operator,
@@ -8842,6 +8857,19 @@ def user_operator_stasiun():
                          selected_kota=selected_kota_normalized,
                          selected_status_lengkap=status_lengkap,
                          status_summary=status_summary)
+
+@app.route('/user-operator/stasiun')
+@login_required
+@user_operator_required
+def user_operator_stasiun():
+    return _handle_user_operator_stasiun('user_operator/stasiun.html')
+
+@app.route('/user-operator/stasiun-v2')
+@app.route('/user-operator/daftar-stasiun-v2')
+@login_required
+@user_operator_required
+def user_operator_stasiun_v2():
+    return _handle_user_operator_stasiun('user_operator/stasiun_v2.html')
 
 @app.route('/user-operator/stasiun/<int:station_id>')
 @login_required

@@ -1,0 +1,978 @@
+{% extends "user_operator/base.html" %}
+
+{% block title %}Daftar Stasiun v2 - SiPaMeL{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ===== VARIABLES ===== */
+    :root {
+        --primary-color: #2a5298;
+        --primary-light: #e8f0fe;
+        --border-radius: 8px;
+        --box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+
+    /* Page Header */
+    .page-header {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 25px;
+        border-radius: 10px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    /* Workflow Steps */
+    .workflow-steps {
+        background: white;
+        border-radius: 10px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        border: 1px solid #e9ecef;
+    }
+    
+    .step-card {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        text-align: center;
+        height: 100%;
+        transition: all 0.3s;
+        border: 2px solid transparent;
+    }
+    
+    .step-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .step-card.active {
+        border-color: #17a2b8;
+        background: #e3f2fd;
+    }
+    
+    .step-icon {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        margin: 0 auto 15px;
+    }
+    
+    .step-icon.step-1 {
+        background: linear-gradient(135deg, #17a2b8 0%, #20c997 100%);
+    }
+    
+    .step-icon.step-2 {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    }
+    
+    /* Filter Card */
+    .filter-card {
+        background: white;
+        border-radius: 10px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        border: 1px solid #e9ecef;
+    }
+    
+    /* Table */
+    .stations-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    
+    .stations-table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        font-size: 0.85rem;
+        padding: 12px 8px;
+        white-space: nowrap;
+        border-bottom: 2px solid #dee2e6;
+    }
+    
+    .stations-table td {
+        padding: 15px 8px;
+        vertical-align: top;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    /* Kolom Stasiun Lawan */
+    .lawan-container {
+        max-width: 100%;
+    }
+    
+    .lawan-group {
+        margin-bottom: 10px;
+    }
+    
+    .group-header {
+        padding: 4px 8px;
+        margin-bottom: 2px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .group-header.ungrouped {
+        background: #fff3cd;
+        border-left: 3px solid #f39c12;
+        color: #856404;
+    }
+    
+    .group-header.grouped {
+        background: #d1ecf1;
+        border-left: 3px solid #17a2b8;
+        color: #0c5460;
+    }
+    
+    .group-header i {
+        margin-right: 4px;
+    }
+    
+    .lawan-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 4px 8px;
+        margin-bottom: 2px;
+        background: #f8f9fa;
+        border-radius: 4px;
+        border-left: 3px solid #dee2e6;
+    }
+    
+    .lawan-row.aktif { border-left-color: #28a745; }
+    .lawan-row.tidak_aktif { border-left-color: #dc3545; }
+    .lawan-row.tidak_sesuai { border-left-color: #17a2b8; }
+    .lawan-row.belum_ada { border-left-color: #6c757d; }
+    
+    .lawan-name {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: #495057;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 200px;
+    }
+    
+    .status-badge {
+        font-size: 0.7rem;
+        padding: 2px 6px;
+        border-radius: 10px;
+        margin-left: 8px;
+        white-space: nowrap;
+    }
+    
+    .status-aktif { background: #28a745; color: white; }
+    .status-tidak_aktif { background: #dc3545; color: white; }
+    .status-tidak_sesuai { background: #17a2b8; color: white; }
+    .status-belum_ada { background: #6c757d; color: white; }
+    
+    /* Frekuensi badges */
+    .freq-cell {
+        vertical-align: top;
+    }
+    
+    .freq-item {
+        padding: 4px 8px;
+        margin-bottom: 2px;
+        background: #f8f9fa;
+        border-radius: 4px;
+        text-align: center;
+    }
+    
+    .freq-tx-badge {
+        display: inline-block;
+        background: #cfe2ff;
+        color: #084298;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border: 1px solid #b6d4fe;
+        white-space: nowrap;
+    }
+    
+    .freq-tx-badge i {
+        font-size: 0.65rem;
+        margin-right: 2px;
+        color: #0d6efd;
+    }
+    
+    .freq-rx-badge {
+        display: inline-block;
+        background: #d1e7dd;
+        color: #0a3622;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border: 1px solid #a3cfbb;
+        white-space: nowrap;
+    }
+    
+    .freq-rx-badge i {
+        font-size: 0.65rem;
+        margin-right: 2px;
+        color: #198754;
+    }
+    
+    /* Badge jumlah lawan */
+    .total-badge {
+        background: #6c757d;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        margin-bottom: 8px;
+        display: inline-block;
+    }
+    
+    /* Status Pemeriksaan Badge */
+    .inspection-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    
+    .inspection-badge.sudah_diperiksa {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+    }
+    
+    .inspection-badge.belum_diperiksa {
+        background: #ffc107;
+        color: #212529;
+    }
+    
+    .inspection-info {
+        font-size: 0.7rem;
+        color: #6c757d;
+        margin-top: 4px;
+    }
+    
+    /* Action buttons */
+    .btn-group-sm .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+    
+    /* Table Card */
+    .table-card {
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        border: 1px solid #e9ecef;
+        margin-bottom: 20px;
+    }
+    
+    .table-card .card-header {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 15px 20px;
+        border-bottom: none;
+    }
+    
+    /* Pagination */
+    .pagination-container {
+        background: white;
+        padding: 15px 20px;
+        border-top: 1px solid #e9ecef;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    
+    .pagination-info {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    
+    .pagination {
+        margin: 0;
+        gap: 5px;
+    }
+    
+    .page-link {
+        border-radius: 6px;
+        color: #2a5298;
+        border: 1px solid #dee2e6;
+        padding: 0.4rem 0.8rem;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+    }
+    
+    .page-link:hover {
+        background-color: #e8f0fe;
+        color: #1e3c72;
+        border-color: #2a5298;
+        transform: translateY(-1px);
+    }
+    
+    .page-item.active .page-link {
+        background-color: #2a5298;
+        border-color: #2a5298;
+        color: white;
+    }
+    
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 50px 20px;
+    }
+    
+    .empty-state-icon {
+        font-size: 4rem;
+        color: #dee2e6;
+        margin-bottom: 20px;
+    }
+    
+    /* Tooltip */
+    [title] {
+        cursor: help;
+    }
+    
+    /* Border styling */
+    .border-info {
+        border-color: #0dcaf0 !important;
+    }
+    
+    .border-start {
+        border-left-width: 3px !important;
+    }
+    
+    /* Summary Alert - Versi Besar dengan Progress Bar */
+    .summary-alert {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border: 1px solid #e9ecef;
+        border-radius: 16px;
+        padding: 20px 24px;
+        margin-top: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+    
+    .summary-alert .badge {
+        font-size: 1rem;
+        padding: 8px 18px;
+        border-radius: 30px;
+        font-weight: 600;
+    }
+    
+    .summary-alert i {
+        font-size: 1.1rem;
+    }
+    
+    .progress {
+        height: 10px;
+        border-radius: 10px;
+        background-color: #e9ecef;
+    }
+    
+    .progress-bar {
+        border-radius: 10px;
+        transition: width 0.5s ease;
+    }
+    
+    /* Responsive */
+    @media (max-width: 1200px) {
+        .stations-table {
+            min-width: 1400px;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .summary-alert .badge {
+            font-size: 0.85rem;
+            padding: 6px 12px;
+        }
+        .summary-alert strong {
+            font-size: 0.95rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
+        <div>
+            <h1 class="h3 mb-2">
+                <i class="bi bi-wifi me-2"></i>Daftar Stasiun <span class="badge bg-success fs-6 align-middle">v2</span>
+            </h1>
+            <p class="mb-0 opacity-75" style="font-size: 0.95rem;">
+                Kelola semua stasiun Operator <strong>{{ operator_name }}</strong>
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Workflow Steps -->
+<div class="workflow-steps">
+    <h5 class="mb-4"><i class="bi bi-lightbulb me-2"></i>Alur Kerja 2 Langkah</h5>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <div class="step-card active">
+                <div class="step-icon step-1">
+                    <i class="bi bi-diagram-3"></i>
+                </div>
+                <h5>Langkah 1: Buat Grup IDU</h5>
+                <p class="text-muted small mb-0">
+                    Kelompokkan stasiun lawan dengan hasil capture yang sama. Pisahkan ke grup lain jika hasil capture berbeda.
+                </p>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="step-card">
+                <div class="step-icon step-2">
+                    <i class="bi bi-upload"></i>
+                </div>
+                <h5>Langkah 2: Upload Gambar</h5>
+                <p class="text-muted small mb-0">
+                    Setelah grup IDU dibuat, upload gambar dan atur status untuk masing masing stasiun lawan.
+                </p>
+                <p class="text-muted small mb-0 mt-1">
+                    Data capture remote site berupa Capture Current Status, Radio Configuration, Modem Port Setting, TX Power Setting, dan Current Metering, Equipment Configuration.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Card -->
+<div class="filter-card" id="filterSection">
+    <h5 class="mb-4"><i class="bi bi-search me-2"></i>Cari & Filter Stasiun</h5>
+    
+    <form method="GET" action="{{ url_for('user_operator_stasiun_v2') }}" class="row g-3" id="filterForm">
+        <!-- Pencarian Nama Stasiun -->
+        <div class="col-md-3">
+            <label for="search_stasiun" class="form-label">
+                <i class="bi bi-search"></i> Nama Stasiun
+            </label>
+            <input type="text" 
+                   class="form-control" 
+                   id="search_stasiun" 
+                   name="search_stasiun" 
+                   value="{{ request.args.get('search_stasiun', '') }}"
+                   placeholder="Cari nama stasiun...">
+        </div>
+        
+        <!-- Filter Kota -->
+        <div class="col-md-3">
+            <label for="kota" class="form-label">
+                <i class="bi bi-geo-alt"></i> Kota/Kabupaten
+            </label>
+            <select class="form-select" id="kota" name="kota">
+                <option value="all" {% if selected_kota == 'all' %}selected{% endif %}>Semua Kota/Kab</option>
+                {% for kota in kota_list %}
+                <option value="{{ kota }}" {% if selected_kota == kota %}selected{% endif %}>
+                    {{ kota|title }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <!-- Filter Status Kelengkapan Lawan (2 Opsi) -->
+        <div class="col-md-3">
+            <label for="status_lengkap" class="form-label">
+                <i class="bi bi-check2-circle"></i> Kelengkapan Status Lawan
+            </label>
+            <select class="form-select" id="status_lengkap" name="status_lengkap">
+                <option value="all" {% if selected_status_lengkap == 'all' %}selected{% endif %}>Semua </option>
+                <option value="belum_lengkap" {% if selected_status_lengkap == 'belum_lengkap' %}selected{% endif %}>
+                    Belum Lengkap (Masih ada status kosong)
+                </option>
+                <option value="lengkap" {% if selected_status_lengkap == 'lengkap' %}selected{% endif %}>
+                    Sudah Lengkap (Semua status terisi)
+                </option>
+            </select>
+        </div>
+        
+        <!-- Filter Per Page -->
+        <div class="col-md-3">
+            <label for="per_page" class="form-label">
+                <i class="bi bi-list"></i> Tampilkan
+            </label>
+            <select class="form-select" id="per_page" name="per_page">
+                {% for option in [10, 20, 50, 100] %}
+                <option value="{{ option }}" {% if request.args.get('per_page', '20')|int == option %}selected{% endif %}>
+                    {{ option }} data
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <!-- Tombol Aksi -->
+        <div class="col-12 d-flex justify-content-end gap-2 mt-3">
+            <button type="submit" class="btn btn-primary px-4">
+                <i class="bi bi-search"></i> Cari
+            </button>
+            <a href="{{ url_for('user_operator_stasiun_v2') }}" class="btn btn-outline-secondary px-4">
+                <i class="bi bi-arrow-clockwise"></i> Reset Filter
+            </a>
+        </div>
+    </form>
+    
+    <!-- Info Pencarian Aktif -->
+    {% if request.args.get('search_stasiun') or (request.args.get('kota') and request.args.get('kota') != 'all') or (request.args.get('status_lengkap') and request.args.get('status_lengkap') != 'all') %}
+    <div class="alert alert-info mt-3 mb-0 py-2">
+        <i class="bi bi-info-circle"></i> 
+        <strong>Filter aktif:</strong>
+        {% if request.args.get('search_stasiun') %}
+            <span class="badge bg-info me-2">Cari: "{{ request.args.get('search_stasiun') }}"</span>
+        {% endif %}
+        {% if request.args.get('kota') and request.args.get('kota') != 'all' %}
+            <span class="badge bg-info me-2">Kota/Kab: {{ request.args.get('kota')|title }}</span>
+        {% endif %}
+        {% if request.args.get('status_lengkap') and request.args.get('status_lengkap') != 'all' %}
+            <span class="badge bg-info me-2">
+                Kelengkapan:
+                {% if request.args.get('status_lengkap') == 'lengkap' %}
+                    Sudah Lengkap
+                {% else %}
+                    Belum Lengkap
+                {% endif %}
+            </span>
+        {% endif %}
+        <span class="badge bg-secondary">Menampilkan {{ pagination.total }} data</span>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Summary Alert -->
+<div class="summary-alert">
+    <div class="d-flex align-items-center flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-pie-chart-fill text-primary me-1" style="font-size: 1.4rem;"></i>
+            <strong style="font-size: 1.2rem; color: #1e3c72;">Status Kelengkapan Data Upload (PERHALAMAN) :</strong>
+        </div>
+        <div class="d-flex gap-3">
+            <span class="badge bg-success px-4 py-2 rounded-pill" style="font-size: 1rem; font-weight: 700; box-shadow: 0 2px 5px rgba(40,167,69,0.3);">
+                <i class="bi bi-check-circle-fill me-2"></i> Lengkap: {{ status_summary.lengkap|default(0) }}
+            </span>
+            <span class="badge bg-warning text-dark px-4 py-2 rounded-pill" style="font-size: 1rem; font-weight: 700; box-shadow: 0 2px 5px rgba(255,193,7,0.3);">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i> Belum Lengkap: {{ status_summary.belum_lengkap|default(0) }}
+            </span>
+        </div>
+    </div>
+</div>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+    <div class="text-muted small">
+        <i class="bi bi-layout-text-window me-1"></i>
+        Menampilkan 
+        <strong>
+            {% set start_item = ((pagination.page - 1) * pagination.per_page) + 1 %}
+            {% set end_item = pagination.page * pagination.per_page %}
+            {{ start_item }} - 
+            {% if end_item > pagination.total %}{{ pagination.total }}{% else %}{{ end_item }}{% endif %}
+        </strong>
+        dari <strong>{{ pagination.total }}</strong> data
+    </div>
+    <div class="text-muted small">
+        <i class="bi bi-book me-1"></i>
+        Halaman <strong>{{ pagination.page }}</strong> dari <strong>{{ pagination.pages }}</strong>
+    </div>
+</div>
+
+<!-- Stations Table -->
+{% if stations %}
+<div class="table-card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="bi bi-table me-2"></i>Data Stasiun
+        </h5>
+        <div class="text-muted small">
+            Operator: <strong>{{ operator_name }}</strong>
+        </div>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table table-hover mb-0 stations-table">
+            <thead>
+                <tr>
+                    <th style="width: 5%;" class="text-center">No</th>
+                    <th style="width: 20%;">Nama Stasiun</th>
+                    <th style="width: 12%;">Kota/Kab</th>
+                    <th style="width: 30%;">Stasiun Lawan & Status</th>
+                    <th style="width: 8%;">Freq Tx (MHz)</th>
+                    <th style="width: 8%;">Freq Rx (MHz)</th>
+                    <th style="width: 12%;">Status Pemeriksaan</th>
+                    <th style="width: 5%;" class="text-center">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for station in stations %}
+                <tr class="{% if station.has_lawan_without_status %}table-warning{% endif %}">
+                    <td class="text-center align-middle">{{ loop.index + (pagination.page - 1) * pagination.per_page }}</td>
+                    
+                    <!-- Nama Stasiun - LENGKAP, tidak dipotong -->
+                    <td class="align-middle">
+                        <strong title="{{ station.stasiun_name }}">{{ station.stasiun_name }}</strong>
+                        {% if station.has_lawan_without_status %}
+                            <span class="badge bg-warning text-dark ms-1" title="Ada stasiun lawan yang belum diisi status">
+                                <i class="bi bi-exclamation-triangle"></i> Belum Lengkap
+                            </span>
+                        {% endif %}
+                    </td>
+                    
+                    <td class="align-middle">{{ station.kota|title }}</td>
+                    
+                    <!-- KOLOM STASIUN LAWAN & STATUS -->
+                    <td class="align-middle">
+                        {% if station.stasiun_lawan_list %}
+                            <div class="mb-2">
+                                <span class="badge bg-secondary mb-2">
+                                    {{ station.stasiun_lawan_list|length }} Stasiun Lawan
+                                </span>
+                                
+                                <div class="mt-1">
+                                    {% set stasiun_lawan_grouped = {} %}
+                                    {% set groups_dict = {} %}
+                                    
+                                    {% for g in station.grup_list %}
+                                        {% set _ = groups_dict.update({g.id: g.nama_grup}) %}
+                                    {% endfor %}
+                                    
+                                    {% for lawan in station.stasiun_lawan_list %}
+                                        {% set group_key = lawan.group_id if lawan.group_id else 'no_group' %}
+                                        {% if group_key not in stasiun_lawan_grouped %}
+                                            {% set _ = stasiun_lawan_grouped.update({group_key: []}) %}
+                                        {% endif %}
+                                        {% set _ = stasiun_lawan_grouped[group_key].append(lawan) %}
+                                    {% endfor %}
+                                    
+                                    {% for group_key, lawan_list in stasiun_lawan_grouped.items() %}
+                                        {% if group_key != 'no_group' %}
+                                        <div class="border-start border-3 border-info ps-2 mb-2">
+                                            <small class="text-info fw-bold d-block mb-1">
+                                                <i class="bi bi-collection"></i> 
+                                                {% if group_key|int in groups_dict %}
+                                                    {{ groups_dict[group_key|int] }}
+                                                {% else %}
+                                                    Grup {{ group_key }}
+                                                {% endif %}
+                                            </small>
+                                        {% endif %}
+                                        
+                                        {% for lawan in lawan_list %}
+                                            <div class="d-flex justify-content-between align-items-center border-bottom pb-1 mb-1">
+                                                <div style="max-width: 65%; overflow: hidden;">
+                                                    <small class="text-muted" style="display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ lawan.nama_stasiun_lawan }}">
+                                                        {{ lawan.nama_stasiun_lawan }}
+                                                    </small>
+                                                </div>
+                                                <div>
+                                                    {% set latest_status = None %}
+                                                    {% if lawan.status_updates %}
+                                                        {% set latest_status = lawan.status_updates|sort(attribute='updated_at', reverse=true)|first %}
+                                                    {% endif %}
+                                                    
+                                                    {% if latest_status %}
+                                                        <span class="badge bg-{{ 
+                                                            'success' if latest_status.status == 'aktif' else
+                                                            'danger' if latest_status.status == 'tidak_aktif' else
+                                                            'info' if latest_status.status == 'tidak_sesuai' else
+                                                            'secondary'
+                                                        }}" style="padding: 2px 5px; font-size: 10px;">
+                                                            {{ 
+                                                                'Aktif' if latest_status.status == 'aktif' else
+                                                                'Tidak Aktif' if latest_status.status == 'tidak_aktif' else
+                                                                'Tidak Sesuai' if latest_status.status == 'tidak_sesuai' else
+                                                                latest_status.status
+                                                            }}
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="badge bg-light text-dark border" style="padding: 2px 5px; font-size: 10px;">
+                                                            <i class="bi bi-hourglass-split"></i> Belum Upload
+                                                        </span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                        
+                                        {% if group_key != 'no_group' %}
+                                        </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% else %}
+                            <span class="badge bg-light text-dark">Tidak ada stasiun lawan</span>
+                        {% endif %}
+                    </td>
+                    
+                    <!-- KOLOM FREKUENSI TX -->
+                    <td class="align-middle">
+                        {% if station.stasiun_lawan_list %}
+                            <div class="mb-2">
+                                <span class="badge bg-secondary mb-2" style="visibility: hidden; opacity: 0;">
+                                    {{ station.stasiun_lawan_list|length }} placeholder
+                                </span>
+                            </div>
+                            
+                            <div class="mt-1">
+                                {% set stasiun_lawan_grouped = {} %}
+                                
+                                {% for lawan in station.stasiun_lawan_list %}
+                                    {% set group_key = lawan.group_id if lawan.group_id else 'no_group' %}
+                                    {% if group_key not in stasiun_lawan_grouped %}
+                                        {% set _ = stasiun_lawan_grouped.update({group_key: []}) %}
+                                    {% endif %}
+                                    {% set _ = stasiun_lawan_grouped[group_key].append(lawan) %}
+                                {% endfor %}
+                                
+                                {% for group_key, lawan_list in stasiun_lawan_grouped.items() %}
+                                    {% if group_key != 'no_group' %}
+                                        <div class="border-start border-3 border-info ps-2 mb-2" style="border-color: transparent !important;">
+                                            <div class="mb-1" style="height: 20px;"></div>
+                                    {% endif %}
+                                    
+                                    {% for lawan in lawan_list %}
+                                        <div class="d-flex align-items-center border-bottom pb-1 mb-1" style="min-height: 28px;">
+                                            {% if lawan.freq_tx and lawan.freq_tx|trim %}
+                                                <span class="badge bg-info">{{ lawan.freq_tx }}</span>
+                                            {% else %}
+                                                <span class="badge bg-light text-dark">-</span>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                    
+                                    {% if group_key != 'no_group' %}
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <span class="badge bg-light text-dark">-</span>
+                        {% endif %}
+                    </td>
+                    
+                    <!-- KOLOM FREKUENSI RX -->
+                    <td class="align-middle">
+                        {% if station.stasiun_lawan_list %}
+                            <div class="mb-2">
+                                <span class="badge bg-secondary mb-2" style="visibility: hidden; opacity: 0;">
+                                    {{ station.stasiun_lawan_list|length }} placeholder
+                                </span>
+                            </div>
+                            
+                            <div class="mt-1">
+                                {% set stasiun_lawan_grouped = {} %}
+                                
+                                {% for lawan in station.stasiun_lawan_list %}
+                                    {% set group_key = lawan.group_id if lawan.group_id else 'no_group' %}
+                                    {% if group_key not in stasiun_lawan_grouped %}
+                                        {% set _ = stasiun_lawan_grouped.update({group_key: []}) %}
+                                    {% endif %}
+                                    {% set _ = stasiun_lawan_grouped[group_key].append(lawan) %}
+                                {% endfor %}
+                                
+                                {% for group_key, lawan_list in stasiun_lawan_grouped.items() %}
+                                    {% if group_key != 'no_group' %}
+                                        <div class="border-start border-3 border-info ps-2 mb-2" style="border-color: transparent !important;">
+                                            <div class="mb-1" style="height: 20px;"></div>
+                                    {% endif %}
+                                    
+                                    {% for lawan in lawan_list %}
+                                        <div class="d-flex align-items-center border-bottom pb-1 mb-1" style="min-height: 28px;">
+                                            {% if lawan.freq_rx and lawan.freq_rx|trim %}
+                                                <span class="badge bg-success">{{ lawan.freq_rx }}</span>
+                                            {% else %}
+                                                <span class="badge bg-light text-dark">-</span>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                    
+                                    {% if group_key != 'no_group' %}
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <span class="badge bg-light text-dark">-</span>
+                        {% endif %}
+                    </td>
+                    
+                    <!-- KOLOM STATUS PEMERIKSAAN (READ ONLY) -->
+                    <td class="align-middle">
+                        <div class="text-center">
+                            {% if station.status_pemeriksaan == 'sudah_diperiksa' %}
+                                <span class="inspection-badge sudah_diperiksa">
+                                    <i class="bi bi-check-circle-fill me-1"></i> Sudah Diperiksa
+                                </span>
+                                {% if station.checked_at %}
+                                <div class="inspection-info">
+                                    <i class="bi bi-calendar-check"></i> {{ station.checked_at.strftime('%d/%m/%Y') }}
+                                </div>
+                                {% endif %}
+                            {% else %}
+                                <span class="inspection-badge belum_diperiksa">
+                                    <i class="bi bi-question-circle me-1"></i> Belum Diperiksa
+                                </span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    
+                    <!-- KOLOM AKSI -->
+                    <td class="text-center align-middle">
+                        <div class="btn-group btn-group-sm" role="group">
+                            <a href="{{ url_for('user_operator_grup_stasiun', station_id=station.id, next=request.full_path) }}"
+                                class="btn btn-outline-info" title="Kelola Grup IDU">
+                                <i class="bi bi-diagram-3"></i>
+                            </a>
+                            <a href="{{ url_for('user_operator_detail_stasiun', station_id=station.id, next=request.full_path) }}"
+                                class="btn btn-outline-primary" title="Lihat Detail">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Pagination -->
+    <div class="pagination-container">
+        <div class="pagination-info">
+            <i class="bi bi-layout-text-window me-1"></i>
+            Menampilkan 
+            <strong>
+                {% set start_item = ((pagination.page - 1) * pagination.per_page) + 1 %}
+                {% set end_item = pagination.page * pagination.per_page %}
+                {{ start_item }} - 
+                {% if end_item > pagination.total %}{{ pagination.total }}{% else %}{{ end_item }}{% endif %}
+            </strong>
+            dari <strong>{{ pagination.total }}</strong> data
+            | Per halaman <strong>{{ pagination.per_page }}</strong>
+            | Halaman <strong>{{ pagination.page }}</strong> dari <strong>{{ pagination.pages }}</strong>
+        </div>
+        
+        <nav aria-label="Page navigation">
+            <ul class="pagination mb-0">
+                <li class="page-item {% if pagination.page == 1 %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('user_operator_stasiun_v2', page=1, kota=request.args.get('kota'), search_stasiun=request.args.get('search_stasiun', ''), status_lengkap=request.args.get('status_lengkap'), per_page=pagination.per_page) }}">
+                        <i class="bi bi-chevron-double-left"></i>
+                    </a>
+                </li>
+                <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('user_operator_stasiun_v2', page=pagination.prev_num, kota=request.args.get('kota'), search_stasiun=request.args.get('search_stasiun', ''), status_lengkap=request.args.get('status_lengkap'), per_page=pagination.per_page) }}">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                
+                {% for page_num in pagination.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}
+                    {% if page_num %}
+                        <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('user_operator_stasiun_v2', page=page_num, kota=request.args.get('kota'), search_stasiun=request.args.get('search_stasiun', ''), status_lengkap=request.args.get('status_lengkap'), per_page=pagination.per_page) }}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                {% endfor %}
+                
+                <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('user_operator_stasiun_v2', page=pagination.next_num, kota=request.args.get('kota'), search_stasiun=request.args.get('search_stasiun', ''), status_lengkap=request.args.get('status_lengkap'), per_page=pagination.per_page) }}">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                <li class="page-item {% if pagination.page == pagination.pages %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('user_operator_stasiun_v2', page=pagination.pages, kota=request.args.get('kota'), search_stasiun=request.args.get('search_stasiun', ''), status_lengkap=request.args.get('status_lengkap'), per_page=pagination.per_page) }}">
+                        <i class="bi bi-chevron-double-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>
+
+{% else %}
+<!-- Empty State -->
+<div class="card">
+    <div class="card-body">
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="bi bi-inbox"></i>
+            </div>
+            <h5 class="text-muted mb-3">Tidak ada data stasiun</h5>
+            <p class="text-muted mb-4" style="max-width: 400px; margin: 0 auto;">
+                {% if request.args.get('search_stasiun') or request.args.get('kota') != 'all' or request.args.get('status_lengkap') != 'all' %}
+                    Hasil pencarian tidak ditemukan. Coba gunakan kata kunci yang berbeda atau reset filter.
+                {% else %}
+                    Admin belum menambahkan stasiun untuk operator {{ operator_name }}.
+                {% endif %}
+            </p>
+            <div class="d-flex justify-content-center gap-2">
+                {% if request.args.get('search_stasiun') or request.args.get('kota') != 'all' or request.args.get('status_lengkap') != 'all' %}
+                <a href="{{ url_for('user_operator_stasiun_v2') }}" class="btn btn-primary">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Reset Filter
+                </a>
+                {% endif %}
+                <a href="{{ url_for('user_operator_dashboard') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left me-1"></i>Kembali ke Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto submit form ketika per_page berubah
+    const perPageSelect = document.getElementById('per_page');
+    if (perPageSelect) {
+        perPageSelect.addEventListener('change', function() {
+            document.getElementById('filterForm').submit();
+        });
+    }
+    
+    // Auto submit form ketika status_lengkap berubah
+    const statusLengkapSelect = document.getElementById('status_lengkap');
+    if (statusLengkapSelect) {
+        statusLengkapSelect.addEventListener('change', function() {
+            document.getElementById('filterForm').submit();
+        });
+    }
+    
+    // Search dengan tombol Enter
+    const searchInput = document.getElementById('search_stasiun');
+    if (searchInput) {
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                document.getElementById('filterForm').submit();
+            }
+        });
+    }
+    
+    // Tooltips
+    const tooltipTriggerList = document.querySelectorAll('[title]');
+    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+        new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}

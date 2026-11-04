@@ -539,6 +539,13 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'admin_operator_daftar_stasiun_v2' %}active{% endif %}" 
+                   href="{{ url_for('admin_operator_daftar_stasiun_v2') }}">
+                    <i class="bi bi-broadcast-pin"></i> Daftar Stasiun v2
+                    <span class="badge ms-auto text-white" style="background: linear-gradient(135deg, #10b981, #059669); font-size: 0.65rem; padding: 0.25rem 0.5rem; border-radius: 20px;">v2</span>
+                </a>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link {% if request.endpoint == 'admin_operator_ocr' %}active{% endif %}" 
                    href="{{ url_for('admin_operator_ocr') }}">
                     <i class="bi bi-camera"></i> OCR (Capture to text)
