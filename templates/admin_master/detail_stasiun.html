@@ -1788,7 +1788,21 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                         </div>
 
-                                                <!-- CONTAINER PILIHAN LINK OCR (JIKA TERDETEKSI BANYAK LINK) -->
+                                                                        <!-- PROGRESS BAR PEMINDAIAN OCR DENGAN PERSENTASE -->
+                        <div id="ocrProgressCard" class="d-none alert alert-primary py-2 px-3 mb-3 rounded-3 border-0 shadow-sm" style="background: linear-gradient(135deg, #e7f1ff 0%, #f0f7ff 100%);">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="small fw-semibold text-primary d-flex align-items-center" id="ocrProgressStatusText">
+                                    <span class="spinner-border spinner-border-sm me-2 text-primary" role="status"></span>
+                                    Mempersiapkan pembacaan capture OCR...
+                                </span>
+                                <span class="badge bg-primary rounded-pill font-monospace fw-bold px-2 py-1" id="ocrProgressPercent" style="font-size: 0.78rem;">0%</span>
+                            </div>
+                            <div class="progress" style="height: 6px; border-radius: 10px; background-color: rgba(13, 110, 253, 0.15);">
+                                <div id="ocrProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: 0%; transition: width 0.3s ease;"></div>
+                            </div>
+                        </div>
+
+                        <!-- CONTAINER PILIHAN LINK OCR (JIKA TERDETEKSI BANYAK LINK) -->
                         <div id="ocrDetectedLinksAlert" class="d-none alert alert-info py-2 px-3 mb-3 d-flex align-items-center justify-content-between small rounded-3 border-0 bg-primary bg-opacity-10">
                             <div class="d-flex align-items-center overflow-hidden">
                                 <i class="bi bi-check-circle-fill text-success me-2 fs-6 flex-shrink-0"></i>
@@ -2019,7 +2033,7 @@ function openPeriksaModalFromBtn(btn) {
     
     // Catatan
     document.getElementById('editCatatanPemeriksaan').value = d.catatan || '';
-    const _alertOcr = document.getElementById('ocrDetectedLinksAlert'); if (_alertOcr) _alertOcr.classList.add('d-none');
+    const _alertOcr = document.getElementById('ocrDetectedLinksAlert'); if (_alertOcr) _alertOcr.classList.add('d-none'); const _pCard = document.getElementById('ocrProgressCard'); if (_pCard) _pCard.classList.add('d-none');
     
     const modalEl = document.getElementById('periksaParameterModal');
     if (!periksaModalInstance) {
@@ -2201,7 +2215,92 @@ function selectBestOcrLink(ocrLinks) {
     return bestLink;
 }
 
-// 2. Fungsi Utama: Langsung Membaca Capturean Stasiun Terupload (Tanpa Pop-up Upload)
+let ocrProgressInterval = null;
+
+function setOcrProgress(percent, statusText) {
+    const card = document.getElementById('ocrProgressCard');
+    const bar = document.getElementById('ocrProgressBar');
+    const pctLabel = document.getElementById('ocrProgressPercent');
+    const txtLabel = document.getElementById('ocrProgressStatusText');
+    const btn = document.getElementById('btnIsiDariOCR');
+
+    if (card) card.classList.remove('d-none');
+    const safePct = Math.min(100, Math.max(0, percent));
+    if (bar) bar.style.width = safePct + '%';
+    if (pctLabel) pctLabel.innerText = Math.round(safePct) + '%';
+    if (txtLabel && statusText) {
+        txtLabel.innerHTML = `<span class="spinner-border spinner-border-sm me-2 text-primary" role="status"></span> ${statusText}`;
+    }
+    if (btn) {
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Membaca OCR (${Math.round(safePct)}%)...`;
+    }
+}
+
+function startOcrProgressSimulation() {
+    let currentPct = 12;
+    setOcrProgress(currentPct, 'Menghubungkan ke server & mengambil capturean...');
+    
+    if (ocrProgressInterval) clearInterval(ocrProgressInterval);
+
+    ocrProgressInterval = setInterval(() => {
+        if (currentPct < 32) {
+            currentPct += Math.random() * 5 + 3;
+            setOcrProgress(currentPct, 'Mengunduh gambar capture Radio & Port Setting...');
+        } else if (currentPct < 62) {
+            currentPct += Math.random() * 4 + 2;
+            setOcrProgress(currentPct, 'RapidOCR: Memindai tabel Radio Configuration...');
+        } else if (currentPct < 86) {
+            currentPct += Math.random() * 3 + 1.5;
+            setOcrProgress(currentPct, 'RapidOCR: Mengekstrak Tx, Rx, Bandwidth & Lawan...');
+        } else if (currentPct < 95) {
+            currentPct += 0.6;
+            setOcrProgress(currentPct, 'Menyinkronkan parameter teknis link...');
+        }
+    }, 380);
+}
+
+function finishOcrProgress(success = true) {
+    if (ocrProgressInterval) {
+        clearInterval(ocrProgressInterval);
+        ocrProgressInterval = null;
+    }
+    if (success) {
+        setOcrProgress(100, 'Ekstraksi selesai 100%! Parameter berhasil diterapkan.');
+        const bar = document.getElementById('ocrProgressBar');
+        if (bar) {
+            bar.className = 'progress-bar bg-success';
+        }
+        const pctLabel = document.getElementById('ocrProgressPercent');
+        if (pctLabel) {
+            pctLabel.className = 'badge bg-success rounded-pill font-monospace fw-bold px-2 py-1';
+        }
+    }
+    setTimeout(() => {
+        const card = document.getElementById('ocrProgressCard');
+        if (card) card.classList.add('d-none');
+        // Reset warna bar ke default biru
+        const bar = document.getElementById('ocrProgressBar');
+        if (bar) bar.className = 'progress-bar progress-bar-striped progress-bar-animated bg-primary';
+        const pctLabel = document.getElementById('ocrProgressPercent');
+        if (pctLabel) pctLabel.className = 'badge bg-primary rounded-pill font-monospace fw-bold px-2 py-1';
+    }, 1300);
+}
+
+function cancelOcrProgress() {
+    if (ocrProgressInterval) {
+        clearInterval(ocrProgressInterval);
+        ocrProgressInterval = null;
+    }
+    const card = document.getElementById('ocrProgressCard');
+    if (card) card.classList.add('d-none');
+    const bar = document.getElementById('ocrProgressBar');
+    if (bar) bar.className = 'progress-bar progress-bar-striped progress-bar-animated bg-primary';
+    const pctLabel = document.getElementById('ocrProgressPercent');
+    if (pctLabel) pctLabel.className = 'badge bg-primary rounded-pill font-monospace fw-bold px-2 py-1';
+}
+
+
+// 2. Fungsi Utama: Langsung Membaca Capturean Stasiun Terupload (Dengan Persentase)
 async function isiDariHasilOCR(forceRescan = false) {
     const btn = document.getElementById('btnIsiDariOCR');
     const originalBtnHtml = btn ? btn.innerHTML : '';
@@ -2225,13 +2324,12 @@ async function isiDariHasilOCR(forceRescan = false) {
         }
     }
 
-    // Jika belum ada di cache, langsung panggil server untuk membaca capturean stasiun
+    // Jika belum ada di cache, panggil server dengan animasi persentase aktif
     if (!ocrLinks || ocrLinks.length === 0) {
         if (btn) {
             btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Membaca capture...';
         }
-        showOcrToast('Sedang membaca capturean stasiun dengan RapidOCR...');
+        startOcrProgressSimulation();
 
         try {
             const resp = await fetch(`/api/stasiun/${stationId}/ocr-scan-uploads`, {
@@ -2241,14 +2339,17 @@ async function isiDariHasilOCR(forceRescan = false) {
             });
             const res = await resp.json();
             if (resp.ok && res.status === 'success' && res.links && res.links.length > 0) {
+                finishOcrProgress(true);
                 ocrLinks = res.links;
                 localStorage.setItem(cacheKey, JSON.stringify(ocrLinks));
                 localStorage.setItem('sipamel_last_ocr_links', JSON.stringify(ocrLinks));
             } else {
+                cancelOcrProgress();
                 alert(res.message || 'Belum ada gambar capturean yang diunggah untuk stasiun ini pada menu galeri stasiun.');
                 return;
             }
         } catch (e) {
+            cancelOcrProgress();
             alert('Gagal membaca capturean stasiun: ' + e.message);
             return;
         } finally {
@@ -2257,6 +2358,10 @@ async function isiDariHasilOCR(forceRescan = false) {
                 btn.innerHTML = originalBtnHtml;
             }
         }
+    } else {
+        // Tampilkan persentase 100% cepat dari cache
+        setOcrProgress(100, 'Memuat hasil OCR dari memori cache stasiun...');
+        finishOcrProgress(true);
     }
 
     if (!ocrLinks || ocrLinks.length === 0) {
