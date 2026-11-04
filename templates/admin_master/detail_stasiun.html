@@ -1057,7 +1057,7 @@
                                         <i class="bi bi-card-text text-muted me-1"></i> <span class="text-muted">ISR:</span> 
                                         <span class="text-danger font-monospace fw-bold" id="textISR_{{ opponent.id }}">{{ opponent.nomor_isr or '02877478-0005U/2620242029' }}</span>
                                     </div>
-                                    <button type="button" class="btn btn-outline-primary btn-sm w-100 rounded-2 fw-semibold py-1" style="font-size: 0.82rem;"
+                                    <button type="button" class="btn btn-outline-primary btn-sm w-100 rounded-2 fw-semibold py-1" data-bs-toggle="modal" data-bs-target="#periksaParameterModal" style="font-size: 0.82rem;"
                                         data-lawan-id="{{ opponent.id }}"
                                         data-lawan-nama="{{ opponent.nama }}"
                                         data-stasiun-nama="{{ station.stasiun_name }}"
@@ -2208,12 +2208,30 @@ function applyOCRValuesToForm(link) {
     }
 
     showOcrToast(`✓ ${appliedCount} parameter (Tx, Rx, BW, Merk) berhasil diisi dari hasil OCR!`);
+    alert(`✓ Parameter Berhasil Diisi dari Hasil OCR:\n- Tx: ${document.getElementById('edit_hasil_tx').value} MHz\n- Rx: ${document.getElementById('edit_hasil_rx').value} MHz\n- Bandwidth: ${document.getElementById('edit_hasil_bw').value} MHz\n- Perangkat: ${document.getElementById('edit_hasil_tipe').value}`);
 }
 
 function bukaQuickOcrModal() {
     const modalEl = document.getElementById('quickOcrModal');
     if (!quickOcrModalInstance) {
         quickOcrModalInstance = new bootstrap.Modal(modalEl);
+    }
+
+    const periksaModalEl = document.getElementById('periksaParameterModal');
+    let periksaInst = bootstrap.Modal.getInstance(periksaModalEl);
+    if (!periksaInst && window.bootstrap) {
+        periksaInst = new bootstrap.Modal(periksaModalEl);
+    }
+    
+    if (periksaInst && periksaModalEl.classList.contains('show')) {
+        periksaInst.hide();
+        const onQuickHidden = function() {
+            modalEl.removeEventListener('hidden.bs.modal', onQuickHidden);
+            setTimeout(() => {
+                periksaInst.show();
+            }, 300);
+        };
+        modalEl.addEventListener('hidden.bs.modal', onQuickHidden);
     }
 
     // Reset view
@@ -2226,7 +2244,9 @@ function bukaQuickOcrModal() {
     document.getElementById('btnApplyQuickOCR').classList.add('d-none');
     document.getElementById('quickOcrFileInput').value = '';
 
-    quickOcrModalInstance.show();
+    setTimeout(() => {
+        quickOcrModalInstance.show();
+    }, 200);
 }
 
 function handleQuickOcrFileSelect(files) {
@@ -2302,8 +2322,7 @@ async function runQuickOCR() {
         document.getElementById('btnApplyQuickOCR').classList.remove('d-none');
 
     } catch (err) {
-        alert('Kesalahan OCR:
-' + err.message);
+        alert('Kesalahan OCR: ' + err.message);
     } finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="bi bi-cpu me-1"></i> Scan Ulang';
@@ -2331,7 +2350,7 @@ async function scanDariGambarTerupload() {
         localStorage.setItem('sipamel_last_ocr_links', JSON.stringify(res.links));
         isiDariHasilOCR();
     } catch (e) {
-        alert('Gagal memindai gambar terupload: ' + e.message + '\n\nSilakan gunakan opsi "Scan Screenshot Baru" untuk mengunggah capture langsung.');
+        alert('Gagal memindai gambar terupload: ' + e.message);
     }
 }
 
