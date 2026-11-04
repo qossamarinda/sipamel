@@ -1342,6 +1342,38 @@
             return;
         }
 
+        // Jika links kosong, ekstrak link microwave dari teks regex
+        if ((!links || links.length === 0) && text) {
+            const txMatch = text.match(/(?:Tx(?:\s*RF)?|Transmitter|Tx\s*Freq)[\s:=]*(\d{4,6}(?:\.\d+)?)/i);
+            const rxMatch = text.match(/(?:Rx(?:\s*RF)?|Receiver|Rx\s*Freq)[\s:=]*(\d{4,6}(?:\.\d+)?)/i);
+            const bwMatch = text.match(/(?:BW|Bandwidth|Channel\s*Spacing)[\s:=]*(\d+(?:\.\d+)?)/i);
+            const devMatch = text.match(/(?:i?PASOLINK\s*[A-Za-z0-9_\-]+|NEC|HUAWEI|ERICSSON)/i);
+            const stnMatch = text.match(/(?:NE\s*Name|Station|Stasiun|STN)[\s:=]*([A-Za-z0-9_\-]+)/i);
+            const portMatch = text.match(/(?:Port\s*Name|Lawan|Target)[\s:=]*([A-Za-z0-9_\-]+)/i);
+            
+            if (txMatch || rxMatch) {
+                links = [{
+                    slot: 1,
+                    stn_name: stnMatch ? stnMatch[1] : null,
+                    stasiun_lawan: portMatch ? portMatch[1] : null,
+                    tx_rf: txMatch ? parseFloat(txMatch[1]) : null,
+                    rx_rf: rxMatch ? parseFloat(rxMatch[1]) : null,
+                    bw_mhz: bwMatch ? parseFloat(bwMatch[1]) : 28.0,
+                    merk_tipe: devMatch ? devMatch[0] : 'NEC iPASOLINK'
+                }];
+            }
+        }
+
+        if (links && links.length > 0) {
+            try {
+                localStorage.setItem('sipamel_last_ocr_links', JSON.stringify(links));
+                localStorage.setItem('sipamel_last_ocr_time', new Date().toISOString());
+            } catch (e) {
+                console.warn('LocalStorage save error:', e);
+            }
+        }
+
+
         const found = [];
 
         // Tambahkan pill dari link yang berhasil diidentifikasi RapidOCR

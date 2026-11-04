@@ -1694,6 +1694,23 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                         </div>
 
+                                                <!-- CONTAINER PILIHAN LINK OCR (JIKA TERDETEKSI BANYAK LINK) -->
+                        <div id="ocrDetectedLinksAlert" class="d-none alert alert-info py-2 px-3 mb-3 d-flex align-items-center justify-content-between small rounded-3 border-0 bg-primary bg-opacity-10">
+                            <div class="d-flex align-items-center overflow-hidden">
+                                <i class="bi bi-check-circle-fill text-success me-2 fs-6 flex-shrink-0"></i>
+                                <div class="text-truncate" id="ocrDetectedLinksText">
+                                    Link diterapkan: <strong>-</strong>
+                                </div>
+                            </div>
+                            <div class="dropdown flex-shrink-0 ms-2" id="ocrSwitchLinkDropdown">
+                                <button class="btn btn-sm btn-primary rounded-pill px-3 dropdown-toggle shadow-sm" type="button" data-bs-toggle="dropdown" style="font-size: 0.75rem;">
+                                    Ganti Link OCR
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow border-0 small" id="ocrSwitchLinkList" style="min-width: 290px; max-height: 250px; overflow-y: auto;">
+                                </ul>
+                            </div>
+                        </div>
+
                         <div class="table-responsive">
                             <table class="table table-bordered table-sm align-middle mb-0">
                                 <thead>
@@ -1900,6 +1917,7 @@ function openPeriksaModalFromBtn(btn) {
     
     // Catatan
     document.getElementById('editCatatanPemeriksaan').value = d.catatan || '';
+    const _alertOcr = document.getElementById('ocrDetectedLinksAlert'); if (_alertOcr) _alertOcr.classList.add('d-none');
     
     const modalEl = document.getElementById('periksaParameterModal');
     if (!periksaModalInstance) {
@@ -1976,11 +1994,12 @@ async function submitPeriksaParameter(e) {
 }
 
 // ============================================================================
-// LOGIKA FITUR ISI DARI HASIL OCR
+// LOGIKA FITUR ISI DARI HASIL OCR LENGKAP & OTOMATIS
 // ============================================================================
 let quickOcrModalInstance = null;
 let currentQuickOcrImageBase64 = null;
 let detectedQuickOcrLink = null;
+let currentLoadedOcrLinks = [];
 
 function flashFieldHighlight(fieldId) {
     const el = document.getElementById(fieldId);
@@ -1988,10 +2007,12 @@ function flashFieldHighlight(fieldId) {
     el.style.transition = 'all 0.3s ease';
     el.style.backgroundColor = '#d1e7dd';
     el.style.borderColor = '#198754';
+    el.style.boxShadow = '0 0 0 0.25rem rgba(25, 135, 84, 0.25)';
     setTimeout(() => {
         el.style.backgroundColor = '';
         el.style.borderColor = '';
-    }, 2000);
+        el.style.boxShadow = '';
+    }, 2200);
 }
 
 function showOcrToast(msg) {
@@ -2019,129 +2040,272 @@ function showOcrToast(msg) {
     setTimeout(() => {
         toast.style.opacity = '0';
         toast.style.transform = 'translateY(20px)';
-    }, 3800);
+    }, 4000);
 }
 
-function isiDariHasilOCR() {
-    let ocrLinks = [];
-    try {
-        const raw = localStorage.getItem('sipamel_last_ocr_links');
-        if (raw) {
-            ocrLinks = JSON.parse(raw);
+// 1. Ekstraksi cerdas: Pilih link terbaik yang cocok dengan data link yang sedang dibuka
+function selectBestOcrLink(ocrLinks) {
+    if (!ocrLinks || ocrLinks.length === 0) return null;
+    if (ocrLinks.length === 1) return ocrLinks[0];
+
+    const isrTx = parseFloat(document.getElementById('val_isr_tx').innerText) || null;
+    const isrRx = parseFloat(document.getElementById('val_isr_rx').innerText) || null;
+    const lawanNama = (document.getElementById('modalStationLawan').innerText || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+    let bestScore = -1;
+    let bestLink = ocrLinks[0];
+
+    for (const l of ocrLinks) {
+        let score = 0;
+        const lTx = parseFloat(l.tx_rf) || null;
+        const lRx = parseFloat(l.rx_rf) || null;
+        const candLawan = (l.stasiun_lawan || l.lawan || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+        // 1. Pasangan Frekuensi Tx & Rx Cocok Sempurna (Bobot Tertinggi)
+        if (isrTx && isrRx && lTx && lRx) {
+            if (Math.abs(lTx - isrTx) < 0.5 && Math.abs(lRx - isrRx) < 0.5) {
+                score += 100;
+            } else if (Math.abs(lTx - isrRx) < 0.5 && Math.abs(lRx - isrTx) < 0.5) {
+                // Pasangan frekuensi terbalik (sudut pandang stasiun lawan)
+                score += 90;
+            }
         }
-    } catch (e) {
-        console.warn('Gagal membaca localStorage:', e);
+
+        // 2. Salah satu frekuensi cocok
+        if (isrTx && lTx && Math.abs(lTx - isrTx) < 0.5) score += 40;
+        if (isrRx && lRx && Math.abs(lRx - isrRx) < 0.5) score += 40;
+
+        // 3. Nama stasiun lawan cocok
+        if (candLawan && lawanNama) {
+            if (candLawan.includes(lawanNama) || lawanNama.includes(candLawan)) {
+                score += 50;
+            } else {
+                const shortLawan = lawanNama.substring(0, 6);
+                if (shortLawan.length >= 4 && candLawan.includes(shortLawan)) {
+                    score += 30;
+                }
+            }
+        }
+
+        if (score > bestScore) {
+            bestScore = score;
+            bestLink = l;
+        }
     }
 
+    return bestLink;
+}
+
+// 2. Fungsi Utama: Isi Form dari Hasil OCR
+async function isiDariHasilOCR(forceRescan = false) {
+    const btn = document.getElementById('btnIsiDariOCR');
+    const originalBtnHtml = btn ? btn.innerHTML : '';
+
+    let ocrLinks = [];
+
+    // Cek localStorage jika tidak dipaksa scan ulang
+    if (!forceRescan) {
+        try {
+            const raw = localStorage.getItem('sipamel_last_ocr_links');
+            if (raw) {
+                ocrLinks = JSON.parse(raw);
+            }
+        } catch (e) {
+            console.warn('Gagal membaca localStorage:', e);
+        }
+    }
+
+    // Jika belum ada data OCR, otomatis scan gambar terupload stasiun ini ke server
+    if (!ocrLinks || ocrLinks.length === 0) {
+        const stationId = '{{ station.id }}';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Memindai OCR...';
+        }
+        showOcrToast('Sedang memindai gambar terupload stasiun ini dengan RapidOCR...');
+
+        try {
+            const resp = await fetch(`/api/stasiun/${stationId}/ocr-scan-uploads`, { method: 'POST' });
+            const res = await resp.json();
+            if (resp.ok && res.status === 'success' && res.links && res.links.length > 0) {
+                ocrLinks = res.links;
+                localStorage.setItem('sipamel_last_ocr_links', JSON.stringify(ocrLinks));
+            } else {
+                console.info('Tidak ada hasil OCR dari gambar stasiun:', res.message);
+            }
+        } catch (e) {
+            console.warn('Gagal scan gambar stasiun:', e);
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalBtnHtml;
+            }
+        }
+    }
+
+    // Jika masih belum ada data link OCR sama sekali, buka modal Quick OCR untuk tempel gambar
     if (!ocrLinks || ocrLinks.length === 0) {
         bukaQuickOcrModal();
         return;
     }
 
-    const lawanNama = (document.getElementById('modalStationLawan').innerText || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-    let matched = null;
+    currentLoadedOcrLinks = ocrLinks;
 
-    if (ocrLinks.length === 1) {
-        matched = ocrLinks[0];
+    // Pilih link paling cocok
+    const matched = selectBestOcrLink(ocrLinks);
+    if (matched) {
+        applyOCRValuesToForm(matched);
+        if (ocrLinks.length > 1) {
+            tampilkanPilihanLinkOcr(ocrLinks, matched);
+        }
     } else {
-        for (const l of ocrLinks) {
-            const cand = (l.stasiun_lawan || l.lawan || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-            if (cand && (lawanNama.includes(cand) || cand.includes(lawanNama))) {
-                matched = l;
-                break;
-            }
-        }
-        if (!matched) {
-            matched = ocrLinks[0];
-        }
+        bukaQuickOcrModal();
     }
-
-    applyOCRValuesToForm(matched);
 }
 
+// 3. Masukkan Nilai Hasil Ekstraksi OCR ke Kolom Form Hasil Pemeriksaan
 function applyOCRValuesToForm(link) {
     if (!link) return;
 
     let appliedCount = 0;
+    const appliedParams = [];
 
-    // 1. Frekuensi Tx
-    if (link.tx_rf !== undefined && link.tx_rf !== null) {
-        document.getElementById('edit_hasil_tx').value = link.tx_rf;
+    // 1. Frekuensi Tx (MHz)
+    let txVal = link.tx_rf !== undefined && link.tx_rf !== null ? link.tx_rf : (link.tx || link.freq_tx || '');
+    if (txVal !== '') {
+        const num = Number(txVal);
+        if (!isNaN(num)) {
+            txVal = (num % 1 === 0) ? String(Math.round(num)) : String(num);
+        }
+        document.getElementById('edit_hasil_tx').value = txVal;
         flashFieldHighlight('edit_hasil_tx');
         appliedCount++;
+        appliedParams.push(`Tx: ${txVal} MHz`);
     }
 
-    // 2. Frekuensi Rx
-    if (link.rx_rf !== undefined && link.rx_rf !== null) {
-        document.getElementById('edit_hasil_rx').value = link.rx_rf;
+    // 2. Frekuensi Rx (MHz)
+    let rxVal = link.rx_rf !== undefined && link.rx_rf !== null ? link.rx_rf : (link.rx || link.freq_rx || '');
+    if (rxVal !== '') {
+        const num = Number(rxVal);
+        if (!isNaN(num)) {
+            rxVal = (num % 1 === 0) ? String(Math.round(num)) : String(num);
+        }
+        document.getElementById('edit_hasil_rx').value = rxVal;
         flashFieldHighlight('edit_hasil_rx');
         appliedCount++;
+        appliedParams.push(`Rx: ${rxVal} MHz`);
     }
 
-    // 3. Bandwidth
-    const rawBw = link.bw_mhz !== undefined ? link.bw_mhz : link.bandwidth;
-    if (rawBw !== undefined && rawBw !== null) {
-        let bwVal = String(rawBw).trim();
+    // 3. Bandwidth (MHz)
+    let rawBw = link.bw_mhz !== undefined && link.bw_mhz !== null ? link.bw_mhz : (link.bw || link.bandwidth || '');
+    if (rawBw !== '') {
+        let bwNum = Number(rawBw);
         const isrBw = (document.getElementById('val_isr_bw').innerText || '').trim();
-        if (isrBw.length >= 5 && Number(bwVal) < 1000) {
-            bwVal = String(Math.round(Number(bwVal) * 1000));
+        let bwStr = String(rawBw);
+        if (!isNaN(bwNum)) {
+            // Sesuaikan satuan jika ISR menggunakan format kHz (misal 28000 vs 28)
+            if (Number(isrBw) > 500 && bwNum < 500) {
+                bwStr = String(Math.round(bwNum * 1000));
+            } else if (Number(isrBw) < 500 && bwNum > 500) {
+                bwStr = String(Math.round(bwNum / 1000));
+            } else {
+                bwStr = (bwNum % 1 === 0) ? String(Math.round(bwNum)) : String(bwNum);
+            }
         }
-        document.getElementById('edit_hasil_bw').value = bwVal;
+        document.getElementById('edit_hasil_bw').value = bwStr;
         flashFieldHighlight('edit_hasil_bw');
         appliedCount++;
+        appliedParams.push(`BW: ${bwStr} MHz`);
     }
 
     // 4. Merk / Tipe Perangkat
-    const rawTipe = link.merk_tipe || link.perangkat || link.equip_info;
+    let rawTipe = link.merk_tipe || link.perangkat || link.equip_info || link.model || '';
+    if (typeof rawTipe === 'object') {
+        rawTipe = rawTipe.full_name || rawTipe.model || 'NEC iPASOLINK';
+    }
     if (rawTipe) {
-        let tipeStr = typeof rawTipe === 'object' ? (rawTipe.full_name || rawTipe.model || 'NEC') : String(rawTipe);
+        const isrTipe = (document.getElementById('val_isr_tipe').innerText || '').trim();
+        let tipeStr = String(rawTipe).trim();
+        if (isrTipe && isrTipe !== '-' && (isrTipe.toLowerCase().includes(tipeStr.toLowerCase()) || tipeStr.toLowerCase().includes(isrTipe.toLowerCase()))) {
+            tipeStr = isrTipe;
+        }
         document.getElementById('edit_hasil_tipe').value = tipeStr;
         flashFieldHighlight('edit_hasil_tipe');
         appliedCount++;
+        appliedParams.push(`Perangkat: ${tipeStr}`);
     }
 
-    // Bandingkan dengan Nilai ISR
-    const txIsr = (document.getElementById('val_isr_tx').innerText || '').trim();
-    const rxIsr = (document.getElementById('val_isr_rx').innerText || '').trim();
-    const txHasil = (document.getElementById('edit_hasil_tx').value || '').trim();
-    const rxHasil = (document.getElementById('edit_hasil_rx').value || '').trim();
+    // Bandingkan dengan Nilai ISR (SIMS) untuk update Status Pemeriksaan
+    const txIsr = parseFloat(document.getElementById('val_isr_tx').innerText);
+    const rxIsr = parseFloat(document.getElementById('val_isr_rx').innerText);
+    const bwIsr = parseFloat(document.getElementById('val_isr_bw').innerText);
 
-    if (txIsr && rxIsr && txHasil && rxHasil) {
-        if (Number(txIsr) === Number(txHasil) && Number(rxIsr) === Number(rxHasil)) {
-            document.getElementById('editHasilPemeriksaan').value = 'Sesuai ISR';
-        } else {
-            document.getElementById('editHasilPemeriksaan').value = 'Tidak Sesuai Parameter Teknis';
+    const txHasil = parseFloat(document.getElementById('edit_hasil_tx').value);
+    const rxHasil = parseFloat(document.getElementById('edit_hasil_rx').value);
+    const bwHasil = parseFloat(document.getElementById('edit_hasil_bw').value);
+
+    let isMatch = true;
+    if (!isNaN(txIsr) && !isNaN(txHasil) && Math.abs(txIsr - txHasil) > 0.01) isMatch = false;
+    if (!isNaN(rxIsr) && !isNaN(rxHasil) && Math.abs(rxIsr - rxHasil) > 0.01) isMatch = false;
+    if (!isNaN(bwIsr) && !isNaN(bwHasil)) {
+        if (bwIsr !== bwHasil && Math.abs(bwIsr - bwHasil * 1000) > 0.01 && Math.abs(bwIsr * 1000 - bwHasil) > 0.01) {
+            isMatch = false;
         }
     }
 
+    const editStatus = document.getElementById('editHasilPemeriksaan');
+    if (editStatus) {
+        editStatus.value = isMatch ? 'Sesuai ISR' : 'Tidak Sesuai Parameter Teknis';
+    }
+
     showOcrToast(`✓ ${appliedCount} parameter (Tx, Rx, BW, Merk) berhasil diisi dari hasil OCR!`);
-    alert(`✓ Parameter Berhasil Diisi dari Hasil OCR:\n- Tx: ${document.getElementById('edit_hasil_tx').value} MHz\n- Rx: ${document.getElementById('edit_hasil_rx').value} MHz\n- Bandwidth: ${document.getElementById('edit_hasil_bw').value} MHz\n- Perangkat: ${document.getElementById('edit_hasil_tipe').value}`);
 }
 
+// 4. Tampilkan Pilihan Switch Link jika terdeteksi banyak link microwave
+function tampilkanPilihanLinkOcr(ocrLinks, activeLink) {
+    const alertEl = document.getElementById('ocrDetectedLinksAlert');
+    const textEl = document.getElementById('ocrDetectedLinksText');
+    const listEl = document.getElementById('ocrSwitchLinkList');
+    if (!alertEl || !textEl || !listEl) return;
+
+    const slotLabel = activeLink.slot ? `Slot ${activeLink.slot}` : 'Link';
+    const lawanLabel = activeLink.stasiun_lawan || activeLink.lawan || 'Lawan';
+    textEl.innerHTML = `Diterapkan dari OCR: <strong>${slotLabel} (${lawanLabel})</strong> &bull; Tx: ${activeLink.tx_rf} MHz, Rx: ${activeLink.rx_rf} MHz`;
+
+    listEl.innerHTML = '';
+    ocrLinks.forEach((l, idx) => {
+        const li = document.createElement('li');
+        const sLab = l.slot ? `Slot ${l.slot}` : `Link #${idx + 1}`;
+        const lawLab = l.stasiun_lawan || l.lawan || 'Microwave';
+        const isCurrent = l === activeLink;
+        li.innerHTML = `
+            <a class="dropdown-item py-2 ${isCurrent ? 'bg-light fw-bold text-primary' : ''}" href="javascript:void(0)">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>${sLab} - ${lawLab}</span>
+                    ${isCurrent ? '<i class="bi bi-check2 text-primary"></i>' : ''}
+                </div>
+                <div class="small text-muted" style="font-size: 0.73rem;">
+                    Tx: ${l.tx_rf || '-'} MHz | Rx: ${l.rx_rf || '-'} MHz | BW: ${l.bw_mhz || '-'} MHz
+                </div>
+            </a>
+        `;
+        li.querySelector('a').onclick = () => {
+            applyOCRValuesToForm(l);
+            tampilkanPilihanLinkOcr(ocrLinks, l);
+        };
+        listEl.appendChild(li);
+    });
+
+    alertEl.classList.remove('d-none');
+}
+
+// 5. Modal Cepat Tempel Screenshot (Quick OCR)
 function bukaQuickOcrModal() {
     const modalEl = document.getElementById('quickOcrModal');
     if (!quickOcrModalInstance) {
         quickOcrModalInstance = new bootstrap.Modal(modalEl);
     }
 
-    const periksaModalEl = document.getElementById('periksaParameterModal');
-    let periksaInst = bootstrap.Modal.getInstance(periksaModalEl);
-    if (!periksaInst && window.bootstrap) {
-        periksaInst = new bootstrap.Modal(periksaModalEl);
-    }
-    
-    if (periksaInst && periksaModalEl.classList.contains('show')) {
-        periksaInst.hide();
-        const onQuickHidden = function() {
-            modalEl.removeEventListener('hidden.bs.modal', onQuickHidden);
-            setTimeout(() => {
-                periksaInst.show();
-            }, 300);
-        };
-        modalEl.addEventListener('hidden.bs.modal', onQuickHidden);
-    }
-
-    // Reset view
     currentQuickOcrImageBase64 = null;
     detectedQuickOcrLink = null;
     document.getElementById('quickOcrPreviewContainer').classList.add('d-none');
@@ -2151,9 +2315,7 @@ function bukaQuickOcrModal() {
     document.getElementById('btnApplyQuickOCR').classList.add('d-none');
     document.getElementById('quickOcrFileInput').value = '';
 
-    setTimeout(() => {
-        quickOcrModalInstance.show();
-    }, 200);
+    quickOcrModalInstance.show();
 }
 
 function handleQuickOcrFileSelect(files) {
@@ -2170,18 +2332,57 @@ function handleQuickOcrFileSelect(files) {
     reader.readAsDataURL(file);
 }
 
-// Global Paste Listener untuk Quick OCR Modal
-document.addEventListener('paste', function(e) {
+// 6. Global Paste Listener: Tempel screenshot (Ctrl+V) langsung di Modal
+document.addEventListener('paste', async function(e) {
+    const periksaModalEl = document.getElementById('periksaParameterModal');
     const quickModalEl = document.getElementById('quickOcrModal');
-    if (!quickModalEl || !quickModalEl.classList.contains('show')) return;
+    
+    const isPeriksaOpen = periksaModalEl && periksaModalEl.classList.contains('show');
+    const isQuickOpen = quickModalEl && quickModalEl.classList.contains('show');
+
+    if (!isPeriksaOpen && !isQuickOpen) return;
 
     if (e.clipboardData && e.clipboardData.items) {
         for (let i = 0; i < e.clipboardData.items.length; i++) {
             const item = e.clipboardData.items[i];
             if (item.type.indexOf('image') !== -1) {
                 const blob = item.getAsFile();
-                handleQuickOcrFileSelect([blob]);
                 e.preventDefault();
+
+                if (isQuickOpen) {
+                    handleQuickOcrFileSelect([blob]);
+                } else if (isPeriksaOpen) {
+                    // Paste langsung di dalam modal pemeriksaan!
+                    showOcrToast('Memproses screenshot dari clipboard (Ctrl+V) dengan RapidOCR...');
+                    const reader = new FileReader();
+                    reader.onload = async function(evt) {
+                        const b64 = evt.target.result;
+                        try {
+                            const resp = await fetch('/api/ocr/rapidocr', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    images: [b64],
+                                    station_hint: document.getElementById('modalStationInduk').innerText
+                                })
+                            });
+                            const data = await resp.json();
+                            if (resp.ok && data.status === 'success' && data.links && data.links.length > 0) {
+                                localStorage.setItem('sipamel_last_ocr_links', JSON.stringify(data.links));
+                                const best = selectBestOcrLink(data.links);
+                                applyOCRValuesToForm(best);
+                                if (data.links.length > 1) {
+                                    tampilkanPilihanLinkOcr(data.links, best);
+                                }
+                            } else {
+                                alert('RapidOCR: ' + (data.message || 'Tidak ada microwave link yang cocok.'));
+                            }
+                        } catch (err) {
+                            alert('Gagal memproses gambar clipboard: ' + err.message);
+                        }
+                    };
+                    reader.readAsDataURL(blob);
+                }
                 break;
             }
         }
@@ -2218,9 +2419,9 @@ async function runQuickOCR() {
         }
 
         localStorage.setItem('sipamel_last_ocr_links', JSON.stringify(links));
-        detectedQuickOcrLink = links[0];
+        detectedQuickOcrLink = selectBestOcrLink(links) || links[0];
 
-        // Tampilkan hasil di modal
+        // Tampilkan hasil di modal Quick OCR
         document.getElementById('quickOcrResultTx').innerText = detectedQuickOcrLink.tx_rf || '-';
         document.getElementById('quickOcrResultRx').innerText = detectedQuickOcrLink.rx_rf || '-';
         document.getElementById('quickOcrResultBw').innerText = detectedQuickOcrLink.bw_mhz || '-';
@@ -2255,12 +2456,14 @@ async function scanDariGambarTerupload() {
             throw new Error(res.message || 'Tidak ada link yang terdeteksi pada gambar terupload.');
         }
         localStorage.setItem('sipamel_last_ocr_links', JSON.stringify(res.links));
-        isiDariHasilOCR();
+        isiDariHasilOCR(true);
     } catch (e) {
         alert('Gagal memindai gambar terupload: ' + e.message);
     }
 }
 
 </script>
+
+
 
 {% endblock %}
