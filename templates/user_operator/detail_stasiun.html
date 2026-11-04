@@ -1842,7 +1842,11 @@ function openPeriksaModalFromBtn(btn) {
     // Technical table - Nilai ISR (SIMS)
     document.getElementById('val_isr_tx').innerText = d.isrTx || '-';
     document.getElementById('val_isr_rx').innerText = d.isrRx || '-';
-    document.getElementById('val_isr_bw').innerText = d.isrBw || '-';
+    let isrBwDisplay = d.isrBw || '-';
+    if (isrBwDisplay !== '-' && Number(isrBwDisplay) > 500) {
+        isrBwDisplay = String(Math.round(Number(isrBwDisplay) / 1000));
+    }
+    document.getElementById('val_isr_bw').innerText = isrBwDisplay;
     document.getElementById('val_isr_tipe').innerText = d.isrTipe || '-';
     document.getElementById('val_isr_long').innerText = d.isrLong || '-';
     document.getElementById('val_isr_lat').innerText = d.isrLat || '-';
@@ -1850,7 +1854,11 @@ function openPeriksaModalFromBtn(btn) {
     // Technical table - Hasil Pemeriksaan (Dapat Diedit)
     document.getElementById('edit_hasil_tx').value = d.hasilTx || (d.isrTx !== '-' ? d.isrTx : '');
     document.getElementById('edit_hasil_rx').value = d.hasilRx || (d.isrRx !== '-' ? d.isrRx : '');
-    document.getElementById('edit_hasil_bw').value = d.hasilBw || (d.isrBw !== '-' ? d.isrBw : '');
+    let hasilBwDisplay = d.hasilBw || (d.isrBw !== '-' ? d.isrBw : '');
+    if (hasilBwDisplay && Number(hasilBwDisplay) > 500) {
+        hasilBwDisplay = String(Math.round(Number(hasilBwDisplay) / 1000));
+    }
+    document.getElementById('edit_hasil_bw').value = hasilBwDisplay;
     document.getElementById('edit_hasil_tipe').value = d.hasilTipe || (d.isrTipe !== '-' ? d.isrTipe : '');
     document.getElementById('edit_hasil_long').value = d.hasilLong || (d.isrLong !== '-' ? d.isrLong : '');
     document.getElementById('edit_hasil_lat').value = d.hasilLat || (d.isrLat !== '-' ? d.isrLat : '');
@@ -1876,7 +1884,10 @@ function samakanDenganISR() {
 
     if (tx !== '-') document.getElementById('edit_hasil_tx').value = tx;
     if (rx !== '-') document.getElementById('edit_hasil_rx').value = rx;
-    if (bw !== '-') document.getElementById('edit_hasil_bw').value = bw;
+    if (bw !== '-') {
+        if (Number(bw) > 500) bw = String(Math.round(Number(bw) / 1000));
+        document.getElementById('edit_hasil_bw').value = bw;
+    }
     if (tipe !== '-') document.getElementById('edit_hasil_tipe').value = tipe;
     if (long !== '-') document.getElementById('edit_hasil_long').value = long;
     if (lat !== '-') document.getElementById('edit_hasil_lat').value = lat;
@@ -2136,21 +2147,17 @@ function applyOCRValuesToForm(link) {
         appliedParams.push(`Rx: ${rxVal} MHz`);
     }
 
-    // 3. Bandwidth (MHz)
+    // 3. Bandwidth (MHz) - Tetap dalam satuan MHz (misal: 28), tidak diubah ke 28000
     let rawBw = link.bw_mhz !== undefined && link.bw_mhz !== null ? link.bw_mhz : (link.bw || link.bandwidth || '');
     if (rawBw !== '') {
         let bwNum = Number(rawBw);
-        const isrBw = (document.getElementById('val_isr_bw').innerText || '').trim();
-        let bwStr = String(rawBw);
+        let bwStr = String(rawBw).trim();
         if (!isNaN(bwNum)) {
-            // Sesuaikan satuan jika ISR menggunakan format kHz (misal 28000 vs 28)
-            if (Number(isrBw) > 500 && bwNum < 500) {
-                bwStr = String(Math.round(bwNum * 1000));
-            } else if (Number(isrBw) < 500 && bwNum > 500) {
-                bwStr = String(Math.round(bwNum / 1000));
-            } else {
-                bwStr = (bwNum % 1 === 0) ? String(Math.round(bwNum)) : String(bwNum);
+            // Jika terbaca dalam satuan kHz (> 500), konversi ke MHz (misal 28000 -> 28)
+            if (bwNum > 500) {
+                bwNum = bwNum / 1000;
             }
+            bwStr = (bwNum % 1 === 0) ? String(Math.round(bwNum)) : String(bwNum);
         }
         document.getElementById('edit_hasil_bw').value = bwStr;
         flashFieldHighlight('edit_hasil_bw');
@@ -2178,20 +2185,18 @@ function applyOCRValuesToForm(link) {
     // Bandingkan dengan Nilai ISR (SIMS) untuk update Status Pemeriksaan
     const txIsr = parseFloat(document.getElementById('val_isr_tx').innerText);
     const rxIsr = parseFloat(document.getElementById('val_isr_rx').innerText);
-    const bwIsr = parseFloat(document.getElementById('val_isr_bw').innerText);
+    let bwIsr = parseFloat(document.getElementById('val_isr_bw').innerText);
+    if (bwIsr > 500) bwIsr = bwIsr / 1000;
 
     const txHasil = parseFloat(document.getElementById('edit_hasil_tx').value);
     const rxHasil = parseFloat(document.getElementById('edit_hasil_rx').value);
-    const bwHasil = parseFloat(document.getElementById('edit_hasil_bw').value);
+    let bwHasil = parseFloat(document.getElementById('edit_hasil_bw').value);
+    if (bwHasil > 500) bwHasil = bwHasil / 1000;
 
     let isMatch = true;
     if (!isNaN(txIsr) && !isNaN(txHasil) && Math.abs(txIsr - txHasil) > 0.01) isMatch = false;
     if (!isNaN(rxIsr) && !isNaN(rxHasil) && Math.abs(rxIsr - rxHasil) > 0.01) isMatch = false;
-    if (!isNaN(bwIsr) && !isNaN(bwHasil)) {
-        if (bwIsr !== bwHasil && Math.abs(bwIsr - bwHasil * 1000) > 0.01 && Math.abs(bwIsr * 1000 - bwHasil) > 0.01) {
-            isMatch = false;
-        }
-    }
+    if (!isNaN(bwIsr) && !isNaN(bwHasil) && Math.abs(bwIsr - bwHasil) > 0.01) isMatch = false;
 
     const editStatus = document.getElementById('editHasilPemeriksaan');
     if (editStatus) {

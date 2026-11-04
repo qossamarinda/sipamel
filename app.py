@@ -5607,10 +5607,22 @@ def build_stasiun_lawan_dict(lawan, station, latest_status=None, status_history=
     sertifikat_perangkat = lawan.sertifikat_perangkat or 'Ada'
     mulai_beroperasi = lawan.mulai_beroperasi or '-'
 
+    def _normalize_bw_mhz(val, default='28'):
+        if not val:
+            return default
+        s = str(val).strip()
+        try:
+            num = float(s)
+            if num > 500:
+                num = num / 1000.0
+            return str(int(round(num))) if num.is_integer() else str(round(num, 2))
+        except ValueError:
+            return s.replace('kHz', '').replace('khz', '').strip() or default
+
     # Baseline Nilai ISR (SIMS) dari data stasiun / stasiun lawan
     isr_freq_tx = lawan.freq_tx or '-'
     isr_freq_rx = lawan.freq_rx or '-'
-    isr_bw_mhz = lawan.bw_mhz or '28000'
+    isr_bw_mhz = _normalize_bw_mhz(lawan.bw_mhz, default='28')
     isr_tipe_perangkat = lawan.tipe_perangkat or 'NEC iPasolink VR10 Radio Frekuensi'
     isr_longitude = lawan.longitude or '116.71388889'
     isr_latitude = lawan.latitude or '-0.97194444'
@@ -5618,7 +5630,7 @@ def build_stasiun_lawan_dict(lawan, station, latest_status=None, status_history=
     # Hasil Pemeriksaan (Dapat Diedit)
     hasil_freq_tx = lawan.hasil_freq_tx if lawan.hasil_freq_tx is not None else (lawan.freq_tx or '15215')
     hasil_freq_rx = lawan.hasil_freq_rx if lawan.hasil_freq_rx is not None else (lawan.freq_rx or '14725')
-    hasil_bw_mhz = lawan.hasil_bw_mhz if lawan.hasil_bw_mhz is not None else (lawan.bw_mhz or '28000')
+    hasil_bw_mhz = _normalize_bw_mhz(lawan.hasil_bw_mhz if lawan.hasil_bw_mhz is not None else lawan.bw_mhz, default='28')
     hasil_tipe_perangkat = lawan.hasil_tipe_perangkat if lawan.hasil_tipe_perangkat is not None else (lawan.tipe_perangkat or 'NEC iPasolink VR10 Radio Frekuensi')
     hasil_longitude = lawan.hasil_longitude if lawan.hasil_longitude is not None else (lawan.longitude or '116.71388889')
     hasil_latitude = lawan.hasil_latitude if lawan.hasil_latitude is not None else (lawan.latitude or '-0.97194444')
