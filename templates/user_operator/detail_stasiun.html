@@ -1610,18 +1610,19 @@ document.addEventListener('DOMContentLoaded', function() {
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3 small">
                                         <li>
-                                            <a class="dropdown-item py-2" href="javascript:void(0)" onclick="isiDariHasilOCR()">
-                                                <i class="bi bi-lightning-charge text-warning me-2"></i> Gunakan Hasil OCR Terakhir
+                                            <a class="dropdown-item py-2" href="javascript:void(0)" onclick="isiDariHasilOCR(false)">
+                                                <i class="bi bi-lightning-charge text-primary me-2"></i> Baca Capturean Stasiun Ini (Otomatis)
                                             </a>
                                         </li>
+                                        <li>
+                                            <a class="dropdown-item py-2" href="javascript:void(0)" onclick="isiDariHasilOCR(true)">
+                                                <i class="bi bi-arrow-repeat text-success me-2"></i> Pindai Ulang Capturean (Fresh Scan)
+                                            </a>
+                                        </li>
+                                        <li><hr class="dropdown-divider my-1"></li>
                                         <li>
                                             <a class="dropdown-item py-2" href="javascript:void(0)" onclick="bukaQuickOcrModal()">
-                                                <i class="bi bi-camera-fill text-primary me-2"></i> Scan Screenshot Baru (Paste Ctrl+V / Upload)
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a class="dropdown-item py-2" href="javascript:void(0)" onclick="scanDariGambarTerupload()">
-                                                <i class="bi bi-images text-success me-2"></i> Scan Gambar Terupload Stasiun Ini
+                                                <i class="bi bi-upload text-muted me-2"></i> Unggah Screenshot Manual (Opsional)
                                             </a>
                                         </li>
                                     </ul>
@@ -2047,45 +2048,56 @@ function selectBestOcrLink(ocrLinks) {
     return bestLink;
 }
 
-// 2. Fungsi Utama: Isi Form dari Hasil OCR
+// 2. Fungsi Utama: Langsung Membaca Capturean Stasiun Terupload (Tanpa Pop-up Upload)
 async function isiDariHasilOCR(forceRescan = false) {
     const btn = document.getElementById('btnIsiDariOCR');
     const originalBtnHtml = btn ? btn.innerHTML : '';
+    const stationId = '{{ station.id }}';
+    const cacheKey = 'sipamel_station_' + stationId + '_ocr_links';
 
     let ocrLinks = [];
 
-    // Cek localStorage jika tidak dipaksa scan ulang
+    // Cek cache lokal stasiun ini jika tidak dipaksa scan ulang
     if (!forceRescan) {
         try {
-            const raw = localStorage.getItem('sipamel_last_ocr_links');
+            const raw = localStorage.getItem(cacheKey);
             if (raw) {
-                ocrLinks = JSON.parse(raw);
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    ocrLinks = parsed;
+                }
             }
         } catch (e) {
-            console.warn('Gagal membaca localStorage:', e);
+            console.warn('Gagal membaca cache stasiun:', e);
         }
     }
 
-    // Jika belum ada data OCR, otomatis scan gambar terupload stasiun ini ke server
+    // Jika belum ada di cache, langsung panggil server untuk membaca capturean stasiun
     if (!ocrLinks || ocrLinks.length === 0) {
-        const stationId = '{{ station.id }}';
         if (btn) {
             btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Memindai OCR...';
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Membaca capture...';
         }
-        showOcrToast('Sedang memindai gambar terupload stasiun ini dengan RapidOCR...');
+        showOcrToast('Sedang membaca capturean stasiun dengan RapidOCR...');
 
         try {
-            const resp = await fetch(`/api/stasiun/${stationId}/ocr-scan-uploads`, { method: 'POST' });
+            const resp = await fetch(`/api/stasiun/${stationId}/ocr-scan-uploads`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ force: forceRescan })
+            });
             const res = await resp.json();
             if (resp.ok && res.status === 'success' && res.links && res.links.length > 0) {
                 ocrLinks = res.links;
+                localStorage.setItem(cacheKey, JSON.stringify(ocrLinks));
                 localStorage.setItem('sipamel_last_ocr_links', JSON.stringify(ocrLinks));
             } else {
-                console.info('Tidak ada hasil OCR dari gambar stasiun:', res.message);
+                alert(res.message || 'Belum ada gambar capturean yang diunggah untuk stasiun ini pada menu galeri stasiun.');
+                return;
             }
         } catch (e) {
-            console.warn('Gagal scan gambar stasiun:', e);
+            alert('Gagal membaca capturean stasiun: ' + e.message);
+            return;
         } finally {
             if (btn) {
                 btn.disabled = false;
@@ -2094,23 +2106,20 @@ async function isiDariHasilOCR(forceRescan = false) {
         }
     }
 
-    // Jika masih belum ada data link OCR sama sekali, buka modal Quick OCR untuk tempel gambar
     if (!ocrLinks || ocrLinks.length === 0) {
-        bukaQuickOcrModal();
+        alert('Tidak ada parameter microwave link yang terdeteksi dari capture stasiun ini.');
         return;
     }
 
     currentLoadedOcrLinks = ocrLinks;
 
-    // Pilih link paling cocok
-    const matched = selectBestOcrLink(ocrLinks);
+    // Pilih link paling cocok dengan stasiun lawan yang sedang dibuka
+    const matched = selectBestOcrLink(ocrLinks) || ocrLinks[0];
     if (matched) {
         applyOCRValuesToForm(matched);
         if (ocrLinks.length > 1) {
             tampilkanPilihanLinkOcr(ocrLinks, matched);
         }
-    } else {
-        bukaQuickOcrModal();
     }
 }
 

@@ -10731,16 +10731,34 @@ def api_update_stasiun_lawan_parameter(lawan_id):
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
+_STATION_OCR_CACHE = {}
+
 @app.route('/api/stasiun/<int:station_id>/ocr-scan-uploads', methods=['POST'])
 @login_required
 def api_ocr_scan_station_uploads(station_id):
-    """Jalankan RapidOCR pada gambar-gambar terupload stasiun ini"""
+    """Jalankan RapidOCR langsung pada gambar-gambar capture terupload stasiun ini"""
     try:
+        data = request.get_json(silent=True) or {}
+        force_rescan = request.args.get('force') == '1' or data.get('force', False)
+        
         station = Stasiun.query.get_or_404(station_id)
-        # Ambil gambar-gambar terupload stasiun ini
-        uploads = UploadGambar.query.filter_by(stasiun_id=station_id).order_by(UploadGambar.uploaded_at.desc()).limit(3).all()
+        # Ambil semua gambar capture terupload stasiun ini, urutkan dari ID awal (Port & Radio Setting)
+        uploads = UploadGambar.query.filter_by(stasiun_id=station_id).order_by(UploadGambar.id.asc()).limit(8).all()
         if not uploads:
-            return jsonify({'status': 'error', 'message': 'Belum ada gambar yang diunggah untuk stasiun ini.'}), 404
+            return jsonify({'status': 'error', 'message': 'Belum ada capturean yang diunggah untuk stasiun ini pada menu galeri stasiun.'}), 404
+
+        upload_ids = [u.id for u in uploads]
+
+        # Cek cache server
+        if not force_rescan and station_id in _STATION_OCR_CACHE:
+            cached = _STATION_OCR_CACHE[station_id]
+            if cached.get('upload_ids') == upload_ids and cached.get('links'):
+                return jsonify({
+                    'status': 'success',
+                    'links': cached['links'],
+                    'text': cached.get('text', ''),
+                    'cached': True
+                })
 
         import urllib.request
         import tempfile
@@ -10757,13 +10775,22 @@ def api_ocr_scan_station_uploads(station_id):
                     temp_paths.append(fpath)
 
             if not temp_paths:
-                return jsonify({'status': 'error', 'message': 'Tidak dapat mengunduh gambar terupload.'}), 400
+                return jsonify({'status': 'error', 'message': 'Tidak dapat mengunduh gambar capture terupload.'}), 400
 
             result_data = process_microwave_ocr(temp_paths, station_name_hint=station.stasiun_name)
+            links = result_data.get('links', [])
+
+            _STATION_OCR_CACHE[station_id] = {
+                'upload_ids': upload_ids,
+                'links': links,
+                'text': result_data.get('text', '')
+            }
+
             return jsonify({
                 'status': 'success',
-                'links': result_data.get('links', []),
-                'text': result_data.get('text', '')
+                'links': links,
+                'text': result_data.get('text', ''),
+                'cached': False
             })
         finally:
             shutil.rmtree(temp_dir, ignore_errors=True)
