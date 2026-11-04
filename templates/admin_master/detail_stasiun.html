@@ -1048,8 +1048,8 @@
                                 <div class="opponent-pemeriksaan-section mt-2 pt-2" style="border-top: 1px dashed #dee2e6;">
                                     <div class="d-flex justify-content-between align-items-center mb-1">
                                         <span class="text-muted" style="font-size: 0.8rem;">Hasil Pemeriksaan:</span>
-                                        <span class="badge {% if opponent.hasil_pemeriksaan == 'Tidak Sesuai Parameter Teknis' or opponent.hasil_pemeriksaan == 'Tidak Aktif' %}bg-danger-subtle text-danger border border-danger-subtle{% elif opponent.hasil_pemeriksaan == 'Belum Diperiksa' %}bg-secondary-subtle text-secondary border{% else %}bg-success-subtle text-success border border-success-subtle{% endif %} px-2 py-1" style="font-size: 0.75rem;" id="badgeHasil_{{ opponent.id }}">
-                                            <i class="bi {% if opponent.hasil_pemeriksaan == 'Tidak Sesuai Parameter Teknis' or opponent.hasil_pemeriksaan == 'Tidak Aktif' %}bi-x-circle{% elif opponent.hasil_pemeriksaan == 'Belum Diperiksa' %}bi-hourglass{% else %}bi-check-circle{% endif %} me-1"></i>
+                                        <span class="badge {% if opponent.hasil_pemeriksaan == 'Tidak Sesuai Parameter Teknis' or opponent.hasil_pemeriksaan == 'Tidak Aktif' %}bg-danger-subtle text-danger border border-danger-subtle{% elif opponent.hasil_pemeriksaan == 'Tidak Berizin' %}bg-warning-subtle text-warning-emphasis border border-warning-subtle{% elif opponent.hasil_pemeriksaan == 'Belum Diperiksa' %}bg-secondary-subtle text-secondary border{% else %}bg-success-subtle text-success border border-success-subtle{% endif %} px-2 py-1" style="font-size: 0.75rem;" id="badgeHasil_{{ opponent.id }}">
+                                            <i class="bi {% if opponent.hasil_pemeriksaan == 'Tidak Sesuai Parameter Teknis' or opponent.hasil_pemeriksaan == 'Tidak Aktif' %}bi-x-circle{% elif opponent.hasil_pemeriksaan == 'Tidak Berizin' %}bi-shield-exclamation{% elif opponent.hasil_pemeriksaan == 'Belum Diperiksa' %}bi-hourglass{% else %}bi-check-circle{% endif %} me-1"></i>
                                             {{ opponent.hasil_pemeriksaan or 'Sesuai ISR' }}
                                         </span>
                                     </div>
@@ -1717,6 +1717,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <option value="Sesuai ISR">Sesuai ISR</option>
                                     <option value="Tidak Sesuai Parameter Teknis">Tidak Sesuai Parameter Teknis</option>
                                     <option value="Tidak Aktif">Tidak Aktif</option>
+                                    <option value="Tidak Berizin">Tidak Berizin</option>
                                     <option value="Belum Diperiksa">Belum Diperiksa</option>
                                 </select>
                             </div>

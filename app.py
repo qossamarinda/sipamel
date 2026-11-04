@@ -10718,6 +10718,8 @@ def api_update_stasiun_lawan_parameter(lawan_id):
         if not status_val:
             if data.get('hasil_pemeriksaan') == 'Tidak Aktif':
                 status_val = 'tidak_aktif'
+            elif data.get('hasil_pemeriksaan') == 'Tidak Berizin':
+                status_val = 'tidak_sesuai'
             elif data.get('hasil_pemeriksaan') in ['Sesuai ISR', 'Tidak Sesuai Parameter Teknis']:
                 latest_st = StatusUpdate.query.filter_by(stasiun_lawan_id=lawan.id).order_by(StatusUpdate.created_at.desc()).first()
                 if latest_st and latest_st.status == 'tidak_aktif':
@@ -10735,7 +10737,7 @@ def api_update_stasiun_lawan_parameter(lawan_id):
             db.session.add(new_update)
 
         # Update status stasiun induk jika diperiksa
-        if station and data.get('hasil_pemeriksaan') in ['Sesuai ISR', 'Tidak Sesuai Parameter Teknis', 'Tidak Aktif']:
+        if station and data.get('hasil_pemeriksaan') in ['Sesuai ISR', 'Tidak Sesuai Parameter Teknis', 'Tidak Aktif', 'Tidak Berizin']:
             station.status_pemeriksaan = 'sudah_diperiksa'
             station.checked_at = datetime.utcnow()
             station.checked_by = current_user.id
