@@ -1053,7 +1053,35 @@
                                         <i class="bi bi-card-text text-muted me-1"></i> <span class="text-muted">ISR:</span> 
                                         <span class="text-danger font-monospace fw-bold" id="textISR_{{ opponent.id }}">{{ opponent.nomor_isr or '02877478-0005U/2620242029' }}</span>
                                     </div>
-                                    <button type="button" class="btn btn-outline-primary btn-sm w-100 rounded-2 fw-semibold py-1" style="font-size: 0.82rem;" onclick="openPeriksaModal({{ opponent.id }}, '{{ opponent.nama }}', '{{ opponent.freq_tx or '' }}', '{{ opponent.freq_rx or '' }}', '{{ opponent.bw_mhz or '' }}', '{{ opponent.tipe_perangkat or '' }}', '{{ opponent.nomor_isr or '02877478-0005U/2620242029' }}', '{{ opponent.hasil_pemeriksaan or 'Sesuai ISR' }}', '{{ opponent.latest_status or 'aktif' }}', '{{ opponent.catatan_pemeriksaan or opponent.catatan or '' }}', '{{ opponent.metode_pemeriksaan or 'Pemeriksaan melalui Remote Site' }}', '{{ opponent.tanggal_pemeriksaan or '' }}')">
+                                    <button type="button" class="btn btn-outline-primary btn-sm w-100 rounded-2 fw-semibold py-1" style="font-size: 0.82rem;"
+                                        data-lawan-id="{{ opponent.id }}"
+                                        data-lawan-nama="{{ opponent.nama }}"
+                                        data-stasiun-nama="{{ station.stasiun_name }}"
+                                        data-operator="{{ station.operator|upper }}"
+                                        data-client-operator="{{ opponent.client_operator }}"
+                                        data-nomor-isr="{{ opponent.nomor_isr }}"
+                                        data-link-id="{{ opponent.link_id }}"
+                                        data-id-sims="{{ opponent.id_sims }}"
+                                        data-kota="{{ station.kota|title }}"
+                                        data-hasil-pemeriksaan="{{ opponent.hasil_pemeriksaan }}"
+                                        data-metode-pemeriksaan="{{ opponent.metode_pemeriksaan }}"
+                                        data-tanggal-pemeriksaan="{{ opponent.tanggal_pemeriksaan or '' }}"
+                                        data-sertifikat="{{ opponent.sertifikat_perangkat }}"
+                                        data-mulai-beroperasi="{{ opponent.mulai_beroperasi }}"
+                                        data-isr-tx="{{ opponent.isr_freq_tx }}"
+                                        data-isr-rx="{{ opponent.isr_freq_rx }}"
+                                        data-isr-bw="{{ opponent.isr_bw_mhz }}"
+                                        data-isr-tipe="{{ opponent.isr_tipe_perangkat }}"
+                                        data-isr-long="{{ opponent.isr_longitude }}"
+                                        data-isr-lat="{{ opponent.isr_latitude }}"
+                                        data-hasil-tx="{{ opponent.hasil_freq_tx }}"
+                                        data-hasil-rx="{{ opponent.hasil_freq_rx }}"
+                                        data-hasil-bw="{{ opponent.hasil_bw_mhz }}"
+                                        data-hasil-tipe="{{ opponent.hasil_tipe_perangkat }}"
+                                        data-hasil-long="{{ opponent.hasil_longitude }}"
+                                        data-hasil-lat="{{ opponent.hasil_latitude }}"
+                                        data-catatan="{{ opponent.catatan_pemeriksaan or '' }}"
+                                        onclick="openPeriksaModalFromBtn(this)">
                                         <i class="bi bi-clipboard-check me-1"></i> Periksa / Edit Parameter
                                     </button>
                                 </div>
@@ -1537,138 +1565,178 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <!-- ============================================================================ -->
-<!-- MODAL PERIKSA / EDIT PARAMETER                                               -->
+<!-- MODAL PEMERIKSAAN PARAMETER LINK                                             -->
 <!-- ============================================================================ -->
 <div class="modal fade" id="periksaParameterModal" tabindex="-1" aria-labelledby="periksaParameterModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow-lg rounded-4">
-            <div class="modal-header bg-primary text-white py-3 px-4 rounded-top-4">
-                <h5 class="modal-title fw-bold" id="periksaParameterModalLabel">
-                    <i class="bi bi-clipboard2-check me-2"></i> Periksa / Edit Parameter Stasiun Lawan
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="formPeriksaParameter" onsubmit="submitPeriksaParameter(event)">
-                <input type="hidden" id="editLawanId" name="lawan_id">
-                <div class="modal-body p-4">
-                    <!-- Notice Stasiun -->
-                    <div class="alert alert-primary bg-primary bg-opacity-10 border-0 py-2 px-3 small rounded-3 mb-3 d-flex align-items-center">
-                        <i class="bi bi-broadcast fs-5 me-2 text-primary"></i>
-                        <div>
-                            Stasiun Induk: <strong class="text-dark">{{ station.stasiun_name }}</strong> &bull; Lawan: <strong id="modalNamaLawan" class="text-primary">-</strong>
-                        </div>
-                    </div>
-
-                    <div class="row g-3">
-                        <!-- Nomor ISR -->
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold text-secondary">
-                                <i class="bi bi-card-text me-1 text-primary"></i> Nomor ISR
-                            </label>
-                            <input type="text" class="form-control font-monospace" id="editNomorISR" name="nomor_isr" placeholder="Contoh: 02877478-0005U/2620242029">
-                        </div>
-
-                        <!-- Hasil Pemeriksaan -->
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold text-secondary">
-                                <i class="bi bi-patch-check me-1 text-primary"></i> Hasil Pemeriksaan
-                            </label>
-                            <select class="form-select fw-semibold" id="editHasilPemeriksaan" name="hasil_pemeriksaan">
-                                <option value="Sesuai ISR" class="text-success fw-bold">✓ Sesuai ISR</option>
-                                <option value="Tidak Sesuai Parameter Teknis" class="text-danger fw-bold">✗ Tidak Sesuai Parameter Teknis</option>
-                                <option value="Belum Diperiksa" class="text-secondary">⧖ Belum Diperiksa</option>
-                            </select>
-                        </div>
-
-                        <!-- Frekuensi Tx -->
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold text-secondary">
-                                <i class="bi bi-arrow-up-circle me-1 text-primary"></i> Frekuensi Tx (MHz)
-                            </label>
-                            <div class="input-group">
-                                <input type="text" class="form-control font-monospace" id="editFreqTx" name="freq_tx" placeholder="Contoh: 15215.000">
-                                <span class="input-group-text">MHz</span>
-                            </div>
-                        </div>
-
-                        <!-- Frekuensi Rx -->
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold text-secondary">
-                                <i class="bi bi-arrow-down-circle me-1 text-primary"></i> Frekuensi Rx (MHz)
-                            </label>
-                            <div class="input-group">
-                                <input type="text" class="form-control font-monospace" id="editFreqRx" name="freq_rx" placeholder="Contoh: 14725.000">
-                                <span class="input-group-text">MHz</span>
-                            </div>
-                        </div>
-
-                        <!-- Bandwidth (MHz) -->
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold text-secondary">
-                                <i class="bi bi-reception-4 me-1 text-primary"></i> Bandwidth (BW)
-                            </label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="editBwMhz" name="bw_mhz" placeholder="Contoh: 28.0">
-                                <span class="input-group-text">MHz</span>
-                            </div>
-                        </div>
-
-                        <!-- Merk / Tipe Perangkat -->
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold text-secondary">
-                                <i class="bi bi-hdd-network me-1 text-primary"></i> Merk / Tipe Perangkat
-                            </label>
-                            <input type="text" class="form-control" id="editTipePerangkat" name="tipe_perangkat" placeholder="Contoh: NEC iPASOLINK">
-                        </div>
-
-                        <!-- Status Operasional Lawan -->
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold text-secondary">
-                                <i class="bi bi-toggle2-on me-1 text-primary"></i> Status Operasional Lawan
-                            </label>
-                            <select class="form-select" id="editStatusLawan" name="status_lawan">
-                                <option value="aktif">Aktif</option>
-                                <option value="tidak_aktif">Tidak Aktif</option>
-                                <option value="tidak_sesuai">Tidak Sesuai</option>
-                                <option value="belum_ada">Belum Ada</option>
-                            </select>
-                        </div>
-
-                        <!-- Metode Pemeriksaan -->
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold text-secondary">
-                                <i class="bi bi-sliders me-1 text-primary"></i> Metode Pemeriksaan
-                            </label>
-                            <select class="form-select" id="editMetodePemeriksaan" name="metode_pemeriksaan">
-                                <option value="Pemeriksaan melalui Remote Site">Pemeriksaan melalui Remote Site</option>
-                                <option value="Pemeriksaan Langsung On-Site">Pemeriksaan Langsung On-Site</option>
-                                <option value="Verifikasi Dokumen / ISR">Verifikasi Dokumen / ISR</option>
-                            </select>
-                        </div>
-
-                        <!-- Tanggal Pemeriksaan -->
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold text-secondary">
-                                <i class="bi bi-calendar-event me-1 text-primary"></i> Tanggal Pemeriksaan
-                            </label>
-                            <input type="date" class="form-control" id="editTanggalPemeriksaan" name="tanggal_pemeriksaan">
-                        </div>
-
-                        <!-- Catatan / Keterangan -->
-                        <div class="col-12">
-                            <label class="form-label small fw-bold text-secondary">
-                                <i class="bi bi-chat-text me-1 text-primary"></i> Catatan & Kesimpulan Parameter
-                            </label>
-                            <textarea class="form-control" id="editCatatanPemeriksaan" name="catatan_pemeriksaan" rows="2" placeholder="Catatan hasil verifikasi lapangan atau kesesuaian parameter..."></textarea>
+    <div class="modal-dialog modal-dialog-centered modal-lg" style="max-width: 900px;">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <!-- Modal Header -->
+            <div class="modal-header bg-primary text-white py-3 px-4">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-card-checklist fs-4 me-2"></i>
+                    <div>
+                        <h5 class="modal-title fw-bold mb-0" id="periksaParameterModalLabel">Pemeriksaan Parameter Link</h5>
+                        <div class="small text-white-50 mt-1" id="modalSubTitle">
+                            <span id="modalStationInduk">{{ station.stasiun_name }}</span> &rarr; <span id="modalStationLawan">-</span> (<span id="modalOperator">{{ station.operator|upper }}</span>)
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer bg-light px-4 py-3 rounded-bottom-4">
-                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">
-                        Batal
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <form id="formPeriksaParameter" onsubmit="submitPeriksaParameter(event)">
+                <input type="hidden" id="editLawanId" name="lawan_id">
+                <div class="modal-body p-4 bg-light bg-opacity-25">
+                    <!-- Top 3 Info Cards -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <div class="card border rounded-3 p-3 h-100 bg-white shadow-sm">
+                                <div class="text-muted small text-uppercase fw-semibold mb-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">CLIENT / OPERATOR</div>
+                                <div class="fw-bold text-dark text-truncate" style="font-size: 0.88rem;" id="cardClientOperator">-</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border rounded-3 p-3 h-100 bg-white shadow-sm">
+                                <div class="text-muted small text-uppercase fw-semibold mb-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">NO. ISR / LINK ID</div>
+                                <div class="fw-bold text-dark text-truncate" style="font-size: 0.88rem;" id="cardNoIsrLinkId">-</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border rounded-3 p-3 h-100 bg-white shadow-sm">
+                                <div class="text-muted small text-uppercase fw-semibold mb-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">ID SIMS / KOTA</div>
+                                <div class="fw-bold text-dark text-truncate" style="font-size: 0.88rem;" id="cardIdSimsKota">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section: Status & Metode Pemeriksaan -->
+                    <div class="card border rounded-3 p-3 mb-3 bg-white shadow-sm">
+                        <div class="text-primary fw-bold small mb-3 d-flex align-items-center" style="font-size: 0.85rem; border-bottom: 1px solid #f1f3f5; padding-bottom: 8px;">
+                            <i class="bi bi-list-task me-2 fs-6"></i> Status & Metode Pemeriksaan
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold text-dark mb-1">
+                                    Status Pemeriksaan Link <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-select form-select-sm" id="editHasilPemeriksaan" name="hasil_pemeriksaan" required>
+                                    <option value="Sesuai ISR">Sesuai ISR</option>
+                                    <option value="Tidak Sesuai Parameter Teknis">Tidak Sesuai Parameter Teknis</option>
+                                    <option value="Belum Diperiksa">Belum Diperiksa</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold text-dark mb-1">
+                                    Metode Pemeriksaan <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-select form-select-sm" id="editMetodePemeriksaan" name="metode_pemeriksaan" required>
+                                    <option value="Pemeriksaan melalui Remote Site">Pemeriksaan melalui Remote Site</option>
+                                    <option value="Pemeriksaan Langsung On-Site">Pemeriksaan Langsung On-Site</option>
+                                    <option value="Verifikasi Dokumen / ISR">Verifikasi Dokumen / ISR</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold text-dark mb-1">Tanggal Pemeriksaan</label>
+                                <input type="date" class="form-control form-control-sm" id="editTanggalPemeriksaan" name="tanggal_pemeriksaan">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold text-dark mb-1">Sertifikat Perangkat</label>
+                                <select class="form-select form-select-sm" id="editSertifikatPerangkat" name="sertifikat_perangkat">
+                                    <option value="Ada">Ada</option>
+                                    <option value="Tidak Ada">Tidak Ada</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold text-dark mb-1">Mulai Beroperasi</label>
+                                <input type="text" class="form-control form-control-sm" id="editMulaiBeroperasi" name="mulai_beroperasi" placeholder="YYYY-MM-DD atau -">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section: Data Parameter Teknis (ISR vs Hasil Pemeriksaan) -->
+                    <div class="card border rounded-3 p-3 mb-3 bg-white shadow-sm">
+                        <div class="d-flex justify-content-between align-items-center mb-3" style="border-bottom: 1px solid #f1f3f5; padding-bottom: 8px;">
+                            <div class="text-dark fw-bold small d-flex align-items-center" style="font-size: 0.85rem;">
+                                <i class="bi bi-sliders me-2 text-primary"></i> Data Parameter Teknis (ISR vs Hasil Pemeriksaan)
+                            </div>
+                            <button type="button" class="btn btn-outline-secondary btn-sm px-3 rounded-pill" onclick="samakanDenganISR()" style="font-size: 0.78rem;">
+                                <i class="bi bi-arrow-repeat me-1"></i> Samakan dengan ISR
+                            </button>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-sm align-middle mb-0">
+                                <thead>
+                                    <tr class="table-light text-center small fw-bold">
+                                        <th style="width: 30%;" class="py-2">Parameter Teknis</th>
+                                        <th style="width: 35%;" class="py-2">Nilai ISR (SIMS)</th>
+                                        <th style="width: 35%;" class="py-2">Hasil Pemeriksaan (Dapat Diedit)</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="small">
+                                    <tr>
+                                        <td class="fw-semibold px-3">Frekuensi Tx (MHz)</td>
+                                        <td class="text-center font-monospace" id="val_isr_tx">-</td>
+                                        <td>
+                                            <input type="text" class="form-control form-control-sm text-center font-monospace" id="edit_hasil_tx" name="hasil_freq_tx">
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-semibold px-3">Frekuensi Rx (MHz)</td>
+                                        <td class="text-center font-monospace" id="val_isr_rx">-</td>
+                                        <td>
+                                            <input type="text" class="form-control form-control-sm text-center font-monospace" id="edit_hasil_rx" name="hasil_freq_rx">
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-semibold px-3">Bandwidth (MHz)</td>
+                                        <td class="text-center font-monospace" id="val_isr_bw">-</td>
+                                        <td>
+                                            <input type="text" class="form-control form-control-sm text-center font-monospace" id="edit_hasil_bw" name="hasil_bw_mhz">
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-semibold px-3">Merk / Tipe Perangkat</td>
+                                        <td class="text-center" id="val_isr_tipe">-</td>
+                                        <td>
+                                            <input type="text" class="form-control form-control-sm text-center" id="edit_hasil_tipe" name="hasil_tipe_perangkat">
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-semibold px-3">Koordinat Longitude</td>
+                                        <td class="text-center font-monospace" id="val_isr_long">-</td>
+                                        <td>
+                                            <input type="text" class="form-control form-control-sm text-center font-monospace" id="edit_hasil_long" name="hasil_longitude">
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-semibold px-3">Koordinat Latitude</td>
+                                        <td class="text-center font-monospace" id="val_isr_lat">-</td>
+                                        <td>
+                                            <input type="text" class="form-control form-control-sm text-center font-monospace" id="edit_hasil_lat" name="hasil_latitude">
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Section: Keterangan Tambahan -->
+                    <div class="mb-1">
+                        <label class="form-label small fw-bold text-dark d-flex align-items-center mb-1">
+                            <i class="bi bi-chat-left-text me-2 text-primary"></i> Keterangan Tambahan
+                        </label>
+                        <textarea class="form-control" id="editCatatanPemeriksaan" name="catatan_pemeriksaan" rows="2" placeholder="Catatan hasil pemeriksaan, kendala lapangan, atau rincian jika parameter teknis tidak sesuai..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="modal-footer bg-light px-4 py-3 d-flex justify-content-end gap-2 border-top">
+                    <button type="button" class="btn btn-secondary px-4 fw-semibold" data-bs-dismiss="modal">
+                        Tutup
                     </button>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold" id="btnSimpanParameter">
-                        <i class="bi bi-save me-1"></i> Simpan Parameter
+                    <button type="submit" class="btn btn-primary px-4 fw-semibold" id="btnSimpanParameter">
+                        <i class="bi bi-check-circle me-1"></i> Simpan Hasil Pemeriksaan
                     </button>
                 </div>
             </form>
@@ -1679,31 +1747,75 @@ document.addEventListener('DOMContentLoaded', function() {
 <script>
 let periksaModalInstance = null;
 
-function openPeriksaModal(lawanId, nama, tx, rx, bw, tipe, isr, hasil, status, catatan, metode, tanggal) {
-    document.getElementById('editLawanId').value = lawanId;
-    document.getElementById('modalNamaLawan').innerText = nama || '-';
-    document.getElementById('editNomorISR').value = isr || '02877478-0005U/2620242029';
-    document.getElementById('editHasilPemeriksaan').value = hasil || 'Sesuai ISR';
-    document.getElementById('editFreqTx').value = tx || '';
-    document.getElementById('editFreqRx').value = rx || '';
-    document.getElementById('editBwMhz').value = bw || '';
-    document.getElementById('editTipePerangkat').value = tipe || '';
-    document.getElementById('editStatusLawan').value = status || 'aktif';
-    document.getElementById('editCatatanPemeriksaan').value = catatan || '';
-    document.getElementById('editMetodePemeriksaan').value = metode || 'Pemeriksaan melalui Remote Site';
+function openPeriksaModalFromBtn(btn) {
+    const d = btn.dataset;
+    document.getElementById('editLawanId').value = d.lawanId || '';
     
-    if (tanggal) {
-        document.getElementById('editTanggalPemeriksaan').value = tanggal;
+    // Header & subtitle
+    document.getElementById('modalStationInduk').innerText = d.stasiunNama || '{{ station.stasiun_name }}';
+    document.getElementById('modalStationLawan').innerText = d.lawanNama || '-';
+    document.getElementById('modalOperator').innerText = d.operator || '{{ station.operator|upper }}';
+    
+    // Top 3 cards
+    document.getElementById('cardClientOperator').innerText = d.clientOperator || '-';
+    document.getElementById('cardNoIsrLinkId').innerText = (d.nomorIsr || '-') + ' / ' + (d.linkId || '-');
+    document.getElementById('cardIdSimsKota').innerText = (d.idSims || '-') + ' / ' + (d.kota || '-').toLowerCase();
+    
+    // Status & metode
+    document.getElementById('editHasilPemeriksaan').value = d.hasilPemeriksaan || 'Sesuai ISR';
+    document.getElementById('editMetodePemeriksaan').value = d.metodePemeriksaan || 'Pemeriksaan melalui Remote Site';
+    
+    if (d.tanggalPemeriksaan) {
+        document.getElementById('editTanggalPemeriksaan').value = d.tanggalPemeriksaan;
     } else {
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('editTanggalPemeriksaan').value = today;
+        document.getElementById('editTanggalPemeriksaan').value = new Date().toISOString().split('T')[0];
     }
-
+    
+    document.getElementById('editSertifikatPerangkat').value = d.sertifikat || 'Ada';
+    document.getElementById('editMulaiBeroperasi').value = d.mulaiBeroperasi || '-';
+    
+    // Technical table - Nilai ISR (SIMS)
+    document.getElementById('val_isr_tx').innerText = d.isrTx || '-';
+    document.getElementById('val_isr_rx').innerText = d.isrRx || '-';
+    document.getElementById('val_isr_bw').innerText = d.isrBw || '-';
+    document.getElementById('val_isr_tipe').innerText = d.isrTipe || '-';
+    document.getElementById('val_isr_long').innerText = d.isrLong || '-';
+    document.getElementById('val_isr_lat').innerText = d.isrLat || '-';
+    
+    // Technical table - Hasil Pemeriksaan (Dapat Diedit)
+    document.getElementById('edit_hasil_tx').value = d.hasilTx || (d.isrTx !== '-' ? d.isrTx : '');
+    document.getElementById('edit_hasil_rx').value = d.hasilRx || (d.isrRx !== '-' ? d.isrRx : '');
+    document.getElementById('edit_hasil_bw').value = d.hasilBw || (d.isrBw !== '-' ? d.isrBw : '');
+    document.getElementById('edit_hasil_tipe').value = d.hasilTipe || (d.isrTipe !== '-' ? d.isrTipe : '');
+    document.getElementById('edit_hasil_long').value = d.hasilLong || (d.isrLong !== '-' ? d.isrLong : '');
+    document.getElementById('edit_hasil_lat').value = d.hasilLat || (d.isrLat !== '-' ? d.isrLat : '');
+    
+    // Catatan
+    document.getElementById('editCatatanPemeriksaan').value = d.catatan || '';
+    
     const modalEl = document.getElementById('periksaParameterModal');
     if (!periksaModalInstance) {
         periksaModalInstance = new bootstrap.Modal(modalEl);
     }
     periksaModalInstance.show();
+}
+
+function samakanDenganISR() {
+    const tx = document.getElementById('val_isr_tx').innerText;
+    const rx = document.getElementById('val_isr_rx').innerText;
+    const bw = document.getElementById('val_isr_bw').innerText;
+    const tipe = document.getElementById('val_isr_tipe').innerText;
+    const long = document.getElementById('val_isr_long').innerText;
+    const lat = document.getElementById('val_isr_lat').innerText;
+
+    if (tx !== '-') document.getElementById('edit_hasil_tx').value = tx;
+    if (rx !== '-') document.getElementById('edit_hasil_rx').value = rx;
+    if (bw !== '-') document.getElementById('edit_hasil_bw').value = bw;
+    if (tipe !== '-') document.getElementById('edit_hasil_tipe').value = tipe;
+    if (long !== '-') document.getElementById('edit_hasil_long').value = long;
+    if (lat !== '-') document.getElementById('edit_hasil_lat').value = lat;
+
+    document.getElementById('editHasilPemeriksaan').value = 'Sesuai ISR';
 }
 
 async function submitPeriksaParameter(e) {
@@ -1714,16 +1826,18 @@ async function submitPeriksaParameter(e) {
 
     const lawanId = document.getElementById('editLawanId').value;
     const payload = {
-        nomor_isr: document.getElementById('editNomorISR').value,
         hasil_pemeriksaan: document.getElementById('editHasilPemeriksaan').value,
-        freq_tx: document.getElementById('editFreqTx').value,
-        freq_rx: document.getElementById('editFreqRx').value,
-        bw_mhz: document.getElementById('editBwMhz').value,
-        tipe_perangkat: document.getElementById('editTipePerangkat').value,
-        status_lawan: document.getElementById('editStatusLawan').value,
-        catatan_pemeriksaan: document.getElementById('editCatatanPemeriksaan').value,
         metode_pemeriksaan: document.getElementById('editMetodePemeriksaan').value,
-        tanggal_pemeriksaan: document.getElementById('editTanggalPemeriksaan').value
+        tanggal_pemeriksaan: document.getElementById('editTanggalPemeriksaan').value,
+        sertifikat_perangkat: document.getElementById('editSertifikatPerangkat').value,
+        mulai_beroperasi: document.getElementById('editMulaiBeroperasi').value,
+        hasil_freq_tx: document.getElementById('edit_hasil_tx').value,
+        hasil_freq_rx: document.getElementById('edit_hasil_rx').value,
+        hasil_bw_mhz: document.getElementById('edit_hasil_bw').value,
+        hasil_tipe_perangkat: document.getElementById('edit_hasil_tipe').value,
+        hasil_longitude: document.getElementById('edit_hasil_long').value,
+        hasil_latitude: document.getElementById('edit_hasil_lat').value,
+        catatan_pemeriksaan: document.getElementById('editCatatanPemeriksaan').value
     };
 
     try {
@@ -1735,21 +1849,21 @@ async function submitPeriksaParameter(e) {
 
         const data = await resp.json();
         if (!resp.ok || !data.success) {
-            throw new Error(data.message || 'Gagal menyimpan parameter');
+            throw new Error(data.message || 'Gagal menyimpan hasil pemeriksaan');
         }
 
         if (periksaModalInstance) {
             periksaModalInstance.hide();
         }
 
-        alert('Parameter berhasil disimpan!');
+        alert('Hasil pemeriksaan parameter link berhasil disimpan!');
         window.location.reload();
 
     } catch (err) {
         alert('Gagal menyimpan parameter: ' + err.message);
     } finally {
         btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-save me-1"></i> Simpan Parameter';
+        btn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Simpan Hasil Pemeriksaan';
     }
 }
 </script>

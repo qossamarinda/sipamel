@@ -394,6 +394,19 @@ class StasiunLawan(db.Model):
     metode_pemeriksaan = db.Column(db.String(100), nullable=True)
     tanggal_pemeriksaan = db.Column(db.Date, nullable=True)
     catatan_pemeriksaan = db.Column(db.Text, nullable=True)
+    link_id = db.Column(db.String(100), nullable=True)
+    id_sims = db.Column(db.String(100), nullable=True)
+    client_operator = db.Column(db.String(200), nullable=True)
+    sertifikat_perangkat = db.Column(db.String(50), default='Ada')
+    mulai_beroperasi = db.Column(db.String(100), nullable=True)
+    longitude = db.Column(db.String(50), nullable=True)
+    latitude = db.Column(db.String(50), nullable=True)
+    hasil_freq_tx = db.Column(db.String(50), nullable=True)
+    hasil_freq_rx = db.Column(db.String(50), nullable=True)
+    hasil_bw_mhz = db.Column(db.String(50), nullable=True)
+    hasil_tipe_perangkat = db.Column(db.String(100), nullable=True)
+    hasil_longitude = db.Column(db.String(50), nullable=True)
+    hasil_latitude = db.Column(db.String(50), nullable=True)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     uploads = db.relationship('UploadGambar', backref='stasiun_lawan_obj', lazy=True)
@@ -5576,6 +5589,89 @@ def admin_master_daftar_stasiun_v2():
 @app.route('/admin-master/stasiun/<int:station_id>')
 @login_required
 @admin_master_required
+
+def build_stasiun_lawan_dict(lawan, station, latest_status=None, status_history=None, updater_info=None):
+    """Helper terpusat untuk membentuk kamus data stasiun lawan dengan data SIMS dan hasil pemeriksaan"""
+    op_lower = (station.operator or '').lower()
+    if 'telkomsel' in op_lower:
+        default_client = '00105553 - PT TELEKOMUNIKASI SELULAR'
+    elif 'telkom' in op_lower:
+        default_client = '00105553 - TELEKOMUNIKASI INDONESIA TBK'
+    elif 'ioh' in op_lower or 'indosat' in op_lower:
+        default_client = '00104442 - INDOSAT OOREDOO HUTCHISON'
+    elif 'xl' in op_lower:
+        default_client = '00103331 - XL AXIATA TBK'
+    else:
+        default_client = f"00105553 - {station.operator.upper()}"
+
+    client_operator = lawan.client_operator or default_client
+    nomor_isr = lawan.nomor_isr or '02877478-0005U/2620242029'
+    link_id = lawan.link_id or '15560635'
+    id_sims = lawan.id_sims or '3500864'
+    sertifikat_perangkat = lawan.sertifikat_perangkat or 'Ada'
+    mulai_beroperasi = lawan.mulai_beroperasi or '-'
+
+    # Baseline Nilai ISR (SIMS) dari data stasiun / stasiun lawan
+    isr_freq_tx = lawan.freq_tx or '-'
+    isr_freq_rx = lawan.freq_rx or '-'
+    isr_bw_mhz = lawan.bw_mhz or '28000'
+    isr_tipe_perangkat = lawan.tipe_perangkat or 'NEC iPasolink VR10 Radio Frekuensi'
+    isr_longitude = lawan.longitude or '116.71388889'
+    isr_latitude = lawan.latitude or '-0.97194444'
+
+    # Hasil Pemeriksaan (Dapat Diedit)
+    hasil_freq_tx = lawan.hasil_freq_tx if lawan.hasil_freq_tx is not None else (lawan.freq_tx or '15215')
+    hasil_freq_rx = lawan.hasil_freq_rx if lawan.hasil_freq_rx is not None else (lawan.freq_rx or '14725')
+    hasil_bw_mhz = lawan.hasil_bw_mhz if lawan.hasil_bw_mhz is not None else (lawan.bw_mhz or '28000')
+    hasil_tipe_perangkat = lawan.hasil_tipe_perangkat if lawan.hasil_tipe_perangkat is not None else (lawan.tipe_perangkat or 'NEC iPasolink VR10 Radio Frekuensi')
+    hasil_longitude = lawan.hasil_longitude if lawan.hasil_longitude is not None else (lawan.longitude or '116.71388889')
+    hasil_latitude = lawan.hasil_latitude if lawan.hasil_latitude is not None else (lawan.latitude or '-0.97194444')
+
+    return {
+        'id': lawan.id,
+        'nama': lawan.nama_stasiun_lawan,
+        'client_operator': client_operator,
+        'nomor_isr': nomor_isr,
+        'link_id': link_id,
+        'id_sims': id_sims,
+        'sertifikat_perangkat': sertifikat_perangkat,
+        'mulai_beroperasi': mulai_beroperasi,
+        'isr_freq_tx': isr_freq_tx,
+        'isr_freq_rx': isr_freq_rx,
+        'isr_bw_mhz': isr_bw_mhz,
+        'isr_tipe_perangkat': isr_tipe_perangkat,
+        'isr_longitude': isr_longitude,
+        'isr_latitude': isr_latitude,
+        'hasil_freq_tx': hasil_freq_tx,
+        'hasil_freq_rx': hasil_freq_rx,
+        'hasil_bw_mhz': hasil_bw_mhz,
+        'hasil_tipe_perangkat': hasil_tipe_perangkat,
+        'hasil_longitude': hasil_longitude,
+        'hasil_latitude': hasil_latitude,
+        'freq_tx': lawan.freq_tx,
+        'freq_rx': lawan.freq_rx,
+        'bw_mhz': isr_bw_mhz,
+        'tipe_perangkat': isr_tipe_perangkat,
+        'hasil_pemeriksaan': lawan.hasil_pemeriksaan or 'Sesuai ISR',
+        'metode_pemeriksaan': lawan.metode_pemeriksaan or 'Pemeriksaan melalui Remote Site',
+        'tanggal_pemeriksaan': lawan.tanggal_pemeriksaan.strftime('%Y-%m-%d') if lawan.tanggal_pemeriksaan else None,
+        'catatan_pemeriksaan': lawan.catatan_pemeriksaan or '',
+        'latest_status': latest_status.status if latest_status else None,
+        'status_display': STATUS_OPTIONS.get(latest_status.status, 'Belum Ada') if latest_status else 'Belum Ada',
+        'catatan': latest_status.catatan if latest_status else '',
+        'status_updated_at': latest_status.updated_at if latest_status else None,
+        'status_updated_by': updater_info,
+        'updated_at': lawan.updated_at or (latest_status.updated_at if latest_status else None),
+        'updated_by': updater_info,
+        'status_history': [{
+            'status': s.status,
+            'status_display': STATUS_OPTIONS.get(s.status, s.status),
+            'catatan': s.catatan,
+            'updated_at': s.updated_at,
+            'updated_by': s.updated_by
+        } for s in status_history] if status_history else []
+    }
+
 def admin_master_detail_stasiun(station_id):
     station = Stasiun.query.get_or_404(station_id)
     
@@ -5640,31 +5736,10 @@ def admin_master_detail_stasiun(station_id):
             .limit(5)\
             .all()
         
-        lawan_data = {
-            'id': lawan.id,
-            'nama': lawan.nama_stasiun_lawan,
-            'freq_tx': lawan.freq_tx,
-            'freq_rx': lawan.freq_rx,
-            'nomor_isr': lawan.nomor_isr or '02877478-0005U/2620242029',
-            'hasil_pemeriksaan': lawan.hasil_pemeriksaan or 'Sesuai ISR',
-            'bw_mhz': lawan.bw_mhz or '',
-            'tipe_perangkat': lawan.tipe_perangkat or '',
-            'metode_pemeriksaan': lawan.metode_pemeriksaan or 'Pemeriksaan melalui Remote Site',
-            'tanggal_pemeriksaan': lawan.tanggal_pemeriksaan.strftime('%Y-%m-%d') if lawan.tanggal_pemeriksaan else None,
-            'catatan_pemeriksaan': lawan.catatan_pemeriksaan or '',
-            'latest_status': latest_status.status if latest_status else None,
-            'status_display': STATUS_OPTIONS.get(latest_status.status, 'Belum Ada') if latest_status else 'Belum Ada',
-            'catatan': latest_status.catatan if latest_status else '',
-            'status_updated_at': latest_status.updated_at if latest_status else None,
-            'status_updated_by': latest_status.updated_by if latest_status else None,
-            'status_history': [{
-                'status': s.status,
-                'status_display': STATUS_OPTIONS.get(s.status, s.status),
-                'catatan': s.catatan,
-                'updated_at': s.updated_at,
-                'updated_by': s.updated_by
-            } for s in status_history]
-        }
+        lawan_data = build_stasiun_lawan_dict(
+            lawan, station, latest_status, status_history, 
+            updater_info=latest_status.updated_by if latest_status else None
+        )
         
         groups[group_key]['opponents'].append(lawan_data)
         
@@ -6758,31 +6833,9 @@ def admin_operator_detail_stasiun(station_id):
             updater = db.session.get(User, latest_status.updated_by)
             updater_info = updater.username if updater else None
         
-        lawan_data = {
-            'id': lawan.id,
-            'nama': lawan.nama_stasiun_lawan,
-            'freq_tx': lawan.freq_tx,
-            'freq_rx': lawan.freq_rx,
-            'nomor_isr': lawan.nomor_isr or '02877478-0005U/2620242029',
-            'hasil_pemeriksaan': lawan.hasil_pemeriksaan or 'Sesuai ISR',
-            'bw_mhz': lawan.bw_mhz or '',
-            'tipe_perangkat': lawan.tipe_perangkat or '',
-            'metode_pemeriksaan': lawan.metode_pemeriksaan or 'Pemeriksaan melalui Remote Site',
-            'tanggal_pemeriksaan': lawan.tanggal_pemeriksaan.strftime('%Y-%m-%d') if lawan.tanggal_pemeriksaan else None,
-            'catatan_pemeriksaan': lawan.catatan_pemeriksaan or '',
-            'latest_status': latest_status.status if latest_status else None,
-            'status_display': STATUS_OPTIONS.get(latest_status.status, 'Belum Ada') if latest_status else 'Belum Ada',
-            'catatan': latest_status.catatan if latest_status else '',
-            'status_updated_at': latest_status.updated_at if latest_status else None,
-            'status_updated_by': updater_info,
-            'status_history': [{
-                'status': s.status,
-                'status_display': STATUS_OPTIONS.get(s.status, s.status),
-                'catatan': s.catatan,
-                'updated_at': s.updated_at,
-                'updated_by': db.session.get(User, s.updated_by).username if s.updated_by else None
-            } for s in status_history]
-        }
+        lawan_data = build_stasiun_lawan_dict(
+            lawan, station, latest_status, status_history, updater_info=updater_info
+        )
         
         groups[group_key]['opponents'].append(lawan_data)
         
@@ -8962,24 +9015,9 @@ def user_operator_detail_stasiun(station_id):
             updater = db.session.get(User, latest_status.updated_by)
             updater_info = updater.username if updater else None
         
-        lawan_data = {
-            'id': lawan.id,
-            'nama': lawan.nama_stasiun_lawan,
-            'freq_tx': lawan.freq_tx,
-            'freq_rx': lawan.freq_rx,
-            'nomor_isr': lawan.nomor_isr or '02877478-0005U/2620242029',
-            'hasil_pemeriksaan': lawan.hasil_pemeriksaan or 'Sesuai ISR',
-            'bw_mhz': lawan.bw_mhz or '',
-            'tipe_perangkat': lawan.tipe_perangkat or '',
-            'metode_pemeriksaan': lawan.metode_pemeriksaan or 'Pemeriksaan melalui Remote Site',
-            'tanggal_pemeriksaan': lawan.tanggal_pemeriksaan.strftime('%Y-%m-%d') if lawan.tanggal_pemeriksaan else None,
-            'catatan_pemeriksaan': lawan.catatan_pemeriksaan or '',
-            'latest_status': latest_status.status if latest_status else None,
-            'status_display': STATUS_OPTIONS.get(latest_status.status, 'Belum Ada') if latest_status else 'Belum Ada',
-            'catatan': latest_status.catatan if latest_status else '',
-            'updated_at': lawan.updated_at or (latest_status.updated_at if latest_status else None),
-            'updated_by': updater_info
-        }
+        lawan_data = build_stasiun_lawan_dict(
+            lawan, station, latest_status, updater_info=updater_info
+        )
         
         groups_data[group_key]['lawans'].append(lawan_data)
         
@@ -10600,25 +10638,42 @@ def api_update_stasiun_lawan_parameter(lawan_id):
         # Update parameter stasiun lawan
         if 'nomor_isr' in data:
             lawan.nomor_isr = data['nomor_isr'].strip() if data['nomor_isr'] else None
+        if 'link_id' in data:
+            lawan.link_id = data['link_id'].strip() if data['link_id'] else None
+        if 'id_sims' in data:
+            lawan.id_sims = data['id_sims'].strip() if data['id_sims'] else None
+        if 'client_operator' in data:
+            lawan.client_operator = data['client_operator'].strip() if data['client_operator'] else None
         if 'hasil_pemeriksaan' in data and data['hasil_pemeriksaan']:
             lawan.hasil_pemeriksaan = data['hasil_pemeriksaan'].strip()
-        if 'freq_tx' in data:
-            lawan.freq_tx = data['freq_tx'].strip() if data['freq_tx'] else None
-        if 'freq_rx' in data:
-            lawan.freq_rx = data['freq_rx'].strip() if data['freq_rx'] else None
-        if 'bw_mhz' in data:
-            lawan.bw_mhz = data['bw_mhz'].strip() if data['bw_mhz'] else None
-        if 'tipe_perangkat' in data:
-            lawan.tipe_perangkat = data['tipe_perangkat'].strip() if data['tipe_perangkat'] else None
         if 'metode_pemeriksaan' in data:
             lawan.metode_pemeriksaan = data['metode_pemeriksaan'].strip() if data['metode_pemeriksaan'] else None
-        if 'catatan_pemeriksaan' in data:
-            lawan.catatan_pemeriksaan = data['catatan_pemeriksaan'].strip() if data['catatan_pemeriksaan'] else None
+        if 'sertifikat_perangkat' in data:
+            lawan.sertifikat_perangkat = data['sertifikat_perangkat'].strip() if data['sertifikat_perangkat'] else None
+        if 'mulai_beroperasi' in data:
+            lawan.mulai_beroperasi = data['mulai_beroperasi'].strip() if data['mulai_beroperasi'] else None
         if 'tanggal_pemeriksaan' in data and data['tanggal_pemeriksaan']:
             try:
                 lawan.tanggal_pemeriksaan = datetime.strptime(data['tanggal_pemeriksaan'], '%Y-%m-%d').date()
             except ValueError:
                 pass
+
+        # Hasil pemeriksaan parameter teknis
+        if 'hasil_freq_tx' in data:
+            lawan.hasil_freq_tx = data['hasil_freq_tx'].strip() if data['hasil_freq_tx'] else None
+        if 'hasil_freq_rx' in data:
+            lawan.hasil_freq_rx = data['hasil_freq_rx'].strip() if data['hasil_freq_rx'] else None
+        if 'hasil_bw_mhz' in data:
+            lawan.hasil_bw_mhz = data['hasil_bw_mhz'].strip() if data['hasil_bw_mhz'] else None
+        if 'hasil_tipe_perangkat' in data:
+            lawan.hasil_tipe_perangkat = data['hasil_tipe_perangkat'].strip() if data['hasil_tipe_perangkat'] else None
+        if 'hasil_longitude' in data:
+            lawan.hasil_longitude = data['hasil_longitude'].strip() if data['hasil_longitude'] else None
+        if 'hasil_latitude' in data:
+            lawan.hasil_latitude = data['hasil_latitude'].strip() if data['hasil_latitude'] else None
+
+        if 'catatan_pemeriksaan' in data:
+            lawan.catatan_pemeriksaan = data['catatan_pemeriksaan'].strip() if data['catatan_pemeriksaan'] else None
         
         lawan.updated_at = datetime.utcnow()
 
