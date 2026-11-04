@@ -5586,10 +5586,6 @@ def admin_master_daftar_stasiun():
 def admin_master_daftar_stasiun_v2():
     return _handle_admin_master_daftar_stasiun('admin_master/daftar_stasiun_v2.html')
 
-@app.route('/admin-master/stasiun/<int:station_id>')
-@login_required
-@admin_master_required
-
 def build_stasiun_lawan_dict(lawan, station, latest_status=None, status_history=None, updater_info=None):
     """Helper terpusat untuk membentuk kamus data stasiun lawan dengan data SIMS dan hasil pemeriksaan"""
     op_lower = (station.operator or '').lower()
@@ -5671,6 +5667,12 @@ def build_stasiun_lawan_dict(lawan, station, latest_status=None, status_history=
             'updated_by': s.updated_by
         } for s in status_history] if status_history else []
     }
+
+
+@app.route('/admin-master/stasiun/<int:station_id>')
+@login_required
+@admin_master_required
+
 
 def admin_master_detail_stasiun(station_id):
     station = Stasiun.query.get_or_404(station_id)
