@@ -386,6 +386,16 @@ class StasiunLawan(db.Model):
     urutan = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
+    # Kolom parameter teknis dan status pemeriksaan stasiun lawan
+    nomor_isr = db.Column(db.String(100), nullable=True)
+    hasil_pemeriksaan = db.Column(db.String(100), default='Sesuai ISR')
+    bw_mhz = db.Column(db.String(50), nullable=True)
+    tipe_perangkat = db.Column(db.String(100), nullable=True)
+    metode_pemeriksaan = db.Column(db.String(100), nullable=True)
+    tanggal_pemeriksaan = db.Column(db.Date, nullable=True)
+    catatan_pemeriksaan = db.Column(db.Text, nullable=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
     uploads = db.relationship('UploadGambar', backref='stasiun_lawan_obj', lazy=True)
     status_updates = db.relationship('StatusUpdate', backref='stasiun_lawan', lazy=True, cascade='all, delete-orphan')
 
@@ -5635,6 +5645,13 @@ def admin_master_detail_stasiun(station_id):
             'nama': lawan.nama_stasiun_lawan,
             'freq_tx': lawan.freq_tx,
             'freq_rx': lawan.freq_rx,
+            'nomor_isr': lawan.nomor_isr or '02877478-0005U/2620242029',
+            'hasil_pemeriksaan': lawan.hasil_pemeriksaan or 'Sesuai ISR',
+            'bw_mhz': lawan.bw_mhz or '',
+            'tipe_perangkat': lawan.tipe_perangkat or '',
+            'metode_pemeriksaan': lawan.metode_pemeriksaan or 'Pemeriksaan melalui Remote Site',
+            'tanggal_pemeriksaan': lawan.tanggal_pemeriksaan.strftime('%Y-%m-%d') if lawan.tanggal_pemeriksaan else None,
+            'catatan_pemeriksaan': lawan.catatan_pemeriksaan or '',
             'latest_status': latest_status.status if latest_status else None,
             'status_display': STATUS_OPTIONS.get(latest_status.status, 'Belum Ada') if latest_status else 'Belum Ada',
             'catatan': latest_status.catatan if latest_status else '',
@@ -6746,6 +6763,13 @@ def admin_operator_detail_stasiun(station_id):
             'nama': lawan.nama_stasiun_lawan,
             'freq_tx': lawan.freq_tx,
             'freq_rx': lawan.freq_rx,
+            'nomor_isr': lawan.nomor_isr or '02877478-0005U/2620242029',
+            'hasil_pemeriksaan': lawan.hasil_pemeriksaan or 'Sesuai ISR',
+            'bw_mhz': lawan.bw_mhz or '',
+            'tipe_perangkat': lawan.tipe_perangkat or '',
+            'metode_pemeriksaan': lawan.metode_pemeriksaan or 'Pemeriksaan melalui Remote Site',
+            'tanggal_pemeriksaan': lawan.tanggal_pemeriksaan.strftime('%Y-%m-%d') if lawan.tanggal_pemeriksaan else None,
+            'catatan_pemeriksaan': lawan.catatan_pemeriksaan or '',
             'latest_status': latest_status.status if latest_status else None,
             'status_display': STATUS_OPTIONS.get(latest_status.status, 'Belum Ada') if latest_status else 'Belum Ada',
             'catatan': latest_status.catatan if latest_status else '',
@@ -8943,10 +8967,17 @@ def user_operator_detail_stasiun(station_id):
             'nama': lawan.nama_stasiun_lawan,
             'freq_tx': lawan.freq_tx,
             'freq_rx': lawan.freq_rx,
+            'nomor_isr': lawan.nomor_isr or '02877478-0005U/2620242029',
+            'hasil_pemeriksaan': lawan.hasil_pemeriksaan or 'Sesuai ISR',
+            'bw_mhz': lawan.bw_mhz or '',
+            'tipe_perangkat': lawan.tipe_perangkat or '',
+            'metode_pemeriksaan': lawan.metode_pemeriksaan or 'Pemeriksaan melalui Remote Site',
+            'tanggal_pemeriksaan': lawan.tanggal_pemeriksaan.strftime('%Y-%m-%d') if lawan.tanggal_pemeriksaan else None,
+            'catatan_pemeriksaan': lawan.catatan_pemeriksaan or '',
             'latest_status': latest_status.status if latest_status else None,
             'status_display': STATUS_OPTIONS.get(latest_status.status, 'Belum Ada') if latest_status else 'Belum Ada',
             'catatan': latest_status.catatan if latest_status else '',
-            'updated_at': latest_status.updated_at if latest_status else None,
+            'updated_at': lawan.updated_at or (latest_status.updated_at if latest_status else None),
             'updated_by': updater_info
         }
         
@@ -10529,6 +10560,106 @@ def init_database():
 # ============================================================================
 # MAIN EXECUTION
 # ============================================================================
+
+
+# ============================================================================
+# DETAIL STASIUN V2 ROUTES & API PERIKSA PARAMETER
+# ============================================================================
+
+@app.route('/admin-master/daftar-stasiun-v2/detail/<int:station_id>')
+@login_required
+@admin_master_required
+def admin_master_detail_stasiun_v2(station_id):
+    return admin_master_detail_stasiun(station_id)
+
+@app.route('/admin-operator/daftar-stasiun-v2/detail/<int:station_id>')
+@login_required
+@admin_operator_required
+def admin_operator_detail_stasiun_v2(station_id):
+    return admin_operator_detail_stasiun(station_id)
+
+@app.route('/user-operator/daftar-stasiun-v2/detail/<int:station_id>')
+@login_required
+@user_operator_required
+def user_operator_detail_stasiun_v2(station_id):
+    return user_operator_detail_stasiun(station_id)
+
+@app.route('/api/stasiun-lawan/<int:lawan_id>/update-parameter', methods=['POST'])
+@login_required
+def api_update_stasiun_lawan_parameter(lawan_id):
+    try:
+        data = request.get_json() or {}
+        lawan = StasiunLawan.query.get_or_404(lawan_id)
+        station = Stasiun.query.get(lawan.stasiun_id)
+        
+        # Validasi akses untuk operator
+        if current_user.role in ['admin_operator', 'user_operator']:
+            if station.operator != current_user.operator_type:
+                return jsonify({'success': False, 'message': 'Akses ditolak: bukan stasiun milik operator Anda'}), 403
+
+        # Update parameter stasiun lawan
+        if 'nomor_isr' in data:
+            lawan.nomor_isr = data['nomor_isr'].strip() if data['nomor_isr'] else None
+        if 'hasil_pemeriksaan' in data and data['hasil_pemeriksaan']:
+            lawan.hasil_pemeriksaan = data['hasil_pemeriksaan'].strip()
+        if 'freq_tx' in data:
+            lawan.freq_tx = data['freq_tx'].strip() if data['freq_tx'] else None
+        if 'freq_rx' in data:
+            lawan.freq_rx = data['freq_rx'].strip() if data['freq_rx'] else None
+        if 'bw_mhz' in data:
+            lawan.bw_mhz = data['bw_mhz'].strip() if data['bw_mhz'] else None
+        if 'tipe_perangkat' in data:
+            lawan.tipe_perangkat = data['tipe_perangkat'].strip() if data['tipe_perangkat'] else None
+        if 'metode_pemeriksaan' in data:
+            lawan.metode_pemeriksaan = data['metode_pemeriksaan'].strip() if data['metode_pemeriksaan'] else None
+        if 'catatan_pemeriksaan' in data:
+            lawan.catatan_pemeriksaan = data['catatan_pemeriksaan'].strip() if data['catatan_pemeriksaan'] else None
+        if 'tanggal_pemeriksaan' in data and data['tanggal_pemeriksaan']:
+            try:
+                lawan.tanggal_pemeriksaan = datetime.strptime(data['tanggal_pemeriksaan'], '%Y-%m-%d').date()
+            except ValueError:
+                pass
+        
+        lawan.updated_at = datetime.utcnow()
+
+        # Update status operasional jika diubah
+        status_val = data.get('status_lawan')
+        if status_val and status_val in ['aktif', 'tidak_aktif', 'tidak_sesuai', 'belum_ada']:
+            catatan = data.get('catatan_pemeriksaan') or f"Status diperbarui oleh {current_user.username}"
+            new_update = StatusUpdate(
+                stasiun_lawan_id=lawan.id,
+                status=status_val,
+                updated_by=current_user.id,
+                updated_at=datetime.utcnow(),
+                catatan=catatan
+            )
+            db.session.add(new_update)
+
+        # Update status stasiun induk jika diperiksa
+        if station and data.get('hasil_pemeriksaan') in ['Sesuai ISR', 'Tidak Sesuai Parameter Teknis']:
+            station.status_pemeriksaan = 'sudah_diperiksa'
+            station.checked_at = datetime.utcnow()
+            station.checked_by = current_user.id
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Parameter pemeriksaan stasiun lawan berhasil diperbarui!',
+            'data': {
+                'id': lawan.id,
+                'nomor_isr': lawan.nomor_isr,
+                'hasil_pemeriksaan': lawan.hasil_pemeriksaan,
+                'freq_tx': lawan.freq_tx,
+                'freq_rx': lawan.freq_rx,
+                'bw_mhz': lawan.bw_mhz,
+                'tipe_perangkat': lawan.tipe_perangkat,
+                'status': status_val or 'aktif'
+            }
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 if __name__ == '__main__':
     print("Starting Station Monitoring System...")

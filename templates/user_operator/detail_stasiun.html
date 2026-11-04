@@ -1018,6 +1018,24 @@ body {
                                                     {{ lawan.updated_at.strftime('%d/%m/%Y') }}
                                                 </div>
                                                 {% endif %}
+
+                                                <!-- FITUR HASIL PEMERIKSAAN, NO ISR & TOMBOL PERIKSA/EDIT PARAMETER -->
+                                                <div class="opponent-pemeriksaan-section mt-2 pt-2" style="border-top: 1px dashed #dee2e6;">
+                                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                                        <span class="text-muted" style="font-size: 0.8rem;">Hasil Pemeriksaan:</span>
+                                                        <span class="badge {% if lawan.hasil_pemeriksaan == 'Tidak Sesuai Parameter Teknis' %}bg-danger-subtle text-danger border border-danger-subtle{% elif lawan.hasil_pemeriksaan == 'Belum Diperiksa' %}bg-secondary-subtle text-secondary border{% else %}bg-success-subtle text-success border border-success-subtle{% endif %} px-2 py-1" style="font-size: 0.75rem;" id="badgeHasil_{{ lawan.id }}">
+                                                            <i class="bi {% if lawan.hasil_pemeriksaan == 'Tidak Sesuai Parameter Teknis' %}bi-x-circle{% elif lawan.hasil_pemeriksaan == 'Belum Diperiksa' %}bi-hourglass{% else %}bi-check-circle{% endif %} me-1"></i>
+                                                            {{ lawan.hasil_pemeriksaan or 'Sesuai ISR' }}
+                                                        </span>
+                                                    </div>
+                                                    <div class="mb-2" style="font-size: 0.8rem;">
+                                                        <i class="bi bi-card-text text-muted me-1"></i> <span class="text-muted">ISR:</span> 
+                                                        <span class="text-danger font-monospace fw-bold" id="textISR_{{ lawan.id }}">{{ lawan.nomor_isr or '02877478-0005U/2620242029' }}</span>
+                                                    </div>
+                                                    <button type="button" class="btn btn-outline-primary btn-sm w-100 rounded-2 fw-semibold py-1" style="font-size: 0.82rem;" onclick="openPeriksaModal({{ lawan.id }}, '{{ lawan.nama }}', '{{ lawan.freq_tx or '' }}', '{{ lawan.freq_rx or '' }}', '{{ lawan.bw_mhz or '' }}', '{{ lawan.tipe_perangkat or '' }}', '{{ lawan.nomor_isr or '02877478-0005U/2620242029' }}', '{{ lawan.hasil_pemeriksaan or 'Sesuai ISR' }}', '{{ lawan.latest_status or 'aktif' }}', '{{ lawan.catatan_pemeriksaan or lawan.catatan or '' }}', '{{ lawan.metode_pemeriksaan or 'Pemeriksaan melalui Remote Site' }}', '{{ lawan.tanggal_pemeriksaan or '' }}')">
+                                                        <i class="bi bi-clipboard-check me-1"></i> Periksa / Edit Parameter
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                         {% endfor %}
@@ -1457,4 +1475,223 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('[title]').forEach(el => new bootstrap.Tooltip(el));
 });
 </script>
+
+<!-- ============================================================================ -->
+<!-- MODAL PERIKSA / EDIT PARAMETER                                               -->
+<!-- ============================================================================ -->
+<div class="modal fade" id="periksaParameterModal" tabindex="-1" aria-labelledby="periksaParameterModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-primary text-white py-3 px-4 rounded-top-4">
+                <h5 class="modal-title fw-bold" id="periksaParameterModalLabel">
+                    <i class="bi bi-clipboard2-check me-2"></i> Periksa / Edit Parameter Stasiun Lawan
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formPeriksaParameter" onsubmit="submitPeriksaParameter(event)">
+                <input type="hidden" id="editLawanId" name="lawan_id">
+                <div class="modal-body p-4">
+                    <!-- Notice Stasiun -->
+                    <div class="alert alert-primary bg-primary bg-opacity-10 border-0 py-2 px-3 small rounded-3 mb-3 d-flex align-items-center">
+                        <i class="bi bi-broadcast fs-5 me-2 text-primary"></i>
+                        <div>
+                            Stasiun Induk: <strong class="text-dark">{{ station.stasiun_name }}</strong> &bull; Lawan: <strong id="modalNamaLawan" class="text-primary">-</strong>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <!-- Nomor ISR -->
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">
+                                <i class="bi bi-card-text me-1 text-primary"></i> Nomor ISR
+                            </label>
+                            <input type="text" class="form-control font-monospace" id="editNomorISR" name="nomor_isr" placeholder="Contoh: 02877478-0005U/2620242029">
+                        </div>
+
+                        <!-- Hasil Pemeriksaan -->
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">
+                                <i class="bi bi-patch-check me-1 text-primary"></i> Hasil Pemeriksaan
+                            </label>
+                            <select class="form-select fw-semibold" id="editHasilPemeriksaan" name="hasil_pemeriksaan">
+                                <option value="Sesuai ISR" class="text-success fw-bold">✓ Sesuai ISR</option>
+                                <option value="Tidak Sesuai Parameter Teknis" class="text-danger fw-bold">✗ Tidak Sesuai Parameter Teknis</option>
+                                <option value="Belum Diperiksa" class="text-secondary">⧖ Belum Diperiksa</option>
+                            </select>
+                        </div>
+
+                        <!-- Frekuensi Tx -->
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">
+                                <i class="bi bi-arrow-up-circle me-1 text-primary"></i> Frekuensi Tx (MHz)
+                            </label>
+                            <div class="input-group">
+                                <input type="text" class="form-control font-monospace" id="editFreqTx" name="freq_tx" placeholder="Contoh: 15215.000">
+                                <span class="input-group-text">MHz</span>
+                            </div>
+                        </div>
+
+                        <!-- Frekuensi Rx -->
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">
+                                <i class="bi bi-arrow-down-circle me-1 text-primary"></i> Frekuensi Rx (MHz)
+                            </label>
+                            <div class="input-group">
+                                <input type="text" class="form-control font-monospace" id="editFreqRx" name="freq_rx" placeholder="Contoh: 14725.000">
+                                <span class="input-group-text">MHz</span>
+                            </div>
+                        </div>
+
+                        <!-- Bandwidth (MHz) -->
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">
+                                <i class="bi bi-reception-4 me-1 text-primary"></i> Bandwidth (BW)
+                            </label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="editBwMhz" name="bw_mhz" placeholder="Contoh: 28.0">
+                                <span class="input-group-text">MHz</span>
+                            </div>
+                        </div>
+
+                        <!-- Merk / Tipe Perangkat -->
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">
+                                <i class="bi bi-hdd-network me-1 text-primary"></i> Merk / Tipe Perangkat
+                            </label>
+                            <input type="text" class="form-control" id="editTipePerangkat" name="tipe_perangkat" placeholder="Contoh: NEC iPASOLINK">
+                        </div>
+
+                        <!-- Status Operasional Lawan -->
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">
+                                <i class="bi bi-toggle2-on me-1 text-primary"></i> Status Operasional Lawan
+                            </label>
+                            <select class="form-select" id="editStatusLawan" name="status_lawan">
+                                <option value="aktif">Aktif</option>
+                                <option value="tidak_aktif">Tidak Aktif</option>
+                                <option value="tidak_sesuai">Tidak Sesuai</option>
+                                <option value="belum_ada">Belum Ada</option>
+                            </select>
+                        </div>
+
+                        <!-- Metode Pemeriksaan -->
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">
+                                <i class="bi bi-sliders me-1 text-primary"></i> Metode Pemeriksaan
+                            </label>
+                            <select class="form-select" id="editMetodePemeriksaan" name="metode_pemeriksaan">
+                                <option value="Pemeriksaan melalui Remote Site">Pemeriksaan melalui Remote Site</option>
+                                <option value="Pemeriksaan Langsung On-Site">Pemeriksaan Langsung On-Site</option>
+                                <option value="Verifikasi Dokumen / ISR">Verifikasi Dokumen / ISR</option>
+                            </select>
+                        </div>
+
+                        <!-- Tanggal Pemeriksaan -->
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">
+                                <i class="bi bi-calendar-event me-1 text-primary"></i> Tanggal Pemeriksaan
+                            </label>
+                            <input type="date" class="form-control" id="editTanggalPemeriksaan" name="tanggal_pemeriksaan">
+                        </div>
+
+                        <!-- Catatan / Keterangan -->
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-secondary">
+                                <i class="bi bi-chat-text me-1 text-primary"></i> Catatan & Kesimpulan Parameter
+                            </label>
+                            <textarea class="form-control" id="editCatatanPemeriksaan" name="catatan_pemeriksaan" rows="2" placeholder="Catatan hasil verifikasi lapangan atau kesesuaian parameter..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light px-4 py-3 rounded-bottom-4">
+                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">
+                        Batal
+                    </button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold" id="btnSimpanParameter">
+                        <i class="bi bi-save me-1"></i> Simpan Parameter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+let periksaModalInstance = null;
+
+function openPeriksaModal(lawanId, nama, tx, rx, bw, tipe, isr, hasil, status, catatan, metode, tanggal) {
+    document.getElementById('editLawanId').value = lawanId;
+    document.getElementById('modalNamaLawan').innerText = nama || '-';
+    document.getElementById('editNomorISR').value = isr || '02877478-0005U/2620242029';
+    document.getElementById('editHasilPemeriksaan').value = hasil || 'Sesuai ISR';
+    document.getElementById('editFreqTx').value = tx || '';
+    document.getElementById('editFreqRx').value = rx || '';
+    document.getElementById('editBwMhz').value = bw || '';
+    document.getElementById('editTipePerangkat').value = tipe || '';
+    document.getElementById('editStatusLawan').value = status || 'aktif';
+    document.getElementById('editCatatanPemeriksaan').value = catatan || '';
+    document.getElementById('editMetodePemeriksaan').value = metode || 'Pemeriksaan melalui Remote Site';
+    
+    if (tanggal) {
+        document.getElementById('editTanggalPemeriksaan').value = tanggal;
+    } else {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('editTanggalPemeriksaan').value = today;
+    }
+
+    const modalEl = document.getElementById('periksaParameterModal');
+    if (!periksaModalInstance) {
+        periksaModalInstance = new bootstrap.Modal(modalEl);
+    }
+    periksaModalInstance.show();
+}
+
+async function submitPeriksaParameter(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSimpanParameter');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...';
+
+    const lawanId = document.getElementById('editLawanId').value;
+    const payload = {
+        nomor_isr: document.getElementById('editNomorISR').value,
+        hasil_pemeriksaan: document.getElementById('editHasilPemeriksaan').value,
+        freq_tx: document.getElementById('editFreqTx').value,
+        freq_rx: document.getElementById('editFreqRx').value,
+        bw_mhz: document.getElementById('editBwMhz').value,
+        tipe_perangkat: document.getElementById('editTipePerangkat').value,
+        status_lawan: document.getElementById('editStatusLawan').value,
+        catatan_pemeriksaan: document.getElementById('editCatatanPemeriksaan').value,
+        metode_pemeriksaan: document.getElementById('editMetodePemeriksaan').value,
+        tanggal_pemeriksaan: document.getElementById('editTanggalPemeriksaan').value
+    };
+
+    try {
+        const resp = await fetch(`/api/stasiun-lawan/${lawanId}/update-parameter`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await resp.json();
+        if (!resp.ok || !data.success) {
+            throw new Error(data.message || 'Gagal menyimpan parameter');
+        }
+
+        if (periksaModalInstance) {
+            periksaModalInstance.hide();
+        }
+
+        alert('Parameter berhasil disimpan!');
+        window.location.reload();
+
+    } catch (err) {
+        alert('Gagal menyimpan parameter: ' + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-save me-1"></i> Simpan Parameter';
+    }
+}
+</script>
+
 {% endblock %}
