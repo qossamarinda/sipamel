@@ -6659,6 +6659,36 @@ def generate_apstard_excel(records, status_map, meta_info):
     return bio
 
 
+def get_standard_kota_list(operator=None):
+    """
+    Mengambil daftar kabupaten/kota unik secara case-insensitive dari database
+    dan memetakan ke format standar KOTA_LIST yang konsisten, tanpa duplikasi.
+    """
+    query = db.session.query(
+        db.func.lower(Stasiun.kota).label('kota_lower'),
+        Stasiun.kota
+    ).filter(Stasiun.kota.isnot(None), Stasiun.kota != '')
+    if operator and operator != 'all':
+        query = query.filter(db.func.lower(Stasiun.operator) == operator.lower())
+    kota_raw = query.distinct(db.func.lower(Stasiun.kota)).order_by(db.func.lower(Stasiun.kota)).all()
+    kota_mapping = {}
+    for kota_lower, kota_original in kota_raw:
+        k_low = (kota_lower or '').strip()
+        if not k_low:
+            continue
+        if k_low not in kota_mapping:
+            found = False
+            for std_kota in KOTA_LIST:
+                if std_kota.lower() == k_low:
+                    kota_mapping[k_low] = std_kota
+                    found = True
+                    break
+            if not found:
+                kota_mapping[k_low] = (kota_original or '').strip().title()
+    result = sorted(list(kota_mapping.values()), key=lambda x: x.lower())
+    return result if result else list(KOTA_LIST)
+
+
 @app.route('/admin-master/export-apstard', methods=['GET'])
 @login_required
 @admin_master_required
@@ -6672,7 +6702,7 @@ def admin_master_export_apstard():
 
     # Query distinct operator & kota untuk dropdown filter
     all_operators = [r[0] for r in db.session.query(Stasiun.operator).distinct().order_by(Stasiun.operator).all() if r[0]]
-    all_kotas = [r[0] for r in db.session.query(Stasiun.kota).distinct().order_by(Stasiun.kota).all() if r[0]]
+    all_kotas = get_standard_kota_list()
 
     # Base query
     query = db.session.query(StasiunLawan, Stasiun).join(Stasiun, StasiunLawan.stasiun_id == Stasiun.id)

@@ -135,7 +135,7 @@
                     <select class="form-select form-select-sm" name="kota">
                         <option value="all" {% if selected_kota == 'all' %}selected{% endif %}>Semua Kota / Kab</option>
                         {% for k in all_kotas %}
-                        <option value="{{ k }}" {% if selected_kota|lower == k|lower %}selected{% endif %}>{{ k|title }}</option>
+                        <option value="{{ k }}" {% if selected_kota|lower == k|lower %}selected{% endif %}>{{ k }}</option>
                         {% endfor %}
                     </select>
                 </div>
