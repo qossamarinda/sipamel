@@ -1,0 +1,266 @@
+{% extends "admin_master/base.html" %}
+
+{% block title %}Export Format APSTARD (.xlsx) - Admin Master{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-md-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb mb-0 py-1" style="font-size: 0.85rem;">
+            <li class="breadcrumb-item"><a href="{{ url_for('admin_master_dashboard') }}" class="text-decoration-none"><i class="bi bi-house-door me-1"></i>Dashboard</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Export Format APSTARD</li>
+        </ol>
+    </nav>
+
+    <!-- Header Section -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden" style="background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #2563eb 100%);">
+        <div class="card-body p-4 text-white">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="d-flex align-items-center justify-content-center rounded-3 bg-white bg-opacity-25 shadow-sm" style="width: 58px; height: 58px;">
+                        <i class="bi bi-file-earmark-spreadsheet-fill text-white fs-2"></i>
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <h3 class="fw-bold mb-0 text-white">Export Format APSTARD (.xlsx)</h3>
+                            <span class="badge bg-warning text-dark fw-semibold" style="font-size: 0.75rem;">Admin Master Only</span>
+                        </div>
+                        <p class="mb-0 text-white text-opacity-75" style="font-size: 0.9rem;">
+                            Ekspor hasil pengawasan & pemeriksaan stasiun radio microwave link ke format standar APSTARD Ditjen SDPPI
+                        </p>
+                    </div>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{{ url_for('admin_master_export_apstard_download', operator=selected_operator, kota=selected_kota, status=selected_status, tgl_mulai=selected_tgl_mulai, tgl_selesai=selected_tgl_selesai) }}" 
+                       class="btn btn-success btn-lg px-3 py-2 rounded-3 fw-semibold shadow-sm d-flex align-items-center gap-2">
+                        <i class="bi bi-file-earmark-arrow-down-fill fs-5"></i>
+                        <span>Download Excel (.xlsx)</span>
+                    </a>
+                    <a href="{{ url_for('admin_master_export_apstard_download') }}" 
+                       class="btn btn-light btn-lg px-3 py-2 rounded-3 fw-semibold text-primary shadow-sm d-flex align-items-center gap-2"
+                       title="Download semua data tanpa filter">
+                        <i class="bi bi-cloud-arrow-down-fill fs-5"></i>
+                        <span>Download Semua</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Statistics Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-3 h-100 p-3" style="border-left: 4px solid #2563eb !important;">
+                <div class="text-muted small fw-medium text-uppercase mb-1" style="font-size: 0.72rem;">Total Link</div>
+                <div class="fs-4 fw-bold text-dark">{{ "{:,}".format(summary_counts.total) }}</div>
+                <div class="small text-muted" style="font-size: 0.75rem;">Link stasiun terdata</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-3 h-100 p-3" style="border-left: 4px solid #10b981 !important;">
+                <div class="text-success small fw-medium text-uppercase mb-1" style="font-size: 0.72rem;"><i class="bi bi-check-circle me-1"></i>Sesuai ISR</div>
+                <div class="fs-4 fw-bold text-success">{{ "{:,}".format(summary_counts.sesuai) }}</div>
+                <div class="small text-muted" style="font-size: 0.75rem;">Parameter sesuai</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-3 h-100 p-3" style="border-left: 4px solid #6c757d !important;">
+                <div class="text-secondary small fw-medium text-uppercase mb-1" style="font-size: 0.72rem;"><i class="bi bi-dash-circle me-1"></i>Tidak Aktif</div>
+                <div class="fs-4 fw-bold text-secondary">{{ "{:,}".format(summary_counts.tidak_aktif) }}</div>
+                <div class="small text-muted" style="font-size: 0.75rem;">Stasiun non-aktif</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-3 h-100 p-3" style="border-left: 4px solid #dc3545 !important;">
+                <div class="text-danger small fw-medium text-uppercase mb-1" style="font-size: 0.72rem;"><i class="bi bi-shield-x me-1"></i>Tidak Berizin</div>
+                <div class="fs-4 fw-bold text-danger">{{ "{:,}".format(summary_counts.tidak_berizin) }}</div>
+                <div class="small text-muted" style="font-size: 0.75rem;">Belum ada izin/ISR</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-3 h-100 p-3" style="border-left: 4px solid #f59e0b !important;">
+                <div class="text-warning-emphasis small fw-medium text-uppercase mb-1" style="font-size: 0.72rem;"><i class="bi bi-exclamation-triangle me-1"></i>Tidak Sesuai</div>
+                <div class="fs-4 fw-bold text-warning-emphasis">{{ "{:,}".format(summary_counts.tidak_sesuai) }}</div>
+                <div class="small text-muted" style="font-size: 0.75rem;">Parameter berbeda</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-3 h-100 p-3" style="border-left: 4px solid #0ea5e9 !important;">
+                <div class="text-info small fw-medium text-uppercase mb-1" style="font-size: 0.72rem;"><i class="bi bi-hourglass me-1"></i>Belum Diperiksa</div>
+                <div class="fs-4 fw-bold text-info">{{ "{:,}".format(summary_counts.belum_diperiksa) }}</div>
+                <div class="small text-muted" style="font-size: 0.75rem;">Menunggu inspeksi</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Form Card -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-header bg-white border-bottom py-3">
+            <h6 class="mb-0 fw-bold text-dark d-flex align-items-center">
+                <i class="bi bi-funnel text-primary me-2"></i>Filter Data Ekspor APSTARD
+            </h6>
+        </div>
+        <div class="card-body p-4">
+            <form method="GET" action="{{ url_for('admin_master_export_apstard') }}" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold small text-muted">Operator</label>
+                    <select class="form-select form-select-sm" name="operator">
+                        <option value="all" {% if selected_operator == 'all' %}selected{% endif %}>Semua Operator</option>
+                        {% for op in all_operators %}
+                        <option value="{{ op }}" {% if selected_operator|lower == op|lower %}selected{% endif %}>{{ op|upper }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold small text-muted">Kota / Kabupaten</label>
+                    <select class="form-select form-select-sm" name="kota">
+                        <option value="all" {% if selected_kota == 'all' %}selected{% endif %}>Semua Kota / Kab</option>
+                        {% for k in all_kotas %}
+                        <option value="{{ k }}" {% if selected_kota|lower == k|lower %}selected{% endif %}>{{ k|title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold small text-muted">Status Pemeriksaan Link</label>
+                    <select class="form-select form-select-sm" name="status">
+                        <option value="all" {% if selected_status == 'all' %}selected{% endif %}>Semua Status</option>
+                        <option value="Sesuai ISR" {% if selected_status == 'Sesuai ISR' %}selected{% endif %}>Sesuai ISR</option>
+                        <option value="Tidak Aktif" {% if selected_status == 'Tidak Aktif' %}selected{% endif %}>Tidak Aktif</option>
+                        <option value="Tidak Berizin" {% if selected_status == 'Tidak Berizin' %}selected{% endif %}>Tidak Berizin</option>
+                        <option value="Tidak Sesuai Parameter Teknis" {% if selected_status == 'Tidak Sesuai Parameter Teknis' %}selected{% endif %}>Tidak Sesuai Parameter Teknis</option>
+                        <option value="Belum Diperiksa" {% if selected_status == 'Belum Diperiksa' %}selected{% endif %}>Belum Diperiksa</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary btn-sm px-3 flex-grow-1 fw-semibold">
+                        <i class="bi bi-filter me-1"></i> Terapkan Filter
+                    </button>
+                    <a href="{{ url_for('admin_master_export_apstard') }}" class="btn btn-outline-secondary btn-sm px-3 fw-semibold">
+                        <i class="bi bi-arrow-counterclockwise"></i> Reset
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Data Preview Table Card -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-header bg-white border-bottom py-3 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+            <div>
+                <h6 class="mb-1 fw-bold text-dark d-flex align-items-center">
+                    <i class="bi bi-table text-primary me-2"></i>Pratinjau Data APSTARD (25 Baris Pertama)
+                </h6>
+                <div class="text-muted small" style="font-size: 0.8rem;">
+                    Ditemukan <strong>{{ "{:,}".format(total_count) }}</strong> link data sesuai kriteria filter saat ini.
+                </div>
+            </div>
+            <a href="{{ url_for('admin_master_export_apstard_download', operator=selected_operator, kota=selected_kota, status=selected_status, tgl_mulai=selected_tgl_mulai, tgl_selesai=selected_tgl_selesai) }}" 
+               class="btn btn-sm btn-outline-success fw-semibold d-flex align-items-center gap-1">
+                <i class="bi bi-download"></i> Unduh File Excel Lengkap ({{ "{:,}".format(total_count) }} Link)
+            </a>
+        </div>
+        <div class="card-body p-0">
+            {% if preview_data %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" style="font-size: 0.82rem;">
+                    <thead class="table-light text-muted small text-uppercase">
+                        <tr>
+                            <th class="ps-3 text-center" style="width: 45px;">No</th>
+                            <th>Operator / Klien</th>
+                            <th>No. ISR / Link ID</th>
+                            <th>Stasiun Induk & Lawan</th>
+                            <th>Kota/Kab</th>
+                            <th class="text-center">Freq Tx / Rx (MHz)</th>
+                            <th class="text-center">BW (MHz)</th>
+                            <th class="text-center">Status Pemeriksaan</th>
+                            <th class="text-center">Tgl Periksa</th>
+                            <th class="text-center pe-3">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in preview_data %}
+                        <tr>
+                            <td class="ps-3 text-center text-muted fw-bold">{{ loop.index }}</td>
+                            <td>
+                                <div class="fw-bold text-dark">{{ row.operator }}</div>
+                                <div class="text-muted small text-truncate" style="max-width: 220px;" title="{{ row.client_operator }}">{{ row.client_operator }}</div>
+                            </td>
+                            <td>
+                                <div class="font-monospace text-primary fw-semibold">{{ row.nomor_isr }}</div>
+                                <div class="text-muted small">Link ID: {{ row.link_id }}</div>
+                            </td>
+                            <td>
+                                <div class="fw-semibold text-dark">{{ row.station_name }}</div>
+                                <div class="text-muted small d-flex align-items-center gap-1">
+                                    <i class="bi bi-arrow-return-right text-primary"></i>
+                                    <span>{{ row.nama }}</span>
+                                </div>
+                            </td>
+                            <td>{{ row.kota }}</td>
+                            <td class="text-center">
+                                <div><span class="badge bg-light text-dark border">Tx: {{ row.hasil_freq_tx or row.isr_freq_tx }}</span></div>
+                                <div class="mt-1"><span class="badge bg-light text-dark border">Rx: {{ row.hasil_freq_rx or row.isr_freq_rx }}</span></div>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-light text-dark border">{{ row.hasil_bw_mhz or row.isr_bw_mhz or '28' }} MHz</span>
+                            </td>
+                            <td class="text-center">
+                                {% if row.hasil_pemeriksaan == 'Sesuai ISR' %}
+                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                                    <i class="bi bi-check-circle me-1"></i>Sesuai ISR
+                                </span>
+                                {% elif row.hasil_pemeriksaan == 'Tidak Aktif' %}
+                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1">
+                                    <i class="bi bi-dash-circle me-1"></i>Tidak Aktif
+                                </span>
+                                {% elif row.hasil_pemeriksaan == 'Tidak Berizin' %}
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">
+                                    <i class="bi bi-shield-x me-1"></i>Tidak Berizin
+                                </span>
+                                {% elif row.hasil_pemeriksaan == 'Tidak Sesuai Parameter Teknis' %}
+                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">
+                                    <i class="bi bi-exclamation-triangle me-1"></i>Tidak Sesuai
+                                </span>
+                                {% else %}
+                                <span class="badge bg-light text-muted border px-2 py-1">
+                                    <i class="bi bi-hourglass me-1"></i>{{ row.hasil_pemeriksaan or 'Belum Diperiksa' }}
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center text-muted">
+                                {{ row.tanggal_pemeriksaan or '-' }}
+                            </td>
+                            <td class="text-center pe-3">
+                                <a href="{{ url_for('admin_master_detail_stasiun', station_id=row.id_stasiun or row.stasiun_id if 'id_stasiun' in row or 'stasiun_id' in row else 1) }}" 
+                                   class="btn btn-outline-primary btn-sm py-0 px-2" style="font-size: 0.75rem;" title="Lihat Detail Stasiun">
+                                    <i class="bi bi-eye"></i> Detail
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+                <h6 class="mt-2 text-muted">Tidak ada data link yang cocok dengan filter yang dipilih.</h6>
+                <a href="{{ url_for('admin_master_export_apstard') }}" class="btn btn-sm btn-outline-primary mt-2">Reset Filter</a>
+            </div>
+            {% endif %}
+        </div>
+        <div class="card-footer bg-light border-top py-2 px-3 d-flex justify-content-between align-items-center">
+            <span class="text-muted small">
+                Menampilkan {{ preview_data|length }} baris pratinjau dari {{ "{:,}".format(total_count) }} link keseluruhan.
+            </span>
+            <a href="{{ url_for('admin_master_export_apstard_download', operator=selected_operator, kota=selected_kota, status=selected_status, tgl_mulai=selected_tgl_mulai, tgl_selesai=selected_tgl_selesai) }}" 
+               class="btn btn-success btn-sm fw-semibold">
+                <i class="bi bi-download me-1"></i> Download File Excel APSTARD (.xlsx)
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

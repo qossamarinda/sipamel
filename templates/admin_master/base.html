@@ -569,6 +569,13 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a class="nav-link {% if request.endpoint in ['admin_master_export_apstard', 'admin_master_export_apstard_download'] %}active{% endif %}" 
+                   href="{{ url_for('admin_master_export_apstard') }}">
+                    <i class="bi bi-file-earmark-spreadsheet"></i> Export Format Apstard (.xlsx)
+                    <span class="badge ms-auto text-white" style="background: linear-gradient(135deg, #10b981, #059669); font-size: 0.65rem; padding: 0.25rem 0.5rem; border-radius: 20px;">.xlsx</span>
+                </a>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link {% if request.endpoint == 'admin_master_upload_excel' %}active{% endif %}" 
                    href="{{ url_for('admin_master_upload_excel') }}">
                     <i class="bi bi-file-earmark-excel"></i> Upload Excel

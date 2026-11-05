@@ -6345,6 +6345,446 @@ def admin_master_download_template():
     """Download template Excel untuk admin master"""
     return generate_admin_master_template()
 
+# ============================================================================
+# EXPORT FORMAT APSTARD (.XLSX) - KHUSUS ADMIN MASTER
+# ============================================================================
+
+def generate_apstard_excel(records, status_map, meta_info):
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from openpyxl.utils import get_column_letter, coordinate_to_tuple
+    import io
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "APSTARD_MICROWAVE_LINK"
+    ws.views.sheetView[0].showGridLines = True
+
+    # Palet Warna Standar SDPPI
+    COLOR_GROUP_IDENTITAS = "1E3A8A"  # Dark Blue
+    COLOR_GROUP_SIMS = "3730A3"       # Indigo / Purple Blue
+    COLOR_GROUP_HASIL = "065F46"      # Emerald / Forest Green
+    COLOR_GROUP_STATUS = "1F2937"     # Dark Slate
+
+    COLOR_HEAD_IDENTITAS = "2563EB"   # Blue
+    COLOR_HEAD_SIMS = "4F46E5"        # Indigo
+    COLOR_HEAD_HASIL = "059669"       # Emerald Green
+    COLOR_HEAD_STATUS = "4B5563"      # Slate Gray
+
+    font_title = Font(name="Calibri", size=13, bold=True, color="1E3A8A")
+    font_subtitle = Font(name="Calibri", size=10, bold=True, color="4B5563")
+    font_meta = Font(name="Calibri", size=9, italic=True, color="6B7280")
+    font_group = Font(name="Calibri", size=10, bold=True, color="FFFFFF")
+    font_header = Font(name="Calibri", size=9, bold=True, color="FFFFFF")
+    font_data = Font(name="Calibri", size=9)
+
+    align_center = Alignment(horizontal="center", vertical="center")
+    align_left = Alignment(horizontal="left", vertical="center")
+    align_header = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+    thin_border_side = Side(border_style="thin", color="D1D5DB")
+    data_border = Border(left=thin_border_side, right=thin_border_side, top=thin_border_side, bottom=thin_border_side)
+    head_border = Border(left=Side(border_style="thin", color="9CA3AF"), right=Side(border_style="thin", color="9CA3AF"), top=Side(border_style="thin", color="9CA3AF"), bottom=Side(border_style="medium", color="1F2937"))
+
+    # Status fills and fonts
+    fill_sesuai = PatternFill(start_color="D1FAE5", end_color="D1FAE5", fill_type="solid")
+    font_sesuai = Font(name="Calibri", size=9, bold=True, color="065F46")
+
+    fill_tidak_aktif = PatternFill(start_color="E5E7EB", end_color="E5E7EB", fill_type="solid")
+    font_tidak_aktif = Font(name="Calibri", size=9, bold=True, color="374151")
+
+    fill_tidak_berizin = PatternFill(start_color="FEE2E2", end_color="FEE2E2", fill_type="solid")
+    font_tidak_berizin = Font(name="Calibri", size=9, bold=True, color="991B1B")
+
+    fill_tidak_sesuai = PatternFill(start_color="FEF3C7", end_color="FEF3C7", fill_type="solid")
+    font_tidak_sesuai = Font(name="Calibri", size=9, bold=True, color="92400E")
+
+    fill_belum = PatternFill(start_color="F3F4F6", end_color="F3F4F6", fill_type="solid")
+    font_belum = Font(name="Calibri", size=9, color="6B7280")
+
+    # Row 1: Title Banner
+    ws.merge_cells("A1:AB1")
+    ws["A1"] = "DIREKTORAT JENDERAL SUMBER DAYA DAN PERANGKAT POS DAN INFORMATIKA (DITJEN SDPPI)"
+    ws["A1"].font = font_title
+    ws["A1"].alignment = align_center
+
+    # Row 2: Subtitle
+    ws.merge_cells("A2:AB2")
+    ws["A2"] = "LAPORAN HASIL PENGAWASAN & PEMERIKSAAN STASIUN RADIO DINAS TETAP (MICROWAVE LINK) - FORMAT APSTARD"
+    ws["A2"].font = font_subtitle
+    ws["A2"].alignment = align_center
+
+    # Row 3: Metadata
+    tgl_cetak = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    op_text = meta_info.get('operator', 'all').upper() if meta_info.get('operator') != 'all' else 'SEMUA'
+    kota_text = meta_info.get('kota', 'all').title() if meta_info.get('kota') != 'all' else 'SEMUA'
+    st_text = meta_info.get('status', 'all') if meta_info.get('status') != 'all' else 'SEMUA'
+    total_data = meta_info.get('total', len(records))
+    user_name = meta_info.get('user', 'Admin Master')
+
+    ws.merge_cells("A3:AB3")
+    ws["A3"] = f"Filter: Operator=[{op_text}] | Kota/Kab=[{kota_text}] | Status=[{st_text}] | Total Data: {total_data} Link | Diekspor: {tgl_cetak} WIB oleh {user_name}"
+    ws["A3"].font = font_meta
+    ws["A3"].alignment = align_center
+
+    # Row 4: Empty row for spacing
+    ws.row_dimensions[4].height = 6
+
+    # Row 5: Grouped Headers (Category Banners)
+    group_defs = [
+        ("A5", "M5", "DATA IDENTITAS & PERIZINAN", COLOR_GROUP_IDENTITAS),
+        ("N5", "S5", "PARAMETER TEKNIS ISR (SIMS SDPPI)", COLOR_GROUP_SIMS),
+        ("T5", "Y5", "PARAMETER HASIL PEMERIKSAAN LAPANGAN", COLOR_GROUP_HASIL),
+        ("Z5", "AB5", "EVALUASI, STATUS & CATATAN", COLOR_GROUP_STATUS)
+    ]
+    for start, end, label, color in group_defs:
+        ws.merge_cells(f"{start}:{end}")
+        c = ws[start]
+        c.value = label
+        c.font = font_group
+        c.alignment = align_center
+        fill = PatternFill(start_color=color, end_color=color, fill_type="solid")
+        s_col, s_row = coordinate_to_tuple(start)
+        e_col, e_row = coordinate_to_tuple(end)
+        for r in range(s_row, e_row + 1):
+            for col_idx in range(s_col, e_col + 1):
+                cell_item = ws.cell(row=r, column=col_idx)
+                cell_item.fill = fill
+                cell_item.border = head_border
+
+    ws.row_dimensions[5].height = 24
+
+    # Row 6: Column Headers (28 Columns)
+    headers = [
+        ("No", COLOR_HEAD_IDENTITAS),
+        ("Operator", COLOR_HEAD_IDENTITAS),
+        ("Klien / Pemegang Izin", COLOR_HEAD_IDENTITAS),
+        ("No. ISR", COLOR_HEAD_IDENTITAS),
+        ("Link ID", COLOR_HEAD_IDENTITAS),
+        ("ID SIMS", COLOR_HEAD_IDENTITAS),
+        ("Kota / Kabupaten", COLOR_HEAD_IDENTITAS),
+        ("Stasiun Induk (Site A)", COLOR_HEAD_IDENTITAS),
+        ("Stasiun Lawan (Site B)", COLOR_HEAD_IDENTITAS),
+        ("Tanggal Pemeriksaan", COLOR_HEAD_IDENTITAS),
+        ("Metode Pemeriksaan", COLOR_HEAD_IDENTITAS),
+        ("Sertifikat Perangkat", COLOR_HEAD_IDENTITAS),
+        ("Mulai Beroperasi", COLOR_HEAD_IDENTITAS),
+        ("Freq Tx ISR (MHz)", COLOR_HEAD_SIMS),
+        ("Freq Rx ISR (MHz)", COLOR_HEAD_SIMS),
+        ("Bandwidth ISR (MHz)", COLOR_HEAD_SIMS),
+        ("Tipe Perangkat ISR", COLOR_HEAD_SIMS),
+        ("Longitude ISR", COLOR_HEAD_SIMS),
+        ("Latitude ISR", COLOR_HEAD_SIMS),
+        ("Freq Tx Lapangan (MHz)", COLOR_HEAD_HASIL),
+        ("Freq Rx Lapangan (MHz)", COLOR_HEAD_HASIL),
+        ("Bandwidth Lapangan (MHz)", COLOR_HEAD_HASIL),
+        ("Tipe Perangkat Lapangan", COLOR_HEAD_HASIL),
+        ("Longitude Lapangan", COLOR_HEAD_HASIL),
+        ("Latitude Lapangan", COLOR_HEAD_HASIL),
+        ("Status Pemeriksaan Link", COLOR_HEAD_STATUS),
+        ("Status Operasional", COLOR_HEAD_STATUS),
+        ("Catatan Pemeriksaan", COLOR_HEAD_STATUS)
+    ]
+
+    for col_idx, (head_text, head_color) in enumerate(headers, 1):
+        cell = ws.cell(row=6, column=col_idx)
+        cell.value = head_text
+        cell.font = font_header
+        cell.alignment = align_header
+        cell.fill = PatternFill(start_color=head_color, end_color=head_color, fill_type="solid")
+        cell.border = head_border
+
+    ws.row_dimensions[6].height = 30
+
+    # Rows 7+: Data Rows
+    current_row = 7
+    for idx, (lawan, station) in enumerate(records, 1):
+        st_op = status_map.get(lawan.id)
+        d = build_stasiun_lawan_dict(lawan, station, latest_status=None)
+        
+        hasil_pem = d.get('hasil_pemeriksaan') or 'Sesuai ISR'
+        if hasil_pem == 'Sesuai ISR' and st_op:
+            if st_op == 'tidak_aktif':
+                hasil_pem = 'Tidak Aktif'
+            elif st_op == 'tidak_berizin':
+                hasil_pem = 'Tidak Berizin'
+
+        eff_status = st_op
+        if hasil_pem == 'Tidak Berizin':
+            eff_status = 'tidak_berizin'
+        elif hasil_pem == 'Tidak Aktif':
+            eff_status = 'tidak_aktif'
+        elif not eff_status:
+            eff_status = 'aktif'
+
+        status_op_label = STATUS_OPTIONS.get(eff_status, 'Aktif')
+
+        tgl_str = '-'
+        if lawan.tanggal_pemeriksaan:
+            try:
+                tgl_str = lawan.tanggal_pemeriksaan.strftime('%d/%m/%Y')
+            except Exception:
+                tgl_str = str(lawan.tanggal_pemeriksaan)
+
+        row_values = [
+            idx,
+            (station.operator or '').upper(),
+            d.get('client_operator') or '-',
+            d.get('nomor_isr') or '-',
+            d.get('link_id') or '-',
+            d.get('id_sims') or '-',
+            (station.kota or '').title(),
+            station.stasiun_name or '-',
+            lawan.nama_stasiun_lawan or '-',
+            tgl_str,
+            d.get('metode_pemeriksaan') or '-',
+            d.get('sertifikat_perangkat') or 'Ada',
+            d.get('mulai_beroperasi') or '-',
+            d.get('isr_freq_tx') or '-',
+            d.get('isr_freq_rx') or '-',
+            d.get('isr_bw_mhz') or '28',
+            d.get('isr_tipe_perangkat') or '-',
+            d.get('isr_longitude') or '-',
+            d.get('isr_latitude') or '-',
+            d.get('hasil_freq_tx') or '-',
+            d.get('hasil_freq_rx') or '-',
+            d.get('hasil_bw_mhz') or '28',
+            d.get('hasil_tipe_perangkat') or '-',
+            d.get('hasil_longitude') or '-',
+            d.get('hasil_latitude') or '-',
+            hasil_pem,
+            status_op_label,
+            lawan.catatan_pemeriksaan or '-'
+        ]
+
+        is_even = (idx % 2 == 0)
+        row_fill = PatternFill(start_color="F9FAFB", end_color="F9FAFB", fill_type="solid") if is_even else None
+
+        for c_idx, val in enumerate(row_values, 1):
+            cell = ws.cell(row=current_row, column=c_idx)
+            cell.value = val
+            cell.font = font_data
+            cell.border = data_border
+            if row_fill:
+                cell.fill = row_fill
+
+            if c_idx in [1, 10, 12, 13, 26, 27]:
+                cell.alignment = align_center
+            elif c_idx in [4, 5, 6, 14, 15, 16, 18, 19, 20, 21, 22, 24, 25]:
+                cell.alignment = align_center
+            else:
+                cell.alignment = align_left
+
+        # Highlight cell status pemeriksaan (Col 26)
+        status_cell = ws.cell(row=current_row, column=26)
+        if hasil_pem == 'Sesuai ISR':
+            status_cell.fill = fill_sesuai
+            status_cell.font = font_sesuai
+        elif hasil_pem == 'Tidak Aktif':
+            status_cell.fill = fill_tidak_aktif
+            status_cell.font = font_tidak_aktif
+        elif hasil_pem == 'Tidak Berizin':
+            status_cell.fill = fill_tidak_berizin
+            status_cell.font = font_tidak_berizin
+        elif hasil_pem == 'Tidak Sesuai Parameter Teknis':
+            status_cell.fill = fill_tidak_sesuai
+            status_cell.font = font_tidak_sesuai
+        else:
+            status_cell.fill = fill_belum
+            status_cell.font = font_belum
+
+        # Highlight cell status operasional (Col 27)
+        op_cell = ws.cell(row=current_row, column=27)
+        if eff_status == 'aktif':
+            op_cell.fill = fill_sesuai
+            op_cell.font = font_sesuai
+        elif eff_status == 'tidak_aktif':
+            op_cell.fill = fill_tidak_aktif
+            op_cell.font = font_tidak_aktif
+        elif eff_status == 'tidak_berizin':
+            op_cell.fill = fill_tidak_berizin
+            op_cell.font = font_tidak_berizin
+        elif eff_status == 'tidak_sesuai':
+            op_cell.fill = fill_tidak_sesuai
+            op_cell.font = font_tidak_sesuai
+
+        ws.row_dimensions[current_row].height = 20
+        current_row += 1
+
+    ws.freeze_panes = "A7"
+
+    if current_row > 7:
+        ws.auto_filter.ref = f"A6:AB{current_row - 1}"
+
+    for col in ws.columns:
+        col_letter = get_column_letter(col[0].column)
+        max_len = 0
+        for cell in col:
+            if cell.row >= 6 and cell.value:
+                max_len = max(max_len, len(str(cell.value)))
+        ws.column_dimensions[col_letter].width = max(max_len + 3, 11)
+
+    bio = io.BytesIO()
+    wb.save(bio)
+    bio.seek(0)
+    return bio
+
+
+@app.route('/admin-master/export-apstard', methods=['GET'])
+@login_required
+@admin_master_required
+def admin_master_export_apstard():
+    """Halaman Export Format Apstard (.xlsx) khusus Admin Master"""
+    operator_filter = request.args.get('operator', 'all').strip()
+    kota_filter = request.args.get('kota', 'all').strip()
+    status_filter = request.args.get('status', 'all').strip()
+    tgl_mulai = request.args.get('tgl_mulai', '').strip()
+    tgl_selesai = request.args.get('tgl_selesai', '').strip()
+
+    # Query distinct operator & kota untuk dropdown filter
+    all_operators = [r[0] for r in db.session.query(Stasiun.operator).distinct().order_by(Stasiun.operator).all() if r[0]]
+    all_kotas = [r[0] for r in db.session.query(Stasiun.kota).distinct().order_by(Stasiun.kota).all() if r[0]]
+
+    # Base query
+    query = db.session.query(StasiunLawan, Stasiun).join(Stasiun, StasiunLawan.stasiun_id == Stasiun.id)
+
+    if operator_filter and operator_filter != 'all':
+        query = query.filter(db.func.lower(Stasiun.operator) == operator_filter.lower())
+    if kota_filter and kota_filter != 'all':
+        query = query.filter(db.func.lower(Stasiun.kota) == kota_filter.lower())
+    if status_filter and status_filter != 'all':
+        query = query.filter(StasiunLawan.hasil_pemeriksaan == status_filter)
+    if tgl_mulai:
+        try:
+            d_mulai = datetime.strptime(tgl_mulai, '%Y-%m-%d').date()
+            query = query.filter(StasiunLawan.tanggal_pemeriksaan >= d_mulai)
+        except ValueError:
+            pass
+    if tgl_selesai:
+        try:
+            d_selesai = datetime.strptime(tgl_selesai, '%Y-%m-%d').date()
+            query = query.filter(StasiunLawan.tanggal_pemeriksaan <= d_selesai)
+        except ValueError:
+            pass
+
+    # Ambil total count
+    total_count = query.count()
+
+    # Hitung status counts untuk summary card
+    counts_query = query.with_entities(StasiunLawan.hasil_pemeriksaan, db.func.count(StasiunLawan.id)).group_by(StasiunLawan.hasil_pemeriksaan).all()
+    summary_counts = {
+        'total': total_count,
+        'sesuai': 0,
+        'tidak_aktif': 0,
+        'tidak_berizin': 0,
+        'tidak_sesuai': 0,
+        'belum_diperiksa': 0
+    }
+    for st, c in counts_query:
+        if st == 'Sesuai ISR':
+            summary_counts['sesuai'] += c
+        elif st == 'Tidak Aktif':
+            summary_counts['tidak_aktif'] += c
+        elif st == 'Tidak Berizin':
+            summary_counts['tidak_berizin'] += c
+        elif st == 'Tidak Sesuai Parameter Teknis':
+            summary_counts['tidak_sesuai'] += c
+        elif st == 'Belum Diperiksa':
+            summary_counts['belum_diperiksa'] += c
+        else:
+            summary_counts['sesuai'] += c
+
+    # Ambil 25 data pertama untuk preview
+    preview_items = query.order_by(Stasiun.operator, Stasiun.stasiun_name, StasiunLawan.urutan).limit(25).all()
+
+    # Format preview items
+    preview_data = []
+    for lawan, station in preview_items:
+        dict_data = build_stasiun_lawan_dict(lawan, station)
+        dict_data['stasiun_id'] = station.id
+        dict_data['id_stasiun'] = station.id
+        dict_data['station_name'] = station.stasiun_name
+        dict_data['operator'] = (station.operator or '').upper()
+        dict_data['kota'] = (station.kota or '').title()
+        preview_data.append(dict_data)
+
+    return render_template(
+        'admin_master/export_apstard.html',
+        all_operators=all_operators,
+        all_kotas=all_kotas,
+        selected_operator=operator_filter,
+        selected_kota=kota_filter,
+        selected_status=status_filter,
+        selected_tgl_mulai=tgl_mulai,
+        selected_tgl_selesai=tgl_selesai,
+        summary_counts=summary_counts,
+        preview_data=preview_data,
+        total_count=total_count
+    )
+
+
+@app.route('/admin-master/export-apstard/download', methods=['GET'])
+@login_required
+@admin_master_required
+def admin_master_export_apstard_download():
+    """Download file Excel format APSTARD (.xlsx)"""
+    operator_filter = request.args.get('operator', 'all').strip()
+    kota_filter = request.args.get('kota', 'all').strip()
+    status_filter = request.args.get('status', 'all').strip()
+    tgl_mulai = request.args.get('tgl_mulai', '').strip()
+    tgl_selesai = request.args.get('tgl_selesai', '').strip()
+
+    query = db.session.query(StasiunLawan, Stasiun).join(Stasiun, StasiunLawan.stasiun_id == Stasiun.id)
+
+    if operator_filter and operator_filter != 'all':
+        query = query.filter(db.func.lower(Stasiun.operator) == operator_filter.lower())
+    if kota_filter and kota_filter != 'all':
+        query = query.filter(db.func.lower(Stasiun.kota) == kota_filter.lower())
+    if status_filter and status_filter != 'all':
+        query = query.filter(StasiunLawan.hasil_pemeriksaan == status_filter)
+    if tgl_mulai:
+        try:
+            d_mulai = datetime.strptime(tgl_mulai, '%Y-%m-%d').date()
+            query = query.filter(StasiunLawan.tanggal_pemeriksaan >= d_mulai)
+        except ValueError:
+            pass
+    if tgl_selesai:
+        try:
+            d_selesai = datetime.strptime(tgl_selesai, '%Y-%m-%d').date()
+            query = query.filter(StasiunLawan.tanggal_pemeriksaan <= d_selesai)
+        except ValueError:
+            pass
+
+    records = query.order_by(Stasiun.operator, Stasiun.stasiun_name, StasiunLawan.urutan).all()
+
+    # Batch query latest status map for operational status
+    subq = db.session.query(
+        StatusUpdate.stasiun_lawan_id,
+        db.func.max(StatusUpdate.id).label('max_id')
+    ).group_by(StatusUpdate.stasiun_lawan_id).subquery()
+    latest_updates = db.session.query(StatusUpdate).join(
+        subq, StatusUpdate.id == subq.c.max_id
+    ).all()
+    status_map = {u.stasiun_lawan_id: u.status for u in latest_updates}
+
+    # Generate Excel in BytesIO
+    excel_stream = generate_apstard_excel(records, status_map, {
+        'operator': operator_filter,
+        'kota': kota_filter,
+        'status': status_filter,
+        'total': len(records),
+        'user': current_user.username
+    })
+
+    filename = f"APSTARD_Microwave_Link_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    return send_file(
+        excel_stream,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name=filename
+    )
+
+
 @app.route('/debug-check-duplicates')
 @login_required
 @admin_master_required
