@@ -6775,7 +6775,44 @@ def admin_master_export_apstard():
     total_count = len(filtered_rows)
 
     # Ambil 25 data pertama untuk preview
-    preview_items = filtered_rows[:25]
+    # Pengaturan jumlah baris & pagination pratinjau sesuai filter pengguna
+    limit_arg = request.args.get('limit', '').strip()
+    page_arg = request.args.get('page', '1').strip()
+    try:
+        page = max(1, int(page_arg))
+    except ValueError:
+        page = 1
+
+    has_filter = (operator_filter != 'all' or kota_filter != 'all' or status_filter != 'all' or tgl_mulai or tgl_selesai)
+    if limit_arg:
+        selected_limit = limit_arg
+    else:
+        # Default: Jika filter aktif dan data <= 1000, tampilkan semua hasil filter langsung
+        if has_filter and total_count <= 1000:
+            selected_limit = 'all'
+        else:
+            selected_limit = '50'
+
+    if selected_limit == 'all':
+        per_page = total_count if total_count > 0 else 50
+        total_pages = 1
+        page = 1
+        offset = 0
+        start_idx = 1 if total_count > 0 else 0
+        end_idx = total_count
+        preview_items = filtered_rows
+    else:
+        try:
+            per_page = int(selected_limit)
+        except ValueError:
+            per_page = 50
+        total_pages = max(1, (total_count + per_page - 1) // per_page)
+        if page > total_pages:
+            page = total_pages
+        offset = (page - 1) * per_page
+        preview_items = filtered_rows[offset:offset + per_page]
+        start_idx = offset + 1 if total_count > 0 else 0
+        end_idx = min(offset + per_page, total_count)
 
     # Format preview items
     preview_data = []
@@ -6796,11 +6833,18 @@ def admin_master_export_apstard():
         selected_operator=operator_filter,
         selected_kota=kota_filter,
         selected_status=status_filter,
+        selected_limit=selected_limit,
         selected_tgl_mulai=tgl_mulai,
         selected_tgl_selesai=tgl_selesai,
         summary_counts=summary_counts,
         preview_data=preview_data,
-        total_count=total_count
+        total_count=total_count,
+        page=page,
+        total_pages=total_pages,
+        per_page=per_page,
+        offset=offset,
+        start_idx=start_idx,
+        end_idx=end_idx
     )
 
 
