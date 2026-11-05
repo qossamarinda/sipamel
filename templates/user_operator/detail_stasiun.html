@@ -948,7 +948,8 @@ body {
                                     {% set counts = {
                                         'aktif': group_info.lawans|selectattr('latest_status', 'equalto', 'aktif')|list|length,
                                         'tidak_aktif': group_info.lawans|selectattr('latest_status', 'equalto', 'tidak_aktif')|list|length,
-                                        'tidak_sesuai': group_info.lawans|selectattr('latest_status', 'equalto', 'tidak_sesuai')|list|length
+                                        'tidak_sesuai': group_info.lawans|selectattr('latest_status', 'equalto', 'tidak_sesuai')|list|length,
+                                        'tidak_berizin': group_info.lawans|selectattr('latest_status', 'equalto', 'tidak_berizin')|list|length
                                     } %}
                                     
                                     <div class="status-stat-item aktif">
@@ -962,6 +963,10 @@ body {
                                     <div class="status-stat-item tidak_sesuai">
                                         <span><i class="bi bi-arrow-repeat"></i> Tidak Sesuai</span>
                                         <span class="status-stat-count">{{ counts.tidak_sesuai }}</span>
+                                    </div>
+                                    <div class="status-stat-item tidak_berizin">
+                                        <span><i class="bi bi-shield-x"></i> Tidak Berizin</span>
+                                        <span class="status-stat-count">{{ counts.tidak_berizin }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -1005,6 +1010,7 @@ body {
                                                     <span class="status-badge {{ status }}">
                                                         {% if status == 'aktif' %}Aktif
                                                         {% elif status == 'tidak_aktif' %}Tidak Aktif
+                                                        {% elif status == 'tidak_berizin' %}Tidak Berizin
                                                         {% elif status == 'tidak_sesuai' %}Tidak Sesuai
                                                         {% else %}Belum Ada{% endif %}
                                                     </span>
@@ -1870,9 +1876,11 @@ function openPeriksaModalFromBtn(btn) {
     // Status & metode
     let hasilVal = d.hasilPemeriksaan;
     if (!hasilVal || hasilVal === 'None') {
-        hasilVal = (d.statusLawan === 'tidak_aktif') ? 'Tidak Aktif' : 'Sesuai ISR';
+        hasilVal = (d.statusLawan === 'tidak_aktif') ? 'Tidak Aktif' : ((d.statusLawan === 'tidak_berizin') ? 'Tidak Berizin' : 'Sesuai ISR');
     } else if (d.statusLawan === 'tidak_aktif' && (hasilVal === 'Sesuai ISR' || hasilVal === '')) {
         hasilVal = 'Tidak Aktif';
+    } else if (d.statusLawan === 'tidak_berizin' && (hasilVal === 'Sesuai ISR' || hasilVal === '')) {
+        hasilVal = 'Tidak Berizin';
     }
     document.getElementById('editHasilPemeriksaan').value = hasilVal;
     document.getElementById('editMetodePemeriksaan').value = d.metodePemeriksaan || 'Pemeriksaan melalui Remote Site';
@@ -1957,7 +1965,7 @@ async function submitPeriksaParameter(e) {
     const lawanId = document.getElementById('editLawanId').value;
     const payload = {
         hasil_pemeriksaan: document.getElementById('editHasilPemeriksaan').value,
-        status_lawan: (document.getElementById('editHasilPemeriksaan').value === 'Tidak Aktif') ? 'tidak_aktif' : undefined,
+        status_lawan: (document.getElementById('editHasilPemeriksaan').value === 'Tidak Aktif') ? 'tidak_aktif' : ((document.getElementById('editHasilPemeriksaan').value === 'Tidak Berizin') ? 'tidak_berizin' : undefined),
         metode_pemeriksaan: document.getElementById('editMetodePemeriksaan').value,
         tanggal_pemeriksaan: document.getElementById('editTanggalPemeriksaan').value,
         sertifikat_perangkat: document.getElementById('editSertifikatPerangkat').value,

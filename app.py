@@ -232,6 +232,7 @@ KOTA_LIST = [
 STATUS_OPTIONS = {
     'aktif': 'Aktif',
     'tidak_aktif': 'Tidak Aktif',
+    'tidak_berizin': 'Tidak Berizin',
     'tidak_sesuai': 'Tidak Sesuai Parameter'
 }
 
@@ -5645,16 +5646,33 @@ def build_stasiun_lawan_dict(lawan, station, latest_status=None, status_history=
     hasil_latitude = lawan.hasil_latitude if lawan.hasil_latitude is not None else (lawan.latitude or '-0.97194444')
 
     # Tentukan hasil pemeriksaan:
-    # Jika status operasional lawan adalah tidak_aktif, maka hasil pemeriksaan diselaraskan menjadi 'Tidak Aktif'
+    # Selaraskan hasil pemeriksaan dan status operasional
     if lawan.hasil_pemeriksaan:
         hasil_pemeriksaan = lawan.hasil_pemeriksaan
-        if hasil_pemeriksaan == 'Sesuai ISR' and latest_status and latest_status.status == 'tidak_aktif':
-            hasil_pemeriksaan = 'Tidak Aktif'
+        if hasil_pemeriksaan == 'Sesuai ISR' and latest_status:
+            if latest_status.status == 'tidak_aktif':
+                hasil_pemeriksaan = 'Tidak Aktif'
+            elif latest_status.status == 'tidak_berizin':
+                hasil_pemeriksaan = 'Tidak Berizin'
     else:
         if latest_status and latest_status.status == 'tidak_aktif':
             hasil_pemeriksaan = 'Tidak Aktif'
+        elif latest_status and latest_status.status == 'tidak_berizin':
+            hasil_pemeriksaan = 'Tidak Berizin'
         else:
             hasil_pemeriksaan = 'Sesuai ISR'
+
+    # Tentukan status operasional lawan efektif
+    effective_status = latest_status.status if latest_status else None
+    if hasil_pemeriksaan == 'Tidak Berizin':
+        effective_status = 'tidak_berizin'
+    elif hasil_pemeriksaan == 'Tidak Aktif':
+        effective_status = 'tidak_aktif'
+    elif not effective_status:
+        if hasil_pemeriksaan == 'Tidak Sesuai Parameter Teknis':
+            effective_status = 'tidak_sesuai'
+        else:
+            effective_status = 'aktif'
 
     return {
         'id': lawan.id,
@@ -5682,12 +5700,12 @@ def build_stasiun_lawan_dict(lawan, station, latest_status=None, status_history=
         'bw_mhz': isr_bw_mhz,
         'tipe_perangkat': isr_tipe_perangkat,
         'hasil_pemeriksaan': hasil_pemeriksaan,
-        'status_lawan': latest_status.status if latest_status else None,
+        'status_lawan': effective_status,
         'metode_pemeriksaan': lawan.metode_pemeriksaan or 'Pemeriksaan melalui Remote Site',
         'tanggal_pemeriksaan': lawan.tanggal_pemeriksaan.strftime('%Y-%m-%d') if lawan.tanggal_pemeriksaan else None,
         'catatan_pemeriksaan': lawan.catatan_pemeriksaan or '',
-        'latest_status': latest_status.status if latest_status else None,
-        'status_display': STATUS_OPTIONS.get(latest_status.status, 'Belum Ada') if latest_status else 'Belum Ada',
+        'latest_status': effective_status,
+        'status_display': STATUS_OPTIONS.get(effective_status, 'Belum Ada') if effective_status else 'Belum Ada',
         'catatan': latest_status.catatan if latest_status else '',
         'status_updated_at': latest_status.updated_at if latest_status else None,
         'status_updated_by': updater_info,
@@ -5756,7 +5774,7 @@ def admin_master_detail_stasiun(station_id):
                 'nama_grup': groups_dict.get(lawan.group_id) if lawan.group_id else None,
                 'opponents': [],
                 'uploads': [],
-                'status_summary': {'aktif': 0, 'tidak_aktif': 0, 'tidak_sesuai': 0}
+                'status_summary': {'aktif': 0, 'tidak_aktif': 0, 'tidak_sesuai': 0, 'tidak_berizin': 0}
             }
         
         # Ambil status terbaru
@@ -5780,8 +5798,9 @@ def admin_master_detail_stasiun(station_id):
         groups[group_key]['opponents'].append(lawan_data)
         
         # Hitung statistik
-        if latest_status and latest_status.status in groups[group_key]['status_summary']:
-            groups[group_key]['status_summary'][latest_status.status] += 1
+        eff_st = lawan_data.get('latest_status')
+        if eff_st and eff_st in groups[group_key]['status_summary']:
+            groups[group_key]['status_summary'][eff_st] += 1
     
     # Proses upload per grup
     for upload in all_uploads:
@@ -5793,7 +5812,7 @@ def admin_master_detail_stasiun(station_id):
                 'nama_grup': groups_dict.get(upload.group_id) if upload.group_id else None,
                 'opponents': [],
                 'uploads': [],
-                'status_summary': {'aktif': 0, 'tidak_aktif': 0, 'tidak_sesuai': 0}
+                'status_summary': {'aktif': 0, 'tidak_aktif': 0, 'tidak_sesuai': 0, 'tidak_berizin': 0}
             }
         
         # Cek duplikasi public_id dalam grup yang sama
@@ -6846,7 +6865,8 @@ def admin_operator_detail_stasiun(station_id):
                 'status_summary': {
                     'aktif': 0,
                     'tidak_aktif': 0,
-                    'tidak_sesuai': 0
+                    'tidak_sesuai': 0,
+                    'tidak_berizin': 0
                 }
             }
         
@@ -6876,8 +6896,9 @@ def admin_operator_detail_stasiun(station_id):
         groups[group_key]['opponents'].append(lawan_data)
         
         # Hitung statistik status per grup
-        if latest_status and latest_status.status in groups[group_key]['status_summary']:
-            groups[group_key]['status_summary'][latest_status.status] += 1
+        eff_st = lawan_data.get('latest_status')
+        if eff_st and eff_st in groups[group_key]['status_summary']:
+            groups[group_key]['status_summary'][eff_st] += 1
     
     # ===== PROSES UPLOAD PER GRUP =====
     for upload in all_uploads:
@@ -6892,7 +6913,8 @@ def admin_operator_detail_stasiun(station_id):
                 'status_summary': {
                     'aktif': 0,
                     'tidak_aktif': 0,
-                    'tidak_sesuai': 0
+                    'tidak_sesuai': 0,
+                    'tidak_berizin': 0
                 }
             }
         
@@ -9037,7 +9059,7 @@ def user_operator_detail_stasiun(station_id):
                 'label': label,
                 'lawans': [],
                 'uploads': [],
-                'status_summary': {'aktif': 0, 'tidak_aktif': 0, 'tidak_sesuai': 0}
+                'status_summary': {'aktif': 0, 'tidak_aktif': 0, 'tidak_sesuai': 0, 'tidak_berizin': 0}
             }
         
         latest_status = StatusUpdate.query\
@@ -9057,8 +9079,9 @@ def user_operator_detail_stasiun(station_id):
         
         groups_data[group_key]['lawans'].append(lawan_data)
         
-        if latest_status and latest_status.status in groups_data[group_key]['status_summary']:
-            groups_data[group_key]['status_summary'][latest_status.status] += 1
+        eff_st = lawan_data.get('latest_status')
+        if eff_st and eff_st in groups_data[group_key]['status_summary']:
+            groups_data[group_key]['status_summary'][eff_st] += 1
     
     # === PROSES UPLOAD PER GRUP ===
     for upload in all_uploads:
@@ -9075,7 +9098,7 @@ def user_operator_detail_stasiun(station_id):
                 'label': label,
                 'lawans': [],
                 'uploads': [],
-                'status_summary': {'aktif': 0, 'tidak_aktif': 0, 'tidak_sesuai': 0}
+                'status_summary': {'aktif': 0, 'tidak_aktif': 0, 'tidak_sesuai': 0, 'tidak_berizin': 0}
             }
         
         # Cek duplikasi public_id dalam grup yang sama
@@ -10719,13 +10742,13 @@ def api_update_stasiun_lawan_parameter(lawan_id):
             if data.get('hasil_pemeriksaan') == 'Tidak Aktif':
                 status_val = 'tidak_aktif'
             elif data.get('hasil_pemeriksaan') == 'Tidak Berizin':
-                status_val = 'tidak_sesuai'
+                status_val = 'tidak_berizin'
             elif data.get('hasil_pemeriksaan') in ['Sesuai ISR', 'Tidak Sesuai Parameter Teknis']:
                 latest_st = StatusUpdate.query.filter_by(stasiun_lawan_id=lawan.id).order_by(StatusUpdate.created_at.desc()).first()
-                if latest_st and latest_st.status == 'tidak_aktif':
+                if latest_st and latest_st.status in ['tidak_aktif', 'tidak_berizin']:
                     status_val = 'aktif'
 
-        if status_val and status_val in ['aktif', 'tidak_aktif', 'tidak_sesuai', 'belum_ada']:
+        if status_val and status_val in ['aktif', 'tidak_aktif', 'tidak_berizin', 'tidak_sesuai', 'belum_ada']:
             catatan = data.get('catatan_pemeriksaan') or f"Status diperbarui menjadi {status_val} oleh {current_user.username}"
             new_update = StatusUpdate(
                 stasiun_lawan_id=lawan.id,
