@@ -6386,7 +6386,7 @@ def generate_apstard_excel(records, status_map, meta_info):
     ws.title = "APSTARD_MICROWAVE_LINK"
     ws.views.sheetView[0].showGridLines = True
 
-    # Palet Warna Standar SDPPI
+    # Palet Warna Standar APSTARD
     COLOR_GROUP_IDENTITAS = "1E3A8A"  # Dark Blue
     COLOR_GROUP_SIMS = "3730A3"       # Indigo / Purple Blue
     COLOR_GROUP_HASIL = "065F46"      # Emerald / Forest Green
@@ -6430,7 +6430,7 @@ def generate_apstard_excel(records, status_map, meta_info):
 
     # Row 1: Title Banner
     ws.merge_cells("A1:AB1")
-    ws["A1"] = "DIREKTORAT JENDERAL SUMBER DAYA DAN PERANGKAT POS DAN INFORMATIKA (DITJEN SDPPI)"
+    ws["A1"] = "DIREKTORAT JENDERAL INFRASTRUKTUR DIGITAL"
     ws["A1"].font = font_title
     ws["A1"].alignment = align_center
 
@@ -6459,7 +6459,7 @@ def generate_apstard_excel(records, status_map, meta_info):
     # Row 5: Grouped Headers (Category Banners)
     group_defs = [
         ("A5", "M5", "DATA IDENTITAS & PERIZINAN", COLOR_GROUP_IDENTITAS),
-        ("N5", "S5", "PARAMETER TEKNIS ISR (SIMS SDPPI)", COLOR_GROUP_SIMS),
+        ("N5", "S5", "PARAMETER TEKNIS ISR (SIMS)", COLOR_GROUP_SIMS),
         ("T5", "Y5", "PARAMETER HASIL PEMERIKSAAN LAPANGAN", COLOR_GROUP_HASIL),
         ("Z5", "AB5", "EVALUASI, STATUS & CATATAN", COLOR_GROUP_STATUS)
     ]
