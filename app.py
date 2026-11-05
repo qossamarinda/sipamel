@@ -6380,178 +6380,72 @@ def generate_apstard_excel(records, status_map, meta_info):
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
     from openpyxl.utils import get_column_letter
     import io
+    import os
 
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "FORM_PEMERIKSAAN_MW"
-    ws.views.sheetView[0].showGridLines = True
+    template_path = os.path.join(os.path.dirname(__file__), 'templates', 'template_apstard.xlsx')
+    if os.path.exists(template_path):
+        wb = openpyxl.load_workbook(template_path)
+        ws = wb.active
+    else:
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Sheet1"
+        ws.views.sheetView[0].showGridLines = True
 
-    # Palet Warna Sesuai Format APSTARD
-    COLOR_INFO_BOX = "F1F5F9"
-    COLOR_HEADER_MAIN = "1E3A8A"      # Navy Blue (Identitas & Evaluasi)
-    COLOR_HEADER_SIMS = "1E40AF"      # Royal Blue (DATA ISR SIMS)
-    COLOR_HEADER_HASIL = "065F46"     # Dark Green (DATA HASIL PEMERIKSAAN)
-    COLOR_HEADER_EVAL = "334155"      # Dark Slate (Status, Mulai Beroperasi, Ket, Kota)
+        ws.row_dimensions[1].height = 93.6
+        ws["A1"] = "FORM PEMERIKSAAN STASIUN RADIO MICROWAVE LINK"
+        ws["A1"].font = Font(name="Arial", size=12, bold=True)
+        ws["A1"].alignment = Alignment(horizontal="left", vertical="center")
 
-    COLOR_SUB_SIMS = "2563EB"         # Blue
-    COLOR_SUB_HASIL = "059669"        # Emerald
-    COLOR_SUB_EVAL = "475569"         # Slate Light
+        ws["E1"] = "Metode Pemeriksaan:\n - Inspeksi melalui Open Shelter\n - Pemeriksaan melalui Remote Site"
+        ws["E1"].font = Font(name="Arial", size=12, bold=True)
+        ws["E1"].alignment = Alignment(horizontal="left", vertical="top", wrap_text=True)
 
-    font_top_title = Font(name="Calibri", size=12, bold=True, color="1E3A8A")
-    font_box_text = Font(name="Calibri", size=8, color="334155")
-    font_head_grp = Font(name="Calibri", size=9, bold=True, color="FFFFFF")
-    font_head_sub = Font(name="Calibri", size=8, bold=True, color="FFFFFF")
-    font_data = Font(name="Calibri", size=9)
+        ws["G1"] = "Status:\n - Sesuai ISR\n - Tidak Sesuai Parameter Teknis\n - Tidak Berizin\n - Tidak Aktif"
+        ws["G1"].font = Font(name="Arial", size=12, bold=True)
+        ws["G1"].alignment = Alignment(horizontal="left", vertical="top", wrap_text=True)
 
-    align_center = Alignment(horizontal="center", vertical="center", wrap_text=True)
-    align_left = Alignment(horizontal="left", vertical="center", wrap_text=True)
-    align_box = Alignment(horizontal="left", vertical="top", wrap_text=True)
+        ws["H1"] = "Perangkat:\n - Ada\n - Tidak\n"
+        ws["H1"].font = Font(name="Arial", size=12, bold=True)
+        ws["H1"].alignment = Alignment(horizontal="left", vertical="top", wrap_text=True)
 
-    thin_border = Border(
-        left=Side(style='thin', color="CBD5E1"),
-        right=Side(style='thin', color="CBD5E1"),
-        top=Side(style='thin', color="CBD5E1"),
-        bottom=Side(style='thin', color="CBD5E1")
-    )
-    data_border = Border(
-        left=Side(style='thin', color="D1D5DB"),
-        right=Side(style='thin', color="D1D5DB"),
-        top=Side(style='thin', color="D1D5DB"),
-        bottom=Side(style='thin', color="D1D5DB")
-    )
+        thin_border = Border(left=Side(style='thin', color="000000"), right=Side(style='thin', color="000000"), top=Side(style='thin', color="000000"), bottom=Side(style='thin', color="000000"))
+        fill_yellow = PatternFill(start_color="FFFFFF00", end_color="FFFFFF00", fill_type="solid")
+        fill_green = PatternFill(start_color="FF92D050", end_color="FF92D050", fill_type="solid")
+        font_h = Font(name="Arial", size=9, bold=True)
+        align_h = Alignment(horizontal="center", vertical="center", wrap_text=True)
 
-    # Status fills and fonts
-    fill_sesuai = PatternFill(start_color="D1FAE5", end_color="D1FAE5", fill_type="solid")
-    font_sesuai = Font(name="Calibri", size=9, bold=True, color="065F46")
+        for rng, val in [("A3:A5", "NO"), ("B3:B5", "TANGGAL \nPEMERIKSAAN"), ("C3:C5", "METODE PEMERIKSAAN"), ("D3:D5", "CLIENT ID"), ("E3:E5", "CLIENT NAME"), ("F3:P3", "DATA ISR (SIMS)"), ("Q3:X3", "DATA HASIL PEMERIKSAAN"), ("Z3:Z5", "STATUS"), ("AA3:AA5", "MULAI BEROPERASI"), ("AB3:AB5", "KETERANGAN"), ("AC3:AC5", "KOTA/KABUPATEN")]:
+            ws.merge_cells(rng)
+            ws[rng.split(":")[0]].value = val
 
-    fill_tidak_aktif = PatternFill(start_color="E5E7EB", end_color="E5E7EB", fill_type="solid")
-    font_tidak_aktif = Font(name="Calibri", size=9, bold=True, color="374151")
+        for rng, val in [("F4:F5", "ID"), ("G4:G5", "NO. ISR\n(CURR_LIC_NUM)"), ("H4:H5", "LINK ID"), ("I4:I5", "STN_NAME"), ("J4:J5", "STASIUN LAWAN"), ("K4:L4", "KOORDINAT (DD)"), ("M4:M5", "Tx (MHz)"), ("N4:N5", "Rx (MHz)"), ("O4:O5", "BW (MHz)"), ("P4:P5", "Merk/Type Perangkat"), ("Q4:Q5", "STN_NAME"), ("R4:R5", "STASIUN LAWAN"), ("S4:T4", "KOORDINAT"), ("U4:U5", "Tx (MHz)"), ("V4:V5", "Rx (MHz)"), ("W4:W5", "BW (MHz)"), ("X4:X5", "Merk/Type Perangkat"), ("Y4:Y5", "Sertifikat Perangkat")]:
+            ws.merge_cells(rng)
+            ws[rng.split(":")[0]].value = val
 
-    fill_tidak_berizin = PatternFill(start_color="FEE2E2", end_color="FEE2E2", fill_type="solid")
-    font_tidak_berizin = Font(name="Calibri", size=9, bold=True, color="991B1B")
+        ws["K5"] = "LONG"
+        ws["L5"] = "LAT"
+        ws["S5"] = "LONG"
+        ws["T5"] = "LAT"
 
-    fill_tidak_sesuai = PatternFill(start_color="FEF3C7", end_color="FEF3C7", fill_type="solid")
-    font_tidak_sesuai = Font(name="Calibri", size=9, bold=True, color="92400E")
+        for r in range(3, 6):
+            for c in range(1, 30):
+                cell = ws.cell(row=r, column=c)
+                cell.border = thin_border
+                cell.font = font_h
+                cell.alignment = align_h
+                if 6 <= c <= 16:
+                    cell.fill = fill_yellow
+                elif 17 <= c <= 25:
+                    cell.fill = fill_green
 
-    fill_belum = PatternFill(start_color="F3F4F6", end_color="F3F4F6", fill_type="solid")
-    font_belum = Font(name="Calibri", size=9, color="6B7280")
+    font_data = Font(name="Arial", size=9)
+    align_center = Alignment(horizontal="center", vertical="center")
+    align_left = Alignment(horizontal="left", vertical="center")
+    thin_side = Side(style='thin', color="D1D5DB")
+    data_border = Border(left=thin_side, right=thin_side, top=thin_side, bottom=thin_side)
+    center_cols = {1, 2, 4, 6, 7, 8, 11, 12, 13, 14, 15, 19, 20, 21, 22, 23, 25, 26, 27}
 
-    # Row 1: Title and Guidance Boxes (Metode, Status, Perangkat)
-    ws.row_dimensions[1].height = 65
-
-    # A1:D1: Title
-    ws.merge_cells("A1:D1")
-    ws["A1"] = "FORM PEMERIKSAAN STASIUN RADIO MICROWAVE LINK"
-    ws["A1"].font = font_top_title
-    ws["A1"].alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
-
-    # E1:F1: Metode Pemeriksaan
-    ws.merge_cells("E1:F1")
-    ws["E1"] = "Metode Pemeriksaan:\n - Inspeksi melalui Open Shelter\n - Pemeriksaan melalui Remote Site"
-    ws["E1"].font = font_box_text
-    ws["E1"].alignment = align_box
-    ws["E1"].fill = PatternFill(start_color=COLOR_INFO_BOX, end_color=COLOR_INFO_BOX, fill_type="solid")
-    ws["E1"].border = thin_border
-
-    # G1: Status
-    ws["G1"] = "Status:\n - Sesuai ISR\n - Tidak Sesuai Parameter Teknis\n - Tidak Berizin\n - Tidak Aktif"
-    ws["G1"].font = font_box_text
-    ws["G1"].alignment = align_box
-    ws["G1"].fill = PatternFill(start_color=COLOR_INFO_BOX, end_color=COLOR_INFO_BOX, fill_type="solid")
-    ws["G1"].border = thin_border
-
-    # H1: Perangkat
-    ws["H1"] = "Perangkat:\n - Ada\n - Tidak\n"
-    ws["H1"].font = font_box_text
-    ws["H1"].alignment = align_box
-    ws["H1"].fill = PatternFill(start_color=COLOR_INFO_BOX, end_color=COLOR_INFO_BOX, fill_type="solid")
-    ws["H1"].border = thin_border
-
-    # Row 2: Spacing
-    ws.row_dimensions[2].height = 8
-
-    # Rows 3, 4, 5: Header Heights
-    ws.row_dimensions[3].height = 26
-    ws.row_dimensions[4].height = 24
-    ws.row_dimensions[5].height = 20
-
-    # Row 3 Header Merges (Level 3)
-    merges_level3 = [
-        ("A3:A5", "NO", COLOR_HEADER_MAIN),
-        ("B3:B5", "TANGGAL \nPEMERIKSAAN", COLOR_HEADER_MAIN),
-        ("C3:C5", "METODE PEMERIKSAAN", COLOR_HEADER_MAIN),
-        ("D3:D5", "CLIENT ID", COLOR_HEADER_MAIN),
-        ("E3:E5", "CLIENT NAME", COLOR_HEADER_MAIN),
-        ("F3:P3", "DATA ISR (SIMS)", COLOR_HEADER_SIMS),
-        ("Q3:Y3", "DATA HASIL PEMERIKSAAN", COLOR_HEADER_HASIL),
-        ("Z3:Z5", "STATUS", COLOR_HEADER_EVAL),
-        ("AA3:AA5", "MULAI BEROPERASI", COLOR_HEADER_EVAL),
-        ("AB3:AB5", "KETERANGAN", COLOR_HEADER_EVAL),
-        ("AC3:AC5", "KOTA/KABUPATEN", COLOR_HEADER_EVAL),
-    ]
-
-    for rng, val, color in merges_level3:
-        ws.merge_cells(rng)
-        top_left = ws[rng.split(":")[0]]
-        top_left.value = val
-        top_left.font = font_head_grp
-        top_left.alignment = align_center
-
-    # Row 4 Subheaders (Level 4)
-    merges_level4 = [
-        ("F4:F5", "ID", COLOR_SUB_SIMS),
-        ("G4:G5", "NO. ISR\n(CURR_LIC_NUM)", COLOR_SUB_SIMS),
-        ("H4:H5", "LINK ID", COLOR_SUB_SIMS),
-        ("I4:I5", "STN_NAME", COLOR_SUB_SIMS),
-        ("J4:J5", "STASIUN LAWAN", COLOR_SUB_SIMS),
-        ("K4:L4", "KOORDINAT (DD)", COLOR_SUB_SIMS),
-        ("M4:M5", "Tx (MHz)", COLOR_SUB_SIMS),
-        ("N4:N5", "Rx (MHz)", COLOR_SUB_SIMS),
-        ("O4:O5", "BW (MHz)", COLOR_SUB_SIMS),
-        ("P4:P5", "Merk/Type Perangkat", COLOR_SUB_SIMS),
-
-        ("Q4:Q5", "STN_NAME", COLOR_SUB_HASIL),
-        ("R4:R5", "STASIUN LAWAN", COLOR_SUB_HASIL),
-        ("S4:T4", "KOORDINAT", COLOR_SUB_HASIL),
-        ("U4:U5", "Tx (MHz)", COLOR_SUB_HASIL),
-        ("V4:V5", "Rx (MHz)", COLOR_SUB_HASIL),
-        ("W4:W5", "BW (MHz)", COLOR_SUB_HASIL),
-        ("X4:X5", "Merk/Type Perangkat", COLOR_SUB_HASIL),
-        ("Y4:Y5", "Sertifikat Perangkat", COLOR_SUB_HASIL),
-    ]
-
-    for rng, val, color in merges_level4:
-        ws.merge_cells(rng)
-        top_left = ws[rng.split(":")[0]]
-        top_left.value = val
-        top_left.font = font_head_sub
-        top_left.alignment = align_center
-
-    # Row 5 Subheaders
-    ws["K5"] = "LONG"
-    ws["L5"] = "LAT"
-    ws["S5"] = "LONG"
-    ws["T5"] = "LAT"
-
-    # Paint borders and background fills across all header cells (A3:AC5)
-    for r in range(3, 6):
-        for c in range(1, 30):
-            cell = ws.cell(row=r, column=c)
-            cell.border = thin_border
-            if c <= 5:
-                fill_c = COLOR_HEADER_MAIN
-            elif 6 <= c <= 16:
-                fill_c = COLOR_HEADER_SIMS if r == 3 else COLOR_SUB_SIMS
-            elif 17 <= c <= 25:
-                fill_c = COLOR_HEADER_HASIL if r == 3 else COLOR_SUB_HASIL
-            else:
-                fill_c = COLOR_HEADER_EVAL
-            cell.fill = PatternFill(start_color=fill_c, end_color=fill_c, fill_type="solid")
-            if not cell.font or cell.font.color.rgb != "FFFFFF":
-                cell.font = font_head_sub
-            cell.alignment = align_center
-
-    # Rows 6+: Data Rows (29 Columns)
     current_row = 6
     for idx, (lawan, station) in enumerate(records, 1):
         st_op = status_map.get(lawan.id)
@@ -6577,88 +6471,49 @@ def generate_apstard_excel(records, status_map, meta_info):
                 tgl_str = str(lawan.tanggal_pemeriksaan)
 
         row_values = [
-            idx,                                                    # 1: NO
-            tgl_str,                                                # 2: TANGGAL PEMERIKSAAN
+            idx,                                                             # 1: NO
+            tgl_str,                                                         # 2: TANGGAL PEMERIKSAAN
             d.get('metode_pemeriksaan') or 'Pemeriksaan melalui Remote Site', # 3: METODE PEMERIKSAAN
-            client_id,                                              # 4: CLIENT ID
-            client_name,                                            # 5: CLIENT NAME
-            d.get('id_sims') or '-',                                # 6: ID (SIMS)
-            d.get('nomor_isr') or '-',                              # 7: NO. ISR (CURR_LIC_NUM)
-            d.get('link_id') or '-',                                # 8: LINK ID
-            station.stasiun_name or '-',                            # 9: STN_NAME (SIMS)
-            lawan.nama_stasiun_lawan or '-',                        # 10: STASIUN LAWAN (SIMS)
-            d.get('isr_longitude') or '-',                          # 11: KOORDINAT LONG (SIMS)
-            d.get('isr_latitude') or '-',                           # 12: KOORDINAT LAT (SIMS)
-            d.get('isr_freq_tx') or '-',                            # 13: Tx (MHz) (SIMS)
-            d.get('isr_freq_rx') or '-',                            # 14: Rx (MHz) (SIMS)
-            d.get('isr_bw_mhz') or '28',                            # 15: BW (MHz) (SIMS)
-            d.get('isr_tipe_perangkat') or '-',                     # 16: Merk/Type Perangkat (SIMS)
-            station.stasiun_name or '-',                            # 17: STN_NAME (HASIL)
-            lawan.nama_stasiun_lawan or '-',                        # 18: STASIUN LAWAN (HASIL)
-            d.get('hasil_longitude') or d.get('isr_longitude') or '-', # 19: KOORDINAT LONG (HASIL)
-            d.get('hasil_latitude') or d.get('isr_latitude') or '-',   # 20: KOORDINAT LAT (HASIL)
-            d.get('hasil_freq_tx') or d.get('isr_freq_tx') or '-',  # 21: Tx (MHz) (HASIL)
-            d.get('hasil_freq_rx') or d.get('isr_freq_rx') or '-',  # 22: Rx (MHz) (HASIL)
-            d.get('hasil_bw_mhz') or d.get('isr_bw_mhz') or '28',  # 23: BW (MHz) (HASIL)
+            client_id,                                                       # 4: CLIENT ID
+            client_name,                                                     # 5: CLIENT NAME
+            d.get('id_sims') or '-',                                         # 6: ID (SIMS)
+            d.get('nomor_isr') or '-',                                       # 7: NO. ISR (CURR_LIC_NUM)
+            d.get('link_id') or '-',                                         # 8: LINK ID
+            station.stasiun_name or '-',                                     # 9: STN_NAME (SIMS)
+            lawan.nama_stasiun_lawan or '-',                                 # 10: STASIUN LAWAN (SIMS)
+            d.get('isr_longitude') or '-',                                   # 11: LONG (KOORDINAT DD SIMS)
+            d.get('isr_latitude') or '-',                                    # 12: LAT (KOORDINAT DD SIMS)
+            d.get('isr_freq_tx') or '-',                                     # 13: Tx (MHz) (SIMS)
+            d.get('isr_freq_rx') or '-',                                     # 14: Rx (MHz) (SIMS)
+            d.get('isr_bw_mhz') or '28',                                     # 15: BW (MHz) (SIMS)
+            d.get('isr_tipe_perangkat') or '-',                              # 16: Merk/Type Perangkat (SIMS)
+            station.stasiun_name or '-',                                     # 17: STN_NAME (HASIL)
+            lawan.nama_stasiun_lawan or '-',                                 # 18: STASIUN LAWAN (HASIL)
+            d.get('hasil_longitude') or d.get('isr_longitude') or '-',          # 19: LONG (KOORDINAT HASIL)
+            d.get('hasil_latitude') or d.get('isr_latitude') or '-',            # 20: LAT (KOORDINAT HASIL)
+            d.get('hasil_freq_tx') or d.get('isr_freq_tx') or '-',           # 21: Tx (MHz) (HASIL)
+            d.get('hasil_freq_rx') or d.get('isr_freq_rx') or '-',           # 22: Rx (MHz) (HASIL)
+            d.get('hasil_bw_mhz') or d.get('isr_bw_mhz') or '28',           # 23: BW (MHz) (HASIL)
             d.get('hasil_tipe_perangkat') or d.get('isr_tipe_perangkat') or '-', # 24: Merk/Type Perangkat (HASIL)
-            d.get('sertifikat_perangkat') or 'Ada',                  # 25: Sertifikat Perangkat
-            hasil_pem,                                              # 26: STATUS
-            d.get('mulai_beroperasi') or '-',                       # 27: MULAI BEROPERASI
-            d.get('catatan_pemeriksaan') or d.get('catatan') or '-', # 28: KETERANGAN
-            (station.kota or '').title()                            # 29: KOTA/KABUPATEN
+            d.get('sertifikat_perangkat') or 'Ada',                           # 25: Sertifikat Perangkat
+            hasil_pem,                                                       # 26: STATUS
+            d.get('mulai_beroperasi') or '-',                                # 27: MULAI BEROPERASI
+            d.get('catatan_pemeriksaan') or d.get('catatan') or '-',          # 28: KETERANGAN
+            (station.kota or '').title()                                     # 29: KOTA/KABUPATEN
         ]
 
-        is_even = (idx % 2 == 0)
-        row_fill = PatternFill(start_color="F8FAFC", end_color="F8FAFC", fill_type="solid") if is_even else None
-
         for c_idx, val in enumerate(row_values, 1):
-            cell = ws.cell(row=current_row, column=c_idx)
-            cell.value = val
+            cell = ws.cell(row=current_row, column=c_idx, value=val)
             cell.font = font_data
             cell.border = data_border
-            if row_fill:
-                cell.fill = row_fill
+            cell.alignment = align_center if c_idx in center_cols else align_left
 
-            # Alignment
-            if c_idx in [1, 2, 4, 6, 7, 8, 11, 12, 13, 14, 15, 19, 20, 21, 22, 23, 25, 26, 27]:
-                cell.alignment = align_center
-            else:
-                cell.alignment = align_left
-
-        # Highlight cell status pemeriksaan (Col 26 / Z)
-        status_cell = ws.cell(row=current_row, column=26)
-        if hasil_pem == 'Sesuai ISR':
-            status_cell.fill = fill_sesuai
-            status_cell.font = font_sesuai
-        elif hasil_pem == 'Tidak Aktif':
-            status_cell.fill = fill_tidak_aktif
-            status_cell.font = font_tidak_aktif
-        elif hasil_pem == 'Tidak Berizin':
-            status_cell.fill = fill_tidak_berizin
-            status_cell.font = font_tidak_berizin
-        elif hasil_pem == 'Tidak Sesuai Parameter Teknis':
-            status_cell.fill = fill_tidak_sesuai
-            status_cell.font = font_tidak_sesuai
-        else:
-            status_cell.fill = fill_belum
-            status_cell.font = font_belum
-
-        ws.row_dimensions[current_row].height = 20
         current_row += 1
 
-    ws.freeze_panes = "F6"
-
-    if current_row > 6:
-        ws.auto_filter.ref = f"A5:AC{current_row - 1}"
-
-    for col in ws.columns:
-        col_letter = get_column_letter(col[0].column)
-        max_len = 0
-        for cell in col:
-            if cell.row >= 3 and cell.value:
-                for line in str(cell.value).split("\n"):
-                    max_len = max(max_len, len(line))
-        ws.column_dimensions[col_letter].width = max(min(max_len + 3, 40), 10)
+    if len(records) == 0 and ws.max_row >= 6:
+        ws.delete_rows(6, ws.max_row - 5)
+    elif len(records) == 1 and ws.max_row >= 7:
+        ws.delete_rows(7, ws.max_row - 6)
 
     bio = io.BytesIO()
     wb.save(bio)
