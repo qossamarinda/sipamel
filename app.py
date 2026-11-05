@@ -6439,14 +6439,36 @@ def generate_apstard_excel(records, status_map, meta_info):
                 elif 17 <= c <= 25:
                     cell.fill = fill_green
 
+        # Baris 6 contoh berwarna orange jika template master belum dibuat
+        sample_row_vals = [
+            '#', '2022-01-31', 'Pemeriksaan melalui Remote Site', 123456, 'CLIENT NAME',
+            123456, '00000000-000AA/0000000000', 123456, 'STNNAME', 'STASIUNLAWAN',
+            '10.10', '20.20', '100.10', '200.20', '300.20', 'Merk/Type Perangkat',
+            'STNNAME', 'STASIUNLAWAN', '10.10', '20.20', '100.10', '200.20', '300.20',
+            'Merk/Type Perangkat', 'Ada', 'Sesuai ISR', '2022-01-31', 'Keterangan', 'Kota/Kabupaten'
+        ]
+        fill_orange = PatternFill(start_color="FFF8CBAD", end_color="FFF8CBAD", fill_type="solid")
+        for c_idx, sval in enumerate(sample_row_vals, 1):
+            scell = ws.cell(row=6, column=c_idx, value=sval)
+            scell.font = Font(name="Arial", size=9)
+            scell.border = thin_border
+            scell.fill = fill_orange
+            scell.alignment = Alignment(horizontal="center", vertical="center") if c_idx in {1, 2, 4, 6, 7, 8, 11, 12, 13, 14, 15, 19, 20, 21, 22, 23, 25, 26, 27} else Alignment(horizontal="left", vertical="center")
+
     font_data = Font(name="Arial", size=9)
     align_center = Alignment(horizontal="center", vertical="center")
     align_left = Alignment(horizontal="left", vertical="center")
-    thin_side = Side(style='thin', color="D1D5DB")
+    thin_side = Side(style='thin', color="000000")
     data_border = Border(left=thin_side, right=thin_side, top=thin_side, bottom=thin_side)
     center_cols = {1, 2, 4, 6, 7, 8, 11, 12, 13, 14, 15, 19, 20, 21, 22, 23, 25, 26, 27}
 
-    current_row = 6
+    # PENTING: Baris 6 (baris contoh berwarna orange) TETAP DIPERTAHANKAN dan TIDAK BOLEH DIUBAH sama sekali.
+    # Bersihkan hanya baris ke-7 ke bawah jika ada sisa data lama dari template.
+    if ws.max_row >= 7:
+        ws.delete_rows(7, ws.max_row - 6)
+
+    # Hasil pemeriksaan diisi di baris selanjutnya (mulai baris ke-7) yang berwarna putih
+    current_row = 7
     for idx, (lawan, station) in enumerate(records, 1):
         st_op = status_map.get(lawan.id)
         d = build_stasiun_lawan_dict(lawan, station, latest_status=None)
@@ -6471,7 +6493,7 @@ def generate_apstard_excel(records, status_map, meta_info):
                 tgl_str = str(lawan.tanggal_pemeriksaan)
 
         row_values = [
-            idx,                                                             # 1: NO
+            idx,                                                             # 1: NO (dimulai dari 1 pada baris 7)
             tgl_str,                                                         # 2: TANGGAL PEMERIKSAAN
             d.get('metode_pemeriksaan') or 'Pemeriksaan melalui Remote Site', # 3: METODE PEMERIKSAAN
             client_id,                                                       # 4: CLIENT ID
@@ -6489,16 +6511,16 @@ def generate_apstard_excel(records, status_map, meta_info):
             d.get('isr_tipe_perangkat') or '-',                              # 16: Merk/Type Perangkat (SIMS)
             station.stasiun_name or '-',                                     # 17: STN_NAME (HASIL)
             lawan.nama_stasiun_lawan or '-',                                 # 18: STASIUN LAWAN (HASIL)
-            d.get('hasil_longitude') or d.get('isr_longitude') or '-',          # 19: LONG (KOORDINAT HASIL)
-            d.get('hasil_latitude') or d.get('isr_latitude') or '-',            # 20: LAT (KOORDINAT HASIL)
+            d.get('hasil_longitude') or d.get('isr_longitude') or '-',       # 19: LONG (KOORDINAT HASIL)
+            d.get('hasil_latitude') or d.get('isr_latitude') or '-',         # 20: LAT (KOORDINAT HASIL)
             d.get('hasil_freq_tx') or d.get('isr_freq_tx') or '-',           # 21: Tx (MHz) (HASIL)
             d.get('hasil_freq_rx') or d.get('isr_freq_rx') or '-',           # 22: Rx (MHz) (HASIL)
-            d.get('hasil_bw_mhz') or d.get('isr_bw_mhz') or '28',           # 23: BW (MHz) (HASIL)
+            d.get('hasil_bw_mhz') or d.get('isr_bw_mhz') or '28',            # 23: BW (MHz) (HASIL)
             d.get('hasil_tipe_perangkat') or d.get('isr_tipe_perangkat') or '-', # 24: Merk/Type Perangkat (HASIL)
-            d.get('sertifikat_perangkat') or 'Ada',                           # 25: Sertifikat Perangkat
+            d.get('sertifikat_perangkat') or 'Ada',                          # 25: Sertifikat Perangkat
             hasil_pem,                                                       # 26: STATUS
             d.get('mulai_beroperasi') or '-',                                # 27: MULAI BEROPERASI
-            d.get('catatan_pemeriksaan') or d.get('catatan') or '-',          # 28: KETERANGAN
+            d.get('catatan_pemeriksaan') or d.get('catatan') or '-',         # 28: KETERANGAN
             (station.kota or '').title()                                     # 29: KOTA/KABUPATEN
         ]
 
@@ -6507,13 +6529,9 @@ def generate_apstard_excel(records, status_map, meta_info):
             cell.font = font_data
             cell.border = data_border
             cell.alignment = align_center if c_idx in center_cols else align_left
+            cell.fill = PatternFill(fill_type=None)
 
         current_row += 1
-
-    if len(records) == 0 and ws.max_row >= 6:
-        ws.delete_rows(6, ws.max_row - 5)
-    elif len(records) == 1 and ws.max_row >= 7:
-        ws.delete_rows(7, ws.max_row - 6)
 
     bio = io.BytesIO()
     wb.save(bio)
