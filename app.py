@@ -6349,6 +6349,32 @@ def admin_master_download_template():
 # EXPORT FORMAT APSTARD (.XLSX) - KHUSUS ADMIN MASTER
 # ============================================================================
 
+def get_effective_hasil_pemeriksaan(lawan, st_op):
+    """
+    Sinkronisasi akurat hasil pemeriksaan dengan data di Daftar Stasiun v2:
+    - Jika lawan.hasil_pemeriksaan telah diubah manual (Tidak Berizin, Tidak Aktif, Tidak Sesuai Parameter Teknis), gunakan itu.
+    - Jika belum diubah manual, tentukan berdasarkan StatusUpdate (hasil upload/inspeksi di Daftar Stasiun v2):
+        * tidak_aktif   -> 'Tidak Aktif'
+        * tidak_berizin -> 'Tidak Berizin'
+        * tidak_sesuai  -> 'Tidak Sesuai Parameter Teknis'
+        * aktif         -> 'Sesuai ISR'
+        * belum ada     -> 'Belum Diperiksa'
+    """
+    hp = lawan.hasil_pemeriksaan
+    if hp and hp not in ['Sesuai ISR', '']:
+        return hp
+    if st_op == 'tidak_aktif':
+        return 'Tidak Aktif'
+    elif st_op == 'tidak_berizin':
+        return 'Tidak Berizin'
+    elif st_op == 'tidak_sesuai':
+        return 'Tidak Sesuai Parameter Teknis'
+    elif st_op == 'aktif':
+        return 'Sesuai ISR'
+    else:
+        return 'Belum Diperiksa'
+
+
 def generate_apstard_excel(records, status_map, meta_info):
     import openpyxl
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
@@ -6502,22 +6528,22 @@ def generate_apstard_excel(records, status_map, meta_info):
         st_op = status_map.get(lawan.id)
         d = build_stasiun_lawan_dict(lawan, station, latest_status=None)
         
-        hasil_pem = d.get('hasil_pemeriksaan') or 'Sesuai ISR'
-        if hasil_pem == 'Sesuai ISR' and st_op:
-            if st_op == 'tidak_aktif':
-                hasil_pem = 'Tidak Aktif'
-            elif st_op == 'tidak_berizin':
-                hasil_pem = 'Tidak Berizin'
+        # Menggunakan status hasil pemeriksaan yang sinkron dengan Daftar Stasiun v2
+        hasil_pem = get_effective_hasil_pemeriksaan(lawan, st_op)
 
         eff_status = st_op
         if hasil_pem == 'Tidak Berizin':
             eff_status = 'tidak_berizin'
         elif hasil_pem == 'Tidak Aktif':
             eff_status = 'tidak_aktif'
-        elif not eff_status:
+        elif hasil_pem == 'Tidak Sesuai Parameter Teknis':
+            eff_status = 'tidak_sesuai'
+        elif hasil_pem == 'Sesuai ISR':
             eff_status = 'aktif'
+        else:
+            eff_status = 'belum_ada'
 
-        status_op_label = STATUS_OPTIONS.get(eff_status, 'Aktif')
+        status_op_label = STATUS_OPTIONS.get(eff_status, 'Belum Ada')
 
         tgl_str = '-'
         if lawan.tanggal_pemeriksaan:
@@ -6607,6 +6633,9 @@ def generate_apstard_excel(records, status_map, meta_info):
         elif eff_status == 'tidak_sesuai':
             op_cell.fill = fill_tidak_sesuai
             op_cell.font = font_tidak_sesuai
+        else:
+            op_cell.fill = fill_belum
+            op_cell.font = font_belum
 
         ws.row_dimensions[current_row].height = 20
         current_row += 1
@@ -6634,7 +6663,7 @@ def generate_apstard_excel(records, status_map, meta_info):
 @login_required
 @admin_master_required
 def admin_master_export_apstard():
-    """Halaman Export Format Apstard (.xlsx) khusus Admin Master"""
+    """Halaman Export Format Apstard (.xlsx) khusus Admin Master (Tersinkronisasi dengan Hasil Pemeriksaan di Daftar Stasiun v2)"""
     operator_filter = request.args.get('operator', 'all').strip()
     kota_filter = request.args.get('kota', 'all').strip()
     status_filter = request.args.get('status', 'all').strip()
@@ -6652,8 +6681,6 @@ def admin_master_export_apstard():
         query = query.filter(db.func.lower(Stasiun.operator) == operator_filter.lower())
     if kota_filter and kota_filter != 'all':
         query = query.filter(db.func.lower(Stasiun.kota) == kota_filter.lower())
-    if status_filter and status_filter != 'all':
-        query = query.filter(StasiunLawan.hasil_pemeriksaan == status_filter)
     if tgl_mulai:
         try:
             d_mulai = datetime.strptime(tgl_mulai, '%Y-%m-%d').date()
@@ -6667,35 +6694,58 @@ def admin_master_export_apstard():
         except ValueError:
             pass
 
-    # Ambil total count
-    total_count = query.count()
+    # Ambil semua data baris yang cocok dengan filter operator & kota
+    all_rows = query.order_by(Stasiun.operator, Stasiun.stasiun_name, StasiunLawan.urutan).all()
 
-    # Hitung status counts untuk summary card
-    counts_query = query.with_entities(StasiunLawan.hasil_pemeriksaan, db.func.count(StasiunLawan.id)).group_by(StasiunLawan.hasil_pemeriksaan).all()
+    # Ambil status terbaru untuk setiap stasiun lawan (persis seperti logika Daftar Stasiun v2)
+    lawan_ids = [l.id for l, _ in all_rows]
+    status_map = {}
+    if lawan_ids:
+        subq = db.session.query(
+            StatusUpdate.stasiun_lawan_id,
+            db.func.max(StatusUpdate.id).label('max_id')
+        ).filter(StatusUpdate.stasiun_lawan_id.in_(lawan_ids))         .group_by(StatusUpdate.stasiun_lawan_id).subquery()
+
+        latest_updates = db.session.query(StatusUpdate).join(
+            subq, StatusUpdate.id == subq.c.max_id
+        ).all()
+        status_map = {u.stasiun_lawan_id: u.status for u in latest_updates}
+
+    # Hitung status counts untuk summary card secara presisi tersinkronisasi
     summary_counts = {
-        'total': total_count,
+        'total': len(all_rows),
         'sesuai': 0,
         'tidak_aktif': 0,
         'tidak_berizin': 0,
         'tidak_sesuai': 0,
         'belum_diperiksa': 0
     }
-    for st, c in counts_query:
-        if st == 'Sesuai ISR':
-            summary_counts['sesuai'] += c
-        elif st == 'Tidak Aktif':
-            summary_counts['tidak_aktif'] += c
-        elif st == 'Tidak Berizin':
-            summary_counts['tidak_berizin'] += c
-        elif st == 'Tidak Sesuai Parameter Teknis':
-            summary_counts['tidak_sesuai'] += c
-        elif st == 'Belum Diperiksa':
-            summary_counts['belum_diperiksa'] += c
+    for lawan, station in all_rows:
+        eff = get_effective_hasil_pemeriksaan(lawan, status_map.get(lawan.id))
+        if eff == 'Sesuai ISR':
+            summary_counts['sesuai'] += 1
+        elif eff == 'Tidak Aktif':
+            summary_counts['tidak_aktif'] += 1
+        elif eff == 'Tidak Berizin':
+            summary_counts['tidak_berizin'] += 1
+        elif eff == 'Tidak Sesuai Parameter Teknis':
+            summary_counts['tidak_sesuai'] += 1
         else:
-            summary_counts['sesuai'] += c
+            summary_counts['belum_diperiksa'] += 1
+
+    # Filter status hasil pemeriksaan jika pengguna memilih filter status
+    if status_filter and status_filter != 'all':
+        filtered_rows = [
+            (l, s) for l, s in all_rows
+            if get_effective_hasil_pemeriksaan(l, status_map.get(l.id)) == status_filter
+        ]
+    else:
+        filtered_rows = all_rows
+
+    total_count = len(filtered_rows)
 
     # Ambil 25 data pertama untuk preview
-    preview_items = query.order_by(Stasiun.operator, Stasiun.stasiun_name, StasiunLawan.urutan).limit(25).all()
+    preview_items = filtered_rows[:25]
 
     # Format preview items
     preview_data = []
@@ -6706,6 +6756,7 @@ def admin_master_export_apstard():
         dict_data['station_name'] = station.stasiun_name
         dict_data['operator'] = (station.operator or '').upper()
         dict_data['kota'] = (station.kota or '').title()
+        dict_data['hasil_pemeriksaan'] = get_effective_hasil_pemeriksaan(lawan, status_map.get(lawan.id))
         preview_data.append(dict_data)
 
     return render_template(
@@ -6727,7 +6778,7 @@ def admin_master_export_apstard():
 @login_required
 @admin_master_required
 def admin_master_export_apstard_download():
-    """Download file Excel format APSTARD (.xlsx)"""
+    """Download file Excel format APSTARD (.xlsx) tersinkronisasi"""
     operator_filter = request.args.get('operator', 'all').strip()
     kota_filter = request.args.get('kota', 'all').strip()
     status_filter = request.args.get('status', 'all').strip()
@@ -6740,8 +6791,6 @@ def admin_master_export_apstard_download():
         query = query.filter(db.func.lower(Stasiun.operator) == operator_filter.lower())
     if kota_filter and kota_filter != 'all':
         query = query.filter(db.func.lower(Stasiun.kota) == kota_filter.lower())
-    if status_filter and status_filter != 'all':
-        query = query.filter(StasiunLawan.hasil_pemeriksaan == status_filter)
     if tgl_mulai:
         try:
             d_mulai = datetime.strptime(tgl_mulai, '%Y-%m-%d').date()
@@ -6755,24 +6804,35 @@ def admin_master_export_apstard_download():
         except ValueError:
             pass
 
-    records = query.order_by(Stasiun.operator, Stasiun.stasiun_name, StasiunLawan.urutan).all()
+    all_rows = query.order_by(Stasiun.operator, Stasiun.stasiun_name, StasiunLawan.urutan).all()
 
-    # Batch query latest status map for operational status
-    subq = db.session.query(
-        StatusUpdate.stasiun_lawan_id,
-        db.func.max(StatusUpdate.id).label('max_id')
-    ).group_by(StatusUpdate.stasiun_lawan_id).subquery()
-    latest_updates = db.session.query(StatusUpdate).join(
-        subq, StatusUpdate.id == subq.c.max_id
-    ).all()
-    status_map = {u.stasiun_lawan_id: u.status for u in latest_updates}
+    lawan_ids = [l.id for l, _ in all_rows]
+    status_map = {}
+    if lawan_ids:
+        subq = db.session.query(
+            StatusUpdate.stasiun_lawan_id,
+            db.func.max(StatusUpdate.id).label('max_id')
+        ).filter(StatusUpdate.stasiun_lawan_id.in_(lawan_ids))         .group_by(StatusUpdate.stasiun_lawan_id).subquery()
 
-    # Generate Excel in BytesIO
-    excel_stream = generate_apstard_excel(records, status_map, {
+        latest_updates = db.session.query(StatusUpdate).join(
+            subq, StatusUpdate.id == subq.c.max_id
+        ).all()
+        status_map = {u.stasiun_lawan_id: u.status for u in latest_updates}
+
+    # Filter status hasil pemeriksaan jika pengguna memilih filter status
+    if status_filter and status_filter != 'all':
+        filtered_rows = [
+            (l, s) for l, s in all_rows
+            if get_effective_hasil_pemeriksaan(l, status_map.get(l.id)) == status_filter
+        ]
+    else:
+        filtered_rows = all_rows
+
+    excel_stream = generate_apstard_excel(filtered_rows, status_map, {
         'operator': operator_filter,
         'kota': kota_filter,
         'status': status_filter,
-        'total': len(records),
+        'total': len(filtered_rows),
         'user': current_user.username
     })
 

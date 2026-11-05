@@ -34,62 +34,80 @@
                     <a href="{{ url_for('admin_master_export_apstard_download', operator=selected_operator, kota=selected_kota, status=selected_status, tgl_mulai=selected_tgl_mulai, tgl_selesai=selected_tgl_selesai) }}" 
                        class="btn btn-success btn-lg px-3 py-2 rounded-3 fw-semibold shadow-sm d-flex align-items-center gap-2">
                         <i class="bi bi-file-earmark-arrow-down-fill fs-5"></i>
-                        <span>Download Excel (.xlsx)</span>
+                        <span>Download Excel Sesuai Filter</span>
                     </a>
                     <a href="{{ url_for('admin_master_export_apstard_download') }}" 
                        class="btn btn-light btn-lg px-3 py-2 rounded-3 fw-semibold text-primary shadow-sm d-flex align-items-center gap-2"
-                       title="Download semua data tanpa filter">
+                       title="Download seluruh 2.895 data tanpa filter">
                         <i class="bi bi-cloud-arrow-down-fill fs-5"></i>
-                        <span>Download Semua</span>
+                        <span>Download Semua Data</span>
                     </a>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Summary Statistics Cards -->
+    <!-- Summary Statistics Cards (Synchronized with Daftar Stasiun v2) -->
     <div class="row g-3 mb-4">
+        <!-- TOTAL LINK -->
         <div class="col-6 col-md-4 col-xl-2">
-            <div class="card border-0 shadow-sm rounded-3 h-100 p-3" style="border-left: 4px solid #2563eb !important;">
-                <div class="text-muted small fw-medium text-uppercase mb-1" style="font-size: 0.72rem;">Total Link</div>
-                <div class="fs-4 fw-bold text-dark">{{ "{:,}".format(summary_counts.total) }}</div>
-                <div class="small text-muted" style="font-size: 0.75rem;">Link stasiun terdata</div>
-            </div>
+            <a href="{{ url_for('admin_master_export_apstard', operator=selected_operator, kota=selected_kota, status='all') }}" class="text-decoration-none">
+                <div class="card border-0 shadow-sm rounded-3 h-100 p-3 stat-card {% if selected_status == 'all' %}active-card{% endif %}" style="border-left: 4px solid #2563eb !important;">
+                    <div class="text-muted small fw-medium text-uppercase mb-1" style="font-size: 0.72rem;">TOTAL LINK</div>
+                    <div class="fs-4 fw-bold text-dark">{{ "{:,}".format(summary_counts.total) }}</div>
+                    <div class="small text-muted" style="font-size: 0.75rem;">Link stasiun terdata</div>
+                </div>
+            </a>
         </div>
+        <!-- SESUAI ISR -->
         <div class="col-6 col-md-4 col-xl-2">
-            <div class="card border-0 shadow-sm rounded-3 h-100 p-3" style="border-left: 4px solid #10b981 !important;">
-                <div class="text-success small fw-medium text-uppercase mb-1" style="font-size: 0.72rem;"><i class="bi bi-check-circle me-1"></i>Sesuai ISR</div>
-                <div class="fs-4 fw-bold text-success">{{ "{:,}".format(summary_counts.sesuai) }}</div>
-                <div class="small text-muted" style="font-size: 0.75rem;">Parameter sesuai</div>
-            </div>
+            <a href="{{ url_for('admin_master_export_apstard', operator=selected_operator, kota=selected_kota, status='Sesuai ISR') }}" class="text-decoration-none">
+                <div class="card border-0 shadow-sm rounded-3 h-100 p-3 stat-card {% if selected_status == 'Sesuai ISR' %}active-card{% endif %}" style="border-left: 4px solid #10b981 !important;">
+                    <div class="text-success small fw-medium text-uppercase mb-1" style="font-size: 0.72rem;"><i class="bi bi-check-circle me-1"></i>SESUAI ISR</div>
+                    <div class="fs-4 fw-bold text-success">{{ "{:,}".format(summary_counts.sesuai) }}</div>
+                    <div class="small text-muted" style="font-size: 0.75rem;">Status Aktif / Sesuai</div>
+                </div>
+            </a>
         </div>
+        <!-- TIDAK AKTIF -->
         <div class="col-6 col-md-4 col-xl-2">
-            <div class="card border-0 shadow-sm rounded-3 h-100 p-3" style="border-left: 4px solid #6c757d !important;">
-                <div class="text-secondary small fw-medium text-uppercase mb-1" style="font-size: 0.72rem;"><i class="bi bi-dash-circle me-1"></i>Tidak Aktif</div>
-                <div class="fs-4 fw-bold text-secondary">{{ "{:,}".format(summary_counts.tidak_aktif) }}</div>
-                <div class="small text-muted" style="font-size: 0.75rem;">Stasiun non-aktif</div>
-            </div>
+            <a href="{{ url_for('admin_master_export_apstard', operator=selected_operator, kota=selected_kota, status='Tidak Aktif') }}" class="text-decoration-none">
+                <div class="card border-0 shadow-sm rounded-3 h-100 p-3 stat-card {% if selected_status == 'Tidak Aktif' %}active-card{% endif %}" style="border-left: 4px solid #6c757d !important;">
+                    <div class="text-secondary small fw-medium text-uppercase mb-1" style="font-size: 0.72rem;"><i class="bi bi-dash-circle me-1"></i>TIDAK AKTIF</div>
+                    <div class="fs-4 fw-bold text-secondary">{{ "{:,}".format(summary_counts.tidak_aktif) }}</div>
+                    <div class="small text-muted" style="font-size: 0.75rem;">Stasiun non-aktif</div>
+                </div>
+            </a>
         </div>
+        <!-- TIDAK BERIZIN -->
         <div class="col-6 col-md-4 col-xl-2">
-            <div class="card border-0 shadow-sm rounded-3 h-100 p-3" style="border-left: 4px solid #dc3545 !important;">
-                <div class="text-danger small fw-medium text-uppercase mb-1" style="font-size: 0.72rem;"><i class="bi bi-shield-x me-1"></i>Tidak Berizin</div>
-                <div class="fs-4 fw-bold text-danger">{{ "{:,}".format(summary_counts.tidak_berizin) }}</div>
-                <div class="small text-muted" style="font-size: 0.75rem;">Belum ada izin/ISR</div>
-            </div>
+            <a href="{{ url_for('admin_master_export_apstard', operator=selected_operator, kota=selected_kota, status='Tidak Berizin') }}" class="text-decoration-none">
+                <div class="card border-0 shadow-sm rounded-3 h-100 p-3 stat-card {% if selected_status == 'Tidak Berizin' %}active-card{% endif %}" style="border-left: 4px solid #dc3545 !important;">
+                    <div class="text-danger small fw-medium text-uppercase mb-1" style="font-size: 0.72rem;"><i class="bi bi-shield-x me-1"></i>TIDAK BERIZIN</div>
+                    <div class="fs-4 fw-bold text-danger">{{ "{:,}".format(summary_counts.tidak_berizin) }}</div>
+                    <div class="small text-muted" style="font-size: 0.75rem;">Tanpa izin / ISR</div>
+                </div>
+            </a>
         </div>
+        <!-- TIDAK SESUAI -->
         <div class="col-6 col-md-4 col-xl-2">
-            <div class="card border-0 shadow-sm rounded-3 h-100 p-3" style="border-left: 4px solid #f59e0b !important;">
-                <div class="text-warning-emphasis small fw-medium text-uppercase mb-1" style="font-size: 0.72rem;"><i class="bi bi-exclamation-triangle me-1"></i>Tidak Sesuai</div>
-                <div class="fs-4 fw-bold text-warning-emphasis">{{ "{:,}".format(summary_counts.tidak_sesuai) }}</div>
-                <div class="small text-muted" style="font-size: 0.75rem;">Parameter berbeda</div>
-            </div>
+            <a href="{{ url_for('admin_master_export_apstard', operator=selected_operator, kota=selected_kota, status='Tidak Sesuai Parameter Teknis') }}" class="text-decoration-none">
+                <div class="card border-0 shadow-sm rounded-3 h-100 p-3 stat-card {% if selected_status == 'Tidak Sesuai Parameter Teknis' %}active-card{% endif %}" style="border-left: 4px solid #f59e0b !important;">
+                    <div class="text-warning-emphasis small fw-medium text-uppercase mb-1" style="font-size: 0.72rem;"><i class="bi bi-exclamation-triangle me-1"></i>TIDAK SESUAI</div>
+                    <div class="fs-4 fw-bold text-warning-emphasis">{{ "{:,}".format(summary_counts.tidak_sesuai) }}</div>
+                    <div class="small text-muted" style="font-size: 0.75rem;">Parameter berbeda</div>
+                </div>
+            </a>
         </div>
+        <!-- BELUM DIPERIKSA -->
         <div class="col-6 col-md-4 col-xl-2">
-            <div class="card border-0 shadow-sm rounded-3 h-100 p-3" style="border-left: 4px solid #0ea5e9 !important;">
-                <div class="text-info small fw-medium text-uppercase mb-1" style="font-size: 0.72rem;"><i class="bi bi-hourglass me-1"></i>Belum Diperiksa</div>
-                <div class="fs-4 fw-bold text-info">{{ "{:,}".format(summary_counts.belum_diperiksa) }}</div>
-                <div class="small text-muted" style="font-size: 0.75rem;">Menunggu inspeksi</div>
-            </div>
+            <a href="{{ url_for('admin_master_export_apstard', operator=selected_operator, kota=selected_kota, status='Belum Diperiksa') }}" class="text-decoration-none">
+                <div class="card border-0 shadow-sm rounded-3 h-100 p-3 stat-card {% if selected_status == 'Belum Diperiksa' %}active-card{% endif %}" style="border-left: 4px solid #0ea5e9 !important;">
+                    <div class="text-info small fw-medium text-uppercase mb-1" style="font-size: 0.72rem;"><i class="bi bi-hourglass me-1"></i>BELUM DIPERIKSA</div>
+                    <div class="fs-4 fw-bold text-info">{{ "{:,}".format(summary_counts.belum_diperiksa) }}</div>
+                    <div class="small text-muted" style="font-size: 0.75rem;">Belum upload capturean</div>
+                </div>
+            </a>
         </div>
     </div>
 
@@ -263,4 +281,19 @@
         </div>
     </div>
 </div>
+
+<style>
+.stat-card {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    cursor: pointer;
+}
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
+}
+.active-card {
+    background-color: #f8fafc;
+    box-shadow: 0 0.25rem 0.75rem rgba(37, 99, 235, 0.15) !important;
+}
+</style>
 {% endblock %}
