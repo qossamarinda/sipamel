@@ -4775,6 +4775,10 @@ def api_ai_chat():
 def admin_master_ocr():
     return render_template('admin_master/ocr.html')
 
+@app.route('/video-presentation', methods=['GET'])
+def video_presentation():
+    return render_template('video_presentation.html')
+
 @app.route('/admin-operator/ocr', methods=['GET'])
 @login_required
 @admin_operator_required

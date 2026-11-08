@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SiPaMeL - Video Presentasi Interaktif Proyek Inovasi (7 Menit)</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4338ca;
+            --primary-light: #6366f1;
+            --accent: #06b6d4;
+            --bg-cinema: #090d16;
+            --surface-cinema: #131b2e;
+            --border-cinema: #1e293b;
+            --text-light: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg-cinema);
+            color: var(--text-light);
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* Top Bar */
+        .cinema-header {
+            background: rgba(19, 27, 46, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-cinema);
+            padding: 0.75rem 1.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        /* Player Wrapper 16:9 Cinema */
+        .player-outer-container {
+            max-width: 1400px;
+            margin: 1.5rem auto;
+            padding: 0 1rem;
+        }
+
+        .cinema-screen {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: radial-gradient(circle at 50% 30%, #1e1b4b 0%, #090d16 100%);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 40px rgba(99, 102, 241, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Slide Canvas */
+        .slide-canvas {
+            flex-grow: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .slide-frame {
+            position: absolute;
+            inset: 0;
+            padding: 2.5rem 3.5rem;
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+            opacity: 0;
+            transform: scale(0.98);
+            transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .slide-frame.active {
+            display: flex;
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* Watermark & Badges */
+        .screen-watermark {
+            position: absolute;
+            top: 1.5rem;
+            right: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            z-index: 50;
+            opacity: 0.85;
+        }
+
+        .screen-badge {
+            background: rgba(99, 102, 241, 0.2);
+            border: 1px solid rgba(99, 102, 241, 0.4);
+            color: #a5b4fc;
+            padding: 0.35rem 0.85rem;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ef4444;
+            animation: pulse-red 1.5s infinite;
+        }
+
+        @keyframes pulse-red {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { transform: scale(1.1); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        /* Slide Content Components */
+        .scene-title-tag {
+            color: var(--accent);
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .scene-main-title {
+            font-size: 2.3rem;
+            font-weight: 800;
+            line-height: 1.2;
+            color: #ffffff;
+            margin-bottom: 1rem;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.4);
+        }
+
+        .scene-lead {
+            font-size: 1.1rem;
+            color: #cbd5e1;
+            line-height: 1.6;
+            max-width: 900px;
+        }
+
+        .scene-split {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2.5rem;
+            align-items: center;
+            height: 100%;
+        }
+
+        .scene-media-box {
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            background: #000;
+            max-height: 380px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .scene-media-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+            transition: transform 0.6s ease;
+        }
+
+        .scene-media-box:hover img {
+            transform: scale(1.03);
+        }
+
+        .kpi-card-glow {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid var(--primary-light);
+        }
+
+        /* Subtitle Bar */
+        .cinema-subtitles-bar {
+            background: rgba(10, 15, 28, 0.85);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 0.9rem 2rem;
+            min-height: 75px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            z-index: 40;
+        }
+
+        .subtitle-text {
+            font-size: 1.05rem;
+            font-weight: 500;
+            color: #e2e8f0;
+            line-height: 1.45;
+            transition: color 0.3s ease;
+        }
+
+        .subtitle-text strong {
+            color: #38bdf8;
+            font-weight: 700;
+        }
+
+        /* Player Controls Dock */
+        .player-control-dock {
+            background: #0b1120;
+            padding: 0.75rem 1.75rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            z-index: 50;
+        }
+
+        .timeline-bar-wrapper {
+            position: relative;
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: height 0.15s ease;
+        }
+
+        .timeline-bar-wrapper:hover {
+            height: 10px;
+        }
+
+        .timeline-progress {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #6366f1, #38bdf8);
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .timeline-handle {
+            position: absolute;
+            right: -6px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 14px;
+            height: 14px;
+            background: #ffffff;
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(0, 0, 0, 0.8);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .timeline-bar-wrapper:hover .timeline-handle {
+            opacity: 1;
+        }
+
+        .controls-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .btn-cinema {
+            background: transparent;
+            border: none;
+            color: #e2e8f0;
+            font-size: 1.15rem;
+            padding: 0.4rem 0.65rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .btn-cinema:hover {
+            color: #38bdf8;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .btn-cinema.active {
+            color: #38bdf8;
+            background: rgba(56, 189, 248, 0.15);
+        }
+
+        .btn-play-big {
+            background: var(--primary-light);
+            color: white;
+            border-radius: 50%;
+            width: 42px;
+            height: 42px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-play-big:hover {
+            background: #4f46e5;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .timecode-display {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.88rem;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        .scene-badge-pill {
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #cbd5e1;
+            padding: 0.3rem 0.75rem;
+            border-radius: 20px;
+        }
+
+        /* Recording Guide Banner */
+        .recording-banner {
+            background: linear-gradient(90deg, rgba(67, 56, 202, 0.2) 0%, rgba(6, 182, 212, 0.2) 100%);
+            border: 1px dashed rgba(56, 189, 248, 0.4);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        /* Slide Specific Styles */
+        .hero-glitch {
+            background: linear-gradient(135deg, #ffffff 0%, #93c5fd 50%, #c084fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Cinema Top Bar -->
+    <header class="cinema-header d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-3">
+            <span class="fs-4 text-primary"><i class="bi bi-broadcast"></i></span>
+            <div>
+                <strong class="d-block" style="font-size: 1.05rem; letter-spacing: -0.3px;">SiPaMeL • Video Showcase Inovasi</strong>
+                <small class="text-muted" style="font-size: 0.75rem;">Balai Monitor Spektrum Frekuensi Radio Kelas I Samarinda • Ditjen Infrastruktur Digital</small>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-sm btn-outline-info rounded-pill px-3" onclick="toggleSpeech()" id="btnVoiceToggle">
+                <i class="bi bi-volume-up-fill me-1"></i> Voiceover AI: <span id="voiceStatusText">Aktif</span>
+            </button>
+            <button class="btn btn-sm btn-primary rounded-pill px-3" onclick="toggleFullscreen()">
+                <i class="bi bi-arrows-fullscreen me-1"></i> Layar Penuh
+            </button>
+        </div>
+    </header>
+
+    <div class="player-outer-container">
+        <!-- Main Cinema Screen -->
+        <div class="cinema-screen" id="cinemaScreen">
+            
+            <!-- Watermark Overlay -->
+            <div class="screen-watermark">
+                <span class="screen-badge">
+                    <span class="live-dot"></span>
+                    <span>SIPAMEL DIGITAL PRODUCTION</span>
+                </span>
+                <span class="screen-badge">
+                    <i class="bi bi-shield-check"></i> RESMI KOMDIGI
+                </span>
+            </div>
+
+            <!-- Canvas for Slides -->
+            <div class="slide-canvas">
+                
+                <!-- SCENE 1: PEMBUKA & KEDAULATAN SPEKTRUM (00:00 - 00:25) -->
+                <div class="slide-frame active" id="scene-0">
+                    <div>
+                        <div class="scene-title-tag"><i class="bi bi-stars"></i> INOVASI PENGAWASAN SPEKTRUM FREKUENSI RADIO</div>
+                        <h1 class="scene-main-title hero-glitch">SiPaMeL (Sistem Pemeriksaan Microwave Link)</h1>
+                        <p class="scene-lead">
+                            Menjaga kedaulatan spektrum frekuensi radio dan keandalan transmisi digital di gerbang Ibu Kota Nusantara, Kalimantan Timur.
+                        </p>
+                    </div>
+
+                    <div class="row g-4 align-items-center my-auto">
+                        <div class="col-md-7">
+                            <div class="p-4 rounded-4" style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);">
+                                <h5 class="fw-bold text-white mb-2"><i class="bi bi-building me-2 text-primary"></i>Balai Monitor Spektrum Frekuensi Radio Kelas I Samarinda</h5>
+                                <p class="text-muted small mb-3">Direktorat Jenderal Infrastruktur Digital — Kementerian Komunikasi dan Digital Republik Indonesia</p>
+                                <div class="d-flex gap-3">
+                                    <div class="badge bg-primary-subtle text-primary border border-primary-subtle p-2 px-3">
+                                        <i class="bi bi-geo-alt-fill me-1"></i> Wilayah Kaltim
+                                    </div>
+                                    <div class="badge bg-success-subtle text-success border border-success-subtle p-2 px-3">
+                                        <i class="bi bi-cpu-fill me-1"></i> Deep Learning Vision OCR
+                                    </div>
+                                    <div class="badge bg-info-subtle text-info border border-info-subtle p-2 px-3">
+                                        <i class="bi bi-robot me-1"></i> Prescriptive AI
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-5 text-center">
+                            <div class="scene-media-box p-3">
+                                <img src="static/video_presentation/assets/login.jpg" alt="Login Portal SiPaMeL">
+                            </div>
+                            <small class="text-muted mt-2 d-block">Portal Resmi: sipamel.up.railway.app</small>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center text-muted small">
+                        <span>Adegan 1 dari 9 • Pembuka & Latar Kelembagaan</span>
+                        <span class="font-monospace">00:00 - 00:25 (Durasi: 25 Detik)</span>
+                    </div>
+                </div>
+
+                <!-- SCENE 2: LANSKAP PENGAWASAN KALTIM (00:25 - 00:50) -->
+                <div class="slide-frame" id="scene-1">
+                    <div>
+                        <div class="scene-title-tag"><i class="bi bi-map-fill"></i> TANTANGAN GEOGRAFIS & POPULASI JARINGAN</div>
+                        <h2 class="scene-main-title">Lanskap Pengawasan 10 Kabupaten & Kota</h2>
+                        <p class="scene-lead">
+                            Mengawasi 349 stasiun pemancar dengan 2.895 tautan microwave link aktif di daratan seluas lebih dari 127.000 km².
+                        </p>
+                    </div>
+
+                    <div class="row g-3 my-auto">
+                        <div class="col-md-3">
+                            <div class="kpi-card-glow">
+                                <small class="text-muted text-uppercase fw-bold">Total Stasiun</small>
+                                <div class="fs-2 fw-bold text-white">349 <small class="fs-6 text-muted">Site</small></div>
+                                <span class="badge bg-primary-subtle text-primary">Terdaftar Resmi</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="kpi-card-glow" style="border-left-color: #10b981;">
+                                <small class="text-muted text-uppercase fw-bold">Tautan Link Lawan</small>
+                                <div class="fs-2 fw-bold text-success">2.895 <small class="fs-6 text-muted">Hop</small></div>
+                                <span class="badge bg-success-subtle text-success">Rata-rata 8.3 Hop/Site</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="kpi-card-glow" style="border-left-color: #06b6d4;">
+                                <small class="text-muted text-uppercase fw-bold">Arsip Foto Fisik</small>
+                                <div class="fs-2 fw-bold text-info">19.146+</div>
+                                <span class="badge bg-info-subtle text-info">Tersimpan Cloudinary</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="kpi-card-glow" style="border-left-color: #f59e0b;">
+                                <small class="text-muted text-uppercase fw-bold">Operator Utama</small>
+                                <div class="fs-2 fw-bold text-warning">4 Operator</div>
+                                <span class="badge bg-warning-subtle text-warning">Telkom, Tsel, IOH, XL</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center text-muted small">
+                        <span>Adegan 2 dari 9 • Cakupan Pengawasan Spektrum</span>
+                        <span class="font-monospace">00:25 - 00:50 (Durasi: 25 Detik)</span>
+                    </div>
+                </div>
+
+                <!-- SCENE 3: LATAR BELAKANG MASALAH (00:50 - 01:20) -->
+                <div class="slide-frame" id="scene-2">
+                    <div>
+                        <div class="scene-title-tag text-danger"><i class="bi bi-exclamation-octagon-fill"></i> LATAR BELAKANG MASALAH</div>
+                        <h2 class="scene-main-title">Kendala Operasional Sebelum Hadirnya SiPaMeL</h2>
+                        <p class="scene-lead">
+                            Tiga titik rawan (*pain points*) utama dalam tata kelola pengawasan konvensional microwave link.
+                        </p>
+                    </div>
+
+                    <div class="row g-4 my-auto">
+                        <div class="col-md-4">
+                            <div class="p-3 rounded-4 bg-danger bg-opacity-10 border border-danger border-opacity-25 h-100">
+                                <div class="fs-1 text-danger mb-2"><i class="bi bi-file-earmark-x"></i></div>
+                                <h5 class="fw-bold text-white">1. Data Tercecer & Manual</h5>
+                                <p class="text-muted small">Dokumen pemeriksaan dan foto fisik tersebar di puluhan file spreadsheet tanpa ada sinkronisasi satu pintu.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 rounded-4 bg-warning bg-opacity-10 border border-warning border-opacity-25 h-100">
+                                <div class="fs-1 text-warning mb-2"><i class="bi bi-keyboard"></i></div>
+                                <h5 class="fw-bold text-white">2. Risiko Human Error</h5>
+                                <p class="text-muted small">Penyalinan angka frekuensi TX/RX dan daya pancar dari foto layar NMS sangat rawan salah ketik dan memakan waktu.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 rounded-4 bg-info bg-opacity-10 border border-info border-opacity-25 h-100">
+                                <div class="fs-1 text-info mb-2"><i class="bi bi-compass"></i></div>
+                                <h5 class="fw-bold text-white">3. Inefisiensi Rute Dinas</h5>
+                                <p class="text-muted small">Belum adanya klastering urgensi wilayah, mengakibatkan pemborosan biaya perjalanan dinas mobil monitoring spektrum.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center text-muted small">
+                        <span>Adegan 3 dari 9 • Identifikasi Titik Kritis Masalah</span>
+                        <span class="font-monospace">00:50 - 01:20 (Durasi: 30 Detik)</span>
+                    </div>
+                </div>
+
+                <!-- SCENE 4: SOLUSI & ARSITEKTUR SIPAMEL (01:20 - 02:35) -->
+                <div class="slide-frame" id="scene-3">
+                    <div>
+                        <div class="scene-title-tag"><i class="bi bi-lightning-charge-fill"></i> SOLUSI INOVASI DIGITAL</div>
+                        <h2 class="scene-main-title">Arsitektur Terpadu Multi-Cloud SiPaMeL</h2>
+                        <p class="scene-lead">
+                            Mengintegrasikan kecerdasan buatan, basis data relasional terpusat, dan penyimpanan media cloud secara real-time.
+                        </p>
+                    </div>
+
+                    <div class="row g-4 align-items-center my-auto">
+                        <div class="col-md-6">
+                            <div class="scene-media-box">
+                                <img src="static/video_presentation/assets/dashboard.jpg" alt="Dashboard SiPaMeL">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex flex-column gap-3">
+                                <div class="d-flex gap-3 align-items-start p-3 rounded-3" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);">
+                                    <div class="fs-3 text-primary"><i class="bi bi-database-check"></i></div>
+                                    <div>
+                                        <strong class="text-white">PostgreSQL Supabase (Cloud DB)</strong>
+                                        <p class="small text-muted mb-0">Sinkronisasi data relasional stasiun, stasiun lawan, dan hasil pemeriksaan terenkripsi.</p>
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-3 align-items-start p-3 rounded-3" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);">
+                                    <div class="fs-3 text-info"><i class="bi bi-cloud-arrow-up"></i></div>
+                                    <div>
+                                        <strong class="text-white">Cloudinary Media CDN</strong>
+                                        <p class="small text-muted mb-0">Penyimpanan puluhan ribu bukti visual perangkat, antena, dan spektrum analyzer tanpa beban server lokal.</p>
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-3 align-items-start p-3 rounded-3" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);">
+                                    <div class="fs-3 text-success"><i class="bi bi-hdd-network"></i></div>
+                                    <div>
+                                        <strong class="text-white">Railway & Render High Availability</strong>
+                                        <p class="small text-muted mb-0">Akses cepat di sipamel.up.railway.app dengan perlindungan Nixpacks Linux & libGL.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center text-muted small">
+                        <span>Adegan 4 dari 9 • Landasan Arsitektur & Teknologi</span>
+                        <span class="font-monospace">01:20 - 02:35 (Durasi: 1 Menit 15 Detik)</span>
+                    </div>
+                </div>
+
+                <!-- SCENE 5: ALUR 1 - DATA MANAGEMENT (02:35 - 03:20) -->
+                <div class="slide-frame" id="scene-4">
+                    <div>
+                        <div class="scene-title-tag"><i class="bi bi-1-circle-fill"></i> ALUR OPERASIONAL I</div>
+                        <h2 class="scene-main-title">Ingesti Data & Command Center Daftar Stasiun v2</h2>
+                        <p class="scene-lead">
+                            Pusat inventarisasi seluruh microwave link dengan filter operator, pencarian instan, dan kartu analitis.
+                        </p>
+                    </div>
+
+                    <div class="row g-4 align-items-center my-auto">
+                        <div class="col-md-5">
+                            <div class="scene-media-box">
+                                <img src="static/video_presentation/assets/sidebar_menu.png" alt="Sidebar SiPaMeL">
+                            </div>
+                        </div>
+                        <div class="col-md-7">
+                            <div class="p-4 rounded-4" style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);">
+                                <h5 class="text-white fw-bold mb-3"><i class="bi bi-speedometer2 text-info me-2"></i>Keunggulan Daftar Stasiun v2:</h5>
+                                <ul class="list-unstyled d-flex flex-column gap-2 text-muted small">
+                                    <li><i class="bi bi-check-circle-fill text-success me-2"></i><strong>Optimasi SQL Instan:</strong> Waktu muat halaman terpangkas drastis dari >60 detik menjadi ~3 detik.</li>
+                                    <li><i class="bi bi-check-circle-fill text-success me-2"></i><strong>Pencarian Multi-parameter:</strong> Temukan nama site, kota, atau nomor ISR dalam hitungan milidetik.</li>
+                                    <li><i class="bi bi-check-circle-fill text-success me-2"></i><strong>Impor Massal Excel:</strong> Ratusan stasiun dapat dimasukkan sekaligus menggunakan template resmi.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center text-muted small">
+                        <span>Adegan 5 dari 9 • Alur Ingesti & Pengelolaan Data</span>
+                        <span class="font-monospace">02:35 - 03:20 (Durasi: 45 Detik)</span>
+                    </div>
+                </div>
+
+                <!-- SCENE 6: ALUR 2 - OCR DEEP LEARNING (03:20 - 04:10) -->
+                <div class="slide-frame" id="scene-5">
+                    <div>
+                        <div class="scene-title-tag text-info"><i class="bi bi-2-circle-fill"></i> ALUR OPERASIONAL II</div>
+                        <h2 class="scene-main-title">Verifikasi Cerdas: RapidOCR Capture-to-Text</h2>
+                        <p class="scene-lead">
+                            Model Deep Learning Vision membaca capture layar NMS perangkat radio microwave secara presisi tanpa input manual.
+                        </p>
+                    </div>
+
+                    <div class="row g-4 align-items-center my-auto">
+                        <div class="col-md-6">
+                            <div class="scene-media-box">
+                                <img src="static/video_presentation/assets/detail_stasiun.jpg" alt="OCR NMS Radio NEC">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-4 rounded-4" style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.25);">
+                                <h5 class="text-white fw-bold mb-3"><i class="bi bi-eye-fill text-primary me-2"></i>Otomasi Parameter Radio Microwave:</h5>
+                                <div class="d-flex flex-column gap-2 text-muted small">
+                                    <div class="p-2 bg-dark rounded border border-secondary">
+                                        <strong class="text-info">Frekuensi Pancar (TX):</strong> Terdeteksi otomatis dari tabel NMS (misal: 15.271 MHz)
+                                    </div>
+                                    <div class="p-2 bg-dark rounded border border-secondary">
+                                        <strong class="text-success">Frekuensi Terima (RX):</strong> Terdeteksi otomatis (misal: 14.781 MHz)
+                                    </div>
+                                    <div class="p-2 bg-dark rounded border border-secondary">
+                                        <strong class="text-warning">Modulasi & Daya:</strong> Membaca 256 QAM, TX Power dBm, dan RX Level secara instan
+                                    </div>
+                                </div>
+                                <div class="mt-3 badge bg-success p-2">
+                                    <i class="bi bi-shield-check me-1"></i> Evaluasi Kesesuaian Terhadap ISR Resmi
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center text-muted small">
+                        <span>Adegan 6 dari 9 • Validasi Berbasis Deep Learning Vision</span>
+                        <span class="font-monospace">03:20 - 04:10 (Durasi: 50 Detik)</span>
+                    </div>
+                </div>
+
+                <!-- SCENE 7: ALUR 3 - PELAPORAN & APSTARD (04:10 - 04:45) -->
+                <div class="slide-frame" id="scene-6">
+                    <div>
+                        <div class="scene-title-tag text-success"><i class="bi bi-3-circle-fill"></i> ALUR OPERASIONAL III</div>
+                        <h2 class="scene-main-title">Otomasi Pelaporan Resmi & Format APSTARD</h2>
+                        <p class="scene-lead">
+                            Sinkronisasi sekali klik ke format nasional Kementerian Komunikasi dan Digital RI.
+                        </p>
+                    </div>
+
+                    <div class="row g-4 align-items-center my-auto">
+                        <div class="col-md-6">
+                            <div class="scene-media-box">
+                                <img src="static/video_presentation/assets/export_apstard.png" alt="Export APSTARD SiPaMeL">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-4 rounded-4" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);">
+                                <h5 class="text-white fw-bold mb-3"><i class="bi bi-file-earmark-spreadsheet text-success me-2"></i>Keluaran Standar Kementerian:</h5>
+                                <ul class="list-unstyled d-flex flex-column gap-2 text-muted small">
+                                    <li><i class="bi bi-check2 text-success me-2"></i><strong>Export Format APSTARD (.xlsx):</strong> Menghasilkan 2.895 baris link tersinkronisasi otomatis dengan hasil verifikasi.</li>
+                                    <li><i class="bi bi-check2 text-success me-2"></i><strong>Rekap Bulanan & Tahunan (.docx):</strong> Dokumen Word siap cetak lengkap dengan foto fisik resolusi tinggi per grup.</li>
+                                    <li><i class="bi bi-check2 text-success me-2"></i><strong>Arsip Berita Acara (BA):</strong> Register nomor BA legal untuk akuntabilitas hukum.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center text-muted small">
+                        <span>Adegan 7 dari 9 • Pelaporan & Akuntabilitas Administratif</span>
+                        <span class="font-monospace">04:10 - 04:45 (Durasi: 35 Detik)</span>
+                    </div>
+                </div>
+
+                <!-- SCENE 8: PUSAT ANALISIS & INTELIJEN AI (04:45 - 05:55) -->
+                <div class="slide-frame" id="scene-7">
+                    <div>
+                        <div class="scene-title-tag text-primary"><i class="bi bi-cpu-fill"></i> PUSAT ANALISIS & INTELIJEN AI</div>
+                        <h2 class="scene-main-title">Prescriptive Intelligence: Rekomendasi Tindakan Strategis</h2>
+                        <p class="scene-lead">
+                            AI mengubah data pasif menjadi keputusan operasional presisi bagi Pimpinan Balmon Samarinda.
+                        </p>
+                    </div>
+
+                    <div class="row g-3 my-auto">
+                        <div class="col-md-3">
+                            <div class="scene-media-box" style="max-height: 220px;">
+                                <img src="static/video_presentation/assets/ai_scorecards.jpg" alt="AI Scorecards">
+                            </div>
+                            <small class="text-muted d-block text-center mt-1">Skor Kesehatan: 73.3% (Grade B)</small>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="scene-media-box" style="max-height: 220px;">
+                                <img src="static/video_presentation/assets/operator_benchmark.jpg" alt="Benchmark Operator">
+                            </div>
+                            <small class="text-muted d-block text-center mt-1">Benchmark 4 Operator</small>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="scene-media-box" style="max-height: 220px;">
+                                <img src="static/video_presentation/assets/deteksi_anomali.jpg" alt="Deteksi Anomali">
+                            </div>
+                            <small class="text-muted d-block text-center mt-1">58 Siap Verifikasi (Quick Wins)</small>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="scene-media-box" style="max-height: 220px;">
+                                <img src="static/video_presentation/assets/prioritas_wilayah.jpg" alt="Prioritas Wilayah">
+                            </div>
+                            <small class="text-muted d-block text-center mt-1">Rute Ekspedisi: Berau & Kukar</small>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center text-muted small">
+                        <span>Adegan 8 dari 9 • Intelijen Keputusan & Asisten Interaktif</span>
+                        <span class="font-monospace">04:45 - 05:55 (Durasi: 1 Menit 10 Detik)</span>
+                    </div>
+                </div>
+
+                <!-- SCENE 9: HASIL AKHIR & PENUTUP (05:55 - 07:00) -->
+                <div class="slide-frame" id="scene-8">
+                    <div>
+                        <div class="scene-title-tag text-success"><i class="bi bi-award-fill"></i> HASIL AKHIR KARYA & DAMPAK</div>
+                        <h2 class="scene-main-title hero-glitch">Transformasi Nyata Pengawasan Digital</h2>
+                        <p class="scene-lead">
+                            Mewujudkan tata kelola spektrum frekuensi radio yang akuntabel, transparan, dan modern di Kalimantan Timur.
+                        </p>
+                    </div>
+
+                    <div class="row g-4 align-items-center my-auto">
+                        <div class="col-md-3 text-center">
+                            <div class="p-3 bg-dark rounded-4 border border-primary">
+                                <h1 class="display-5 fw-bold text-primary mb-0">> 70%</h1>
+                                <p class="small text-muted mb-0">Efisiensi Waktu Pemeriksaan</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="p-3 bg-dark rounded-4 border border-success">
+                                <h1 class="display-5 fw-bold text-success mb-0">81.1%</h1>
+                                <p class="small text-muted mb-0">Dokumentasi Foto Fisik Terarsip</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="p-3 bg-dark rounded-4 border border-info">
+                                <h1 class="display-5 fw-bold text-info mb-0">100%</h1>
+                                <p class="small text-muted mb-0">Akuntabilitas Bukti Terverifikasi</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="p-3 bg-dark rounded-4 border border-warning">
+                                <h1 class="display-5 fw-bold text-warning mb-0">Optimal</h1>
+                                <p class="small text-muted mb-0">Penghematan Anggaran Dinas</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-center p-3 rounded-4 mt-auto" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);">
+                        <strong class="text-white">SiPaMeL: Dari Balai Monitor Kelas I Samarinda, untuk Indonesia Berdaulat Digital.</strong>
+                        <div class="small text-muted mt-1">Direktorat Jenderal Infrastruktur Digital • Kementerian Komunikasi dan Digital Republik Indonesia © 2026</div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center text-muted small mt-2">
+                        <span>Adegan 9 dari 9 • Dampak Kinerja & Penutup</span>
+                        <span class="font-monospace">05:55 - 07:00 (Durasi: 1 Menit 05 Detik)</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Real-time Subtitles Bar -->
+            <div class="cinema-subtitles-bar">
+                <div class="subtitle-text" id="subtitleDisplay">
+                    Klik tombol <strong>Play Video</strong> di bawah untuk memulai pemutaran video presentasi interaktif berdurasi 7 menit dengan narasi suara otomatis.
+                </div>
+            </div>
+
+            <!-- Controls Dock -->
+            <div class="player-control-dock">
+                <!-- Timeline Scrubber -->
+                <div class="timeline-bar-wrapper" id="timelineScrubber" onclick="handleScrub(event)">
+                    <div class="timeline-progress" id="timelineProgress">
+                        <div class="timeline-handle"></div>
+                    </div>
+                </div>
+
+                <div class="controls-row">
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn-cinema" onclick="prevScene()" title="Adegan Sebelumnya"><i class="bi bi-skip-start-fill"></i></button>
+                        <button class="btn-cinema btn-play-big" onclick="togglePlay()" id="btnPlayBig" title="Play/Pause">
+                            <i class="bi bi-play-fill" id="playIcon"></i>
+                        </button>
+                        <button class="btn-cinema" onclick="nextScene()" title="Adegan Selanjutnya"><i class="bi bi-skip-end-fill"></i></button>
+                        
+                        <div class="timecode-display ms-3">
+                            <span id="currentTimecode">00:00</span> / <span id="totalTimecode">07:00</span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="scene-badge-pill" id="currentSceneBadge">Adegan 1: Pembuka</span>
+                        <button class="btn-cinema" onclick="toggleSpeech()" title="Toggle Voiceover"><i class="bi bi-mic-fill"></i></button>
+                        <button class="btn-cinema" onclick="toggleFullscreen()" title="Fullscreen"><i class="bi bi-fullscreen"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recording & Download Guide Banner -->
+        <div class="recording-banner">
+            <div>
+                <strong class="text-white d-block"><i class="bi bi-camera-video-fill text-danger me-2"></i>Ingin Merekam Presentasi Ini Menjadi File Video MP4?</strong>
+                <span class="small text-muted">Cukup tekan pintasan <kbd class="bg-dark text-white border border-secondary px-2 py-1">Win + Alt + R</kbd> pada Windows untuk merekam layar penuh saat presentasi diputar!</span>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-outline-light rounded-pill px-3" onclick="jumpToScene(0); togglePlay();">
+                    <i class="bi bi-play-circle me-1"></i> Mulai Dari Awal
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Controller -->
+    <script>
+        // Data 9 Adegan Video (Total Durasi: 420 Detik = 07:00 Menit)
+        const SCENES = [
+            {
+                id: 0,
+                title: "Adegan 1: Pembuka & Kedaulatan Spektrum",
+                startTime: 0,
+                endTime: 25,
+                narration: "Spektrum frekuensi radio adalah sumber daya alam terbatas yang menjadi tulang punggung konektivitas digital Indonesia. Di Provinsi Kalimantan Timur, wilayah yang bertransformasi menjadi gerbang Ibu Kota Nusantara, keandalan jaringan telekomunikasi antar-menara bertumpu pada ribuan tautan microwave link."
+            },
+            {
+                id: 1,
+                title: "Adegan 2: Lanskap Pengawasan Kaltim",
+                startTime: 25,
+                endTime: 50,
+                narration: "Namun mengawasi kepatuhan teknis microwave link di wilayah seluas Kalimantan Timur bukanlah hal yang mudah. Balai Monitor Samarinda mengemban amanah mengawasi 349 stasiun dengan total lebih dari 2.800 tautan frekuensi aktif di 10 kabupaten dan kota."
+            },
+            {
+                id: 2,
+                title: "Adegan 3: Latar Belakang Masalah",
+                startTime: 50,
+                endTime: 80,
+                narration: "Selama ini proses pengawasan menghadapi tantangan besar: verifikasi data masih tersebar di spreadsheet terpisah, pencocokan frekuensi dari foto perangkat rawan salah ketik atau human error, arsip foto fisik rentan hilang, serta belum adanya analisis prioritas wilayah yang menyebabkan rute dinas lapangan kurang efisien."
+            },
+            {
+                id: 3,
+                title: "Adegan 4: Solusi SiPaMeL & Arsitektur",
+                startTime: 80,
+                endTime: 155,
+                narration: "Menjawab tantangan tersebut, kami menghadirkan terobosan inovasi: SiPaMeL, Sistem Pemeriksaan Microwave Link. Platform web terpadu berbasis cloud dan kecerdasan buatan, dengan database PostgreSQL Supabase, penyimpanan puluhan ribu foto di Cloudinary CDN, dan server cloud berkecepatan tinggi."
+            },
+            {
+                id: 4,
+                title: "Adegan 5: Ingesti Data & Monitoring v2",
+                startTime: 155,
+                endTime: 200,
+                narration: "Alur operasional SiPaMeL dirancang sangat intuitif. Dimulai dari ingesti data massal melalui Upload Excel, hingga pusat kendali Daftar Stasiun versi 2. Waktu muat halaman dioptimalkan dari lebih dari 60 detik menjadi hanya 3 detik, lengkap dengan pencarian cepat dan pemantauan stasiun lawan."
+            },
+            {
+                id: 5,
+                title: "Adegan 6: Verifikasi Deep Learning OCR",
+                startTime: 200,
+                endTime: 250,
+                narration: "Pada tahap pembuktian dan verifikasi cerdas, fitur RapidOCR Capture-to-Text memanfaatkan Deep Learning Vision untuk mengekstrak angka frekuensi pancar TX, frekuensi terima RX, modulasi, dan daya dari foto layar perangkat secara otomatis. Memangkas waktu verifikasi dan menghilangkan risiko salah ketik."
+            },
+            {
+                id: 6,
+                title: "Adegan 7: Pelaporan Standar APSTARD",
+                startTime: 250,
+                endTime: 285,
+                narration: "SiPaMeL mengakhiri era laporan manual. Hasil pemeriksaan dapat langsung diekspor ke format resmi APSTARD Kementerian Komunikasi dan Digital, serta menghasilkan laporan rekap bulanan dan tahunan dalam format Word lengkap dengan lampiran foto fisik per grup."
+            },
+            {
+                id: 7,
+                title: "Adegan 8: Pusat Analisis & Intelijen AI",
+                startTime: 285,
+                endTime: 355,
+                narration: "Pusat Analisis dan Intelijen AI SiPaMeL menghitung Skor Kesehatan Sistem sebesar 73.3%, mendeteksi 58 stasiun siap verifikasi meja kantor, merumuskan rute ekspedisi prioritas ke Berau dan Kutai Kartanegara, serta menyediakan Asisten Percakapan AI interaktif berbasis pemrosesan bahasa alami."
+            },
+            {
+                id: 8,
+                title: "Adegan 9: Hasil Akhir & Penutup",
+                startTime: 355,
+                endTime: 420,
+                narration: "Hadirnya SiPaMeL meningkatkan efisiensi pemeriksaan lebih dari 70%, mendongkrak kepatuhan dokumentasi hingga 81.1%, dan menjamin akuntabilitas pengawasan. SiPaMeL: Dari Balai Monitor Kelas I Samarinda, untuk Indonesia yang berdaulat secara digital."
+            }
+        ];
+
+        let isPlaying = false;
+        let currentTime = 0;
+        let totalDuration = 420; // 7 Menit
+        let playbackInterval = null;
+        let voiceEnabled = true;
+        let currentUtterance = null;
+
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        }
+
+        function getCurrentScene(time) {
+            return SCENES.find(sc => time >= sc.startTime && time < sc.endTime) || SCENES[SCENES.length - 1];
+        }
+
+        function updateUI() {
+            // Update timecode
+            document.getElementById('currentTimecode').innerText = formatTime(currentTime);
+            const percent = (currentTime / totalDuration) * 100;
+            document.getElementById('timelineProgress').style.width = percent + '%';
+
+            // Update Scene
+            const scene = getCurrentScene(currentTime);
+            document.getElementById('currentSceneBadge').innerText = scene.title;
+            document.getElementById('subtitleDisplay').innerHTML = scene.narration.replace(/SiPaMeL|Balai Monitor Samarinda|RapidOCR|APSTARD|PostgreSQL Supabase|Cloudinary/g, match => `<strong>${match}</strong>`);
+
+            // Switch active slide
+            document.querySelectorAll('.slide-frame').forEach((el, idx) => {
+                if (idx === scene.id) {
+                    el.classList.add('active');
+                } else {
+                    el.classList.remove('active');
+                }
+            });
+        }
+
+        function speakSceneNarration(scene) {
+            if (!voiceEnabled || !('speechSynthesis' in window)) return;
+
+            window.speechSynthesis.cancel();
+            currentUtterance = new SpeechSynthesisUtterance(scene.narration);
+            currentUtterance.lang = 'id-ID';
+            currentUtterance.rate = 1.05; // Sedikit lebih artikulatif & natural
+
+            // Cari suara bahasa Indonesia jika ada
+            const voices = window.speechSynthesis.getVoices();
+            const idVoice = voices.find(v => v.lang.includes('id') || v.lang.includes('ID'));
+            if (idVoice) currentUtterance.voice = idVoice;
+
+            window.speechSynthesis.speak(currentUtterance);
+        }
+
+        function togglePlay() {
+            if (isPlaying) {
+                pausePresentation();
+            } else {
+                playPresentation();
+            }
+        }
+
+        function playPresentation() {
+            isPlaying = true;
+            document.getElementById('playIcon').className = 'bi bi-pause-fill';
+            
+            const scene = getCurrentScene(currentTime);
+            speakSceneNarration(scene);
+
+            playbackInterval = setInterval(() => {
+                currentTime += 1;
+                if (currentTime >= totalDuration) {
+                    pausePresentation();
+                    currentTime = totalDuration;
+                }
+                
+                // Cek jika ganti scene
+                const newScene = getCurrentScene(currentTime);
+                if (currentTime === newScene.startTime) {
+                    speakSceneNarration(newScene);
+                }
+
+                updateUI();
+            }, 1000);
+        }
+
+        function pausePresentation() {
+            isPlaying = false;
+            document.getElementById('playIcon').className = 'bi bi-play-fill';
+            if (playbackInterval) clearInterval(playbackInterval);
+            if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+        }
+
+        function jumpToScene(sceneIndex) {
+            const scene = SCENES[sceneIndex];
+            if (!scene) return;
+            currentTime = scene.startTime;
+            updateUI();
+            if (isPlaying) {
+                speakSceneNarration(scene);
+            }
+        }
+
+        function nextScene() {
+            const current = getCurrentScene(currentTime);
+            const nextIdx = Math.min(current.id + 1, SCENES.length - 1);
+            jumpToScene(nextIdx);
+        }
+
+        function prevScene() {
+            const current = getCurrentScene(currentTime);
+            const prevIdx = Math.max(current.id - 1, 0);
+            jumpToScene(prevIdx);
+        }
+
+        function handleScrub(e) {
+            const bar = document.getElementById('timelineScrubber');
+            const rect = bar.getBoundingClientRect();
+            const pos = (e.clientX - rect.left) / rect.width;
+            currentTime = Math.floor(pos * totalDuration);
+            updateUI();
+            if (isPlaying) {
+                speakSceneNarration(getCurrentScene(currentTime));
+            }
+        }
+
+        function toggleSpeech() {
+            voiceEnabled = !voiceEnabled;
+            document.getElementById('voiceStatusText').innerText = voiceEnabled ? 'Aktif' : 'Nonaktif';
+            document.getElementById('btnVoiceToggle').className = voiceEnabled ? 'btn btn-sm btn-outline-info rounded-pill px-3' : 'btn btn-sm btn-outline-secondary rounded-pill px-3';
+            if (!voiceEnabled && 'speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            } else if (voiceEnabled && isPlaying) {
+                speakSceneNarration(getCurrentScene(currentTime));
+            }
+        }
+
+        function toggleFullscreen() {
+            const elem = document.getElementById('cinemaScreen');
+            if (!document.fullscreenElement) {
+                elem.requestFullscreen().catch(err => alert(`Error: ${err.message}`));
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Keyboard Controls
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                togglePlay();
+            } else if (e.code === 'ArrowRight') {
+                nextScene();
+            } else if (e.code === 'ArrowLeft') {
+                prevScene();
+            } else if (e.code === 'KeyF') {
+                toggleFullscreen();
+            }
+        });
+
+        // Init
+        window.addEventListener('load', () => {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.getVoices();
+            }
+            updateUI();
+        });
+    </script>
+</body>
+</html>
