@@ -550,7 +550,8 @@ def inject_models():
         Stasiun=Stasiun,
         StasiunLawan=StasiunLawan,
         UploadGambar=UploadGambar,
-        User=User
+        User=User,
+        GrupStasiun=GrupStasiun
     )
 
 # ============================================================================
