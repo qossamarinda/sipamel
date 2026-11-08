@@ -344,6 +344,8 @@
             transition: margin-left 0.3s ease;
             background: #f8fafc;
             width: 100%;
+            display: flex;
+            flex-direction: column;
         }
         
         @media (min-width: 992px) {
@@ -355,7 +357,7 @@
         
         .main-content {
             padding: 2rem;
-            min-height: calc(100vh - var(--navbar-height));
+            flex: 1 0 auto;
         }
         
         @media (max-width: 768px) {
@@ -387,12 +389,9 @@
             padding: 1rem 2rem;
             font-size: 0.85rem;
             color: #64748b;
-        }
-        
-        @media (min-width: 992px) {
-            .footer {
-                margin-left: var(--sidebar-width);
-            }
+            width: 100%;
+            margin-top: auto;
+            text-align: center;
         }
 
         /* ===== FLASH MESSAGES ===== */
