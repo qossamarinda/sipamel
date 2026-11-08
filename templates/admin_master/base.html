@@ -306,12 +306,15 @@
             background: #f8fafc;
             display: flex;
             flex-direction: column;
+            width: 100%;
         }
         
-        /* Desktop: beri margin untuk sidebar */
+        /* Desktop: beri margin untuk sidebar & batasi lebar agar presisi tidak overflow */
         @media (min-width: 992px) {
             .main-content-wrapper {
                 margin-left: var(--sidebar-width);
+                width: calc(100% - var(--sidebar-width));
+                max-width: calc(100% - var(--sidebar-width));
             }
         }
         
@@ -366,6 +369,9 @@
             width: 100%;
             margin-top: auto;
             text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         @media (max-width: 768px) {
@@ -664,10 +670,10 @@
         </div>
         
         <!-- Footer -->
-        <footer class="footer text-center">
-            <span class="text-muted">
+        <footer class="footer text-center" style="width: 100%; text-align: center; display: flex; align-items: center; justify-content: center;">
+            <div class="text-muted text-center" style="width: 100%; text-align: center;">
                 <i class="bi bi-c-circle me-1"></i> 2026 SiPaMeL - Direktorat Jenderal Infrastruktur Digital - Kementerian Komunikasi dan Digital
-            </span>
+            </div>
         </footer>
     </div>
 
