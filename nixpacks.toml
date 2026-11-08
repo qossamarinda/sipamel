@@ -1,0 +1,10 @@
+# Konfigurasi Nixpacks untuk Railway
+# Menyediakan library grafis Linux (libGL, glib, mesa) yang dibutuhkan oleh OpenCV / RapidOCR
+
+[phases.setup]
+nixPkgs = ["...", "mesa", "libGL", "glib"]
+nixLibs = ["...", "mesa", "libGL", "glib"]
+aptPkgs = ["libgl1", "libglib2.0-0"]
+
+[variables]
+QT_QPA_PLATFORM = "offscreen"
