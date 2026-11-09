@@ -3,18 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SiPaMeL - Video Presentasi Interaktif Proyek Inovasi (7 Menit)</title>
+    <title>SiPaMeL - Video Demo Operasional Berbasis AI (7 Menit)</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #4338ca;
             --primary-light: #6366f1;
             --accent: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
             --bg-cinema: #090d16;
-            --surface-cinema: #131b2e;
-            --border-cinema: #1e293b;
+            --surface-cinema: #111827;
+            --border-cinema: #1f2937;
             --text-light: #f8fafc;
             --text-muted: #94a3b8;
         }
@@ -36,7 +39,7 @@
 
         /* Top Bar */
         .cinema-header {
-            background: rgba(19, 27, 46, 0.95);
+            background: rgba(17, 24, 39, 0.95);
             backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--border-cinema);
             padding: 0.75rem 1.5rem;
@@ -47,8 +50,8 @@
 
         /* Player Wrapper 16:9 Cinema */
         .player-outer-container {
-            max-width: 1400px;
-            margin: 1.5rem auto;
+            max-width: 1420px;
+            margin: 1.25rem auto;
             padding: 0 1rem;
         }
 
@@ -56,11 +59,11 @@
             position: relative;
             width: 100%;
             aspect-ratio: 16 / 9;
-            background: radial-gradient(circle at 50% 30%, #1e1b4b 0%, #090d16 100%);
+            background: radial-gradient(circle at 50% 25%, #1e1b4b 0%, #090d16 100%);
             border-radius: 20px;
             overflow: hidden;
-            box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 40px rgba(99, 102, 241, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 40px rgba(99, 102, 241, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             flex-direction: column;
         }
@@ -75,13 +78,13 @@
         .slide-frame {
             position: absolute;
             inset: 0;
-            padding: 2.5rem 3.5rem;
+            padding: 2.2rem 3.5rem;
             display: none;
             flex-direction: column;
             justify-content: space-between;
             opacity: 0;
-            transform: scale(0.98);
-            transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: scale(0.985);
+            transition: opacity 0.45s cubic-bezier(0.4, 0, 0.2, 1), transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .slide-frame.active {
@@ -93,19 +96,19 @@
         /* Watermark & Badges */
         .screen-watermark {
             position: absolute;
-            top: 1.5rem;
+            top: 1.25rem;
             right: 2rem;
             display: flex;
             align-items: center;
             gap: 0.75rem;
             z-index: 50;
-            opacity: 0.85;
         }
 
         .screen-badge {
-            background: rgba(99, 102, 241, 0.2);
-            border: 1px solid rgba(99, 102, 241, 0.4);
-            color: #a5b4fc;
+            background: rgba(30, 41, 59, 0.75);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(99, 102, 241, 0.35);
+            color: #c7d2fe;
             padding: 0.35rem 0.85rem;
             border-radius: 30px;
             font-size: 0.75rem;
@@ -130,51 +133,45 @@
             100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
 
-        /* Slide Content Components */
-        .scene-title-tag {
+        /* Scene Typography */
+        .scene-phase-tag {
             color: var(--accent);
             text-transform: uppercase;
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             font-weight: 800;
             letter-spacing: 1.5px;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.4rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
 
         .scene-main-title {
-            font-size: 2.3rem;
+            font-size: 2.1rem;
             font-weight: 800;
             line-height: 1.2;
             color: #ffffff;
-            margin-bottom: 1rem;
+            margin-bottom: 0.6rem;
             text-shadow: 0 2px 10px rgba(0,0,0,0.4);
         }
 
         .scene-lead {
-            font-size: 1.1rem;
+            font-size: 1.02rem;
             color: #cbd5e1;
-            line-height: 1.6;
-            max-width: 900px;
+            line-height: 1.5;
+            max-width: 950px;
+            margin-bottom: 0.5rem;
         }
 
-        .scene-split {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2.5rem;
-            align-items: center;
-            height: 100%;
-        }
-
+        /* Media Frame */
         .scene-media-box {
             position: relative;
-            border-radius: 16px;
+            border-radius: 14px;
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
             background: #000;
-            max-height: 380px;
+            max-height: 360px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -185,28 +182,63 @@
             height: 100%;
             object-fit: contain;
             display: block;
-            transition: transform 0.6s ease;
         }
 
-        .scene-media-box:hover img {
-            transform: scale(1.03);
+        .media-caption-badge {
+            position: absolute;
+            bottom: 0.6rem;
+            left: 0.75rem;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(6px);
+            padding: 0.25rem 0.65rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #e2e8f0;
         }
 
-        .kpi-card-glow {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(10px);
+        /* Demo Step Box */
+        .demo-step-card {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(8px);
             border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 0.75rem;
+            transition: all 0.2s ease;
+        }
+
+        .demo-step-card:hover {
+            border-color: rgba(99, 102, 241, 0.4);
+            background: rgba(30, 41, 59, 0.8);
+        }
+
+        /* Evidence Stat Box */
+        .evidence-stat-card {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 14px;
-            padding: 1.25rem 1.5rem;
-            margin-bottom: 1rem;
-            border-left: 4px solid var(--primary-light);
+            padding: 1.25rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .evidence-stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary-light), var(--accent));
         }
 
         /* Subtitle Bar */
         .cinema-subtitles-bar {
-            background: rgba(10, 15, 28, 0.85);
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            padding: 0.9rem 2rem;
+            background: rgba(10, 15, 28, 0.9);
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 0.85rem 2rem;
             min-height: 75px;
             display: flex;
             align-items: center;
@@ -220,7 +252,6 @@
             font-weight: 500;
             color: #e2e8f0;
             line-height: 1.45;
-            transition: color 0.3s ease;
         }
 
         .subtitle-text strong {
@@ -231,11 +262,11 @@
         /* Player Controls Dock */
         .player-control-dock {
             background: #0b1120;
-            padding: 0.75rem 1.75rem;
+            padding: 0.65rem 1.75rem;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             flex-direction: column;
-            gap: 0.6rem;
+            gap: 0.5rem;
             z-index: 50;
         }
 
@@ -290,7 +321,7 @@
             border: none;
             color: #e2e8f0;
             font-size: 1.15rem;
-            padding: 0.4rem 0.65rem;
+            padding: 0.35rem 0.65rem;
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s;
@@ -304,17 +335,12 @@
             background: rgba(255, 255, 255, 0.08);
         }
 
-        .btn-cinema.active {
-            color: #38bdf8;
-            background: rgba(56, 189, 248, 0.15);
-        }
-
         .btn-play-big {
             background: var(--primary-light);
             color: white;
             border-radius: 50%;
-            width: 42px;
-            height: 42px;
+            width: 40px;
+            height: 40px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -341,40 +367,33 @@
             background: rgba(255, 255, 255, 0.06);
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: #cbd5e1;
-            padding: 0.3rem 0.75rem;
+            padding: 0.25rem 0.75rem;
             border-radius: 20px;
         }
 
-        /* Recording Guide Banner */
+        /* Banner */
         .recording-banner {
-            background: linear-gradient(90deg, rgba(67, 56, 202, 0.2) 0%, rgba(6, 182, 212, 0.2) 100%);
+            background: linear-gradient(90deg, rgba(67, 56, 202, 0.18) 0%, rgba(6, 182, 212, 0.18) 100%);
             border: 1px dashed rgba(56, 189, 248, 0.4);
             border-radius: 12px;
             padding: 1rem 1.5rem;
-            margin-top: 1.5rem;
+            margin-top: 1.25rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 1rem;
             flex-wrap: wrap;
         }
-
-        /* Slide Specific Styles */
-        .hero-glitch {
-            background: linear-gradient(135deg, #ffffff 0%, #93c5fd 50%, #c084fc 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
     </style>
 </head>
 <body>
 
-    <!-- Cinema Top Bar -->
+    <!-- Header Bar -->
     <header class="cinema-header d-flex justify-content-between align-items-center">
         <div class="d-flex align-items-center gap-3">
-            <span class="fs-4 text-primary"><i class="bi bi-broadcast"></i></span>
+            <span class="fs-4 text-primary"><i class="bi bi-robot"></i></span>
             <div>
-                <strong class="d-block" style="font-size: 1.05rem; letter-spacing: -0.3px;">SiPaMeL • Video Showcase Inovasi</strong>
+                <strong class="d-block" style="font-size: 1.05rem; letter-spacing: -0.3px;">SiPaMeL • Video Demo Skenario Penggunaan Karya AI (7 Menit)</strong>
                 <small class="text-muted" style="font-size: 0.75rem;">Balai Monitor Spektrum Frekuensi Radio Kelas I Samarinda • Ditjen Infrastruktur Digital</small>
             </div>
         </div>
@@ -383,419 +402,349 @@
                 <i class="bi bi-volume-up-fill me-1"></i> Voiceover AI: <span id="voiceStatusText">Aktif</span>
             </button>
             <button class="btn btn-sm btn-primary rounded-pill px-3" onclick="toggleFullscreen()">
-                <i class="bi bi-arrows-fullscreen me-1"></i> Layar Penuh
+                <i class="bi bi-arrows-fullscreen me-1"></i> Layar Penuh (F)
             </button>
         </div>
     </header>
 
     <div class="player-outer-container">
-        <!-- Main Cinema Screen -->
+        <!-- Cinema Screen -->
         <div class="cinema-screen" id="cinemaScreen">
             
-            <!-- Watermark Overlay -->
+            <!-- Watermark -->
             <div class="screen-watermark">
                 <span class="screen-badge">
                     <span class="live-dot"></span>
-                    <span>SIPAMEL DIGITAL PRODUCTION</span>
+                    <span>LIVE DEMO SIMULATION</span>
                 </span>
                 <span class="screen-badge">
-                    <i class="bi bi-shield-check"></i> RESMI KOMDIGI
+                    <i class="bi bi-shield-check text-success"></i> VERIFIKASI TERUJI
                 </span>
             </div>
 
-            <!-- Canvas for Slides -->
+            <!-- Slides Canvas -->
             <div class="slide-canvas">
                 
-                <!-- SCENE 1: PEMBUKA & KEDAULATAN SPEKTRUM (00:00 - 00:25) -->
+                <!-- SCENE 1: PEMBUKA & PROFIL KARYA (00:00 - 00:35) -->
                 <div class="slide-frame active" id="scene-0">
                     <div>
-                        <div class="scene-title-tag"><i class="bi bi-stars"></i> INOVASI PENGAWASAN SPEKTRUM FREKUENSI RADIO</div>
-                        <h1 class="scene-main-title hero-glitch">SiPaMeL (Sistem Pemeriksaan Microwave Link)</h1>
+                        <div class="scene-phase-tag"><i class="bi bi-stars"></i> DEMONSTRASI PENGGUNAAN KARYA BERBASIS AI</div>
+                        <h1 class="scene-main-title">SiPaMeL (Sistem Pemeriksaan Microwave Link)</h1>
                         <p class="scene-lead">
-                            Menjaga kedaulatan spektrum frekuensi radio dan keandalan transmisi digital di gerbang Ibu Kota Nusantara, Kalimantan Timur.
+                            Prototipe AI dan Sistem Terpadu Pengawasan Spektrum Frekuensi Radio Microwave Link pada Balai Monitor Spektrum Frekuensi Radio Kelas I Samarinda.
                         </p>
                     </div>
 
                     <div class="row g-4 align-items-center my-auto">
                         <div class="col-md-7">
-                            <div class="p-4 rounded-4" style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);">
-                                <h5 class="fw-bold text-white mb-2"><i class="bi bi-building me-2 text-primary"></i>Balai Monitor Spektrum Frekuensi Radio Kelas I Samarinda</h5>
-                                <p class="text-muted small mb-3">Direktorat Jenderal Infrastruktur Digital — Kementerian Komunikasi dan Digital Republik Indonesia</p>
-                                <div class="d-flex gap-3">
-                                    <div class="badge bg-primary-subtle text-primary border border-primary-subtle p-2 px-3">
-                                        <i class="bi bi-geo-alt-fill me-1"></i> Wilayah Kaltim
-                                    </div>
-                                    <div class="badge bg-success-subtle text-success border border-success-subtle p-2 px-3">
-                                        <i class="bi bi-cpu-fill me-1"></i> Deep Learning Vision OCR
-                                    </div>
-                                    <div class="badge bg-info-subtle text-info border border-info-subtle p-2 px-3">
-                                        <i class="bi bi-robot me-1"></i> Prescriptive AI
-                                    </div>
+                            <div class="p-4 rounded-4" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);">
+                                <h5 class="fw-bold text-white mb-2"><i class="bi bi-diagram-3-fill text-primary me-2"></i>Skenario Operasional End-to-End:</h5>
+                                <div class="d-flex flex-column gap-2 text-muted small mt-3">
+                                    <div><i class="bi bi-check-circle text-success me-2"></i><strong>1. Masukan Data (Input):</strong> Ingesti massal data stasiun dan foto fisik Cloudinary.</div>
+                                    <div><i class="bi bi-check-circle text-info me-2"></i><strong>2. Pemrosesan AI:</strong> Deep Learning Vision OCR & Prescriptive Analytics Engine.</div>
+                                    <div><i class="bi bi-check-circle text-warning me-2"></i><strong>3. Luaran (Output):</strong> Standar APSTARD Komdigi (.xlsx) & Laporan Word (.docx).</div>
+                                    <div><i class="bi bi-check-circle text-primary me-2"></i><strong>4. Integrasi & Bukti:</strong> Rute ekspedisi SPT terpadu dan hasil uji efisiensi >70%.</div>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-5 text-center">
                             <div class="scene-media-box p-3">
                                 <img src="static/video_presentation/assets/login.jpg" alt="Login Portal SiPaMeL">
+                                <div class="media-caption-badge">Portal Live: sipamel.up.railway.app</div>
                             </div>
-                            <small class="text-muted mt-2 d-block">Portal Resmi: sipamel.up.railway.app</small>
                         </div>
                     </div>
 
                     <div class="d-flex justify-content-between align-items-center text-muted small">
-                        <span>Adegan 1 dari 9 • Pembuka & Latar Kelembagaan</span>
-                        <span class="font-monospace">00:00 - 00:25 (Durasi: 25 Detik)</span>
+                        <span>Adegan 1 dari 7 • Profil Prototipe & Skenario Kerja</span>
+                        <span class="font-monospace">00:00 - 00:35 (Durasi: 35 Detik)</span>
                     </div>
                 </div>
 
-                <!-- SCENE 2: LANSKAP PENGAWASAN KALTIM (00:25 - 00:50) -->
+                <!-- SCENE 2: TAHAP INPUT DATA (00:35 - 01:30) -->
                 <div class="slide-frame" id="scene-1">
                     <div>
-                        <div class="scene-title-tag"><i class="bi bi-map-fill"></i> TANTANGAN GEOGRAFIS & POPULASI JARINGAN</div>
-                        <h2 class="scene-main-title">Lanskap Pengawasan 10 Kabupaten & Kota</h2>
+                        <div class="scene-phase-tag text-info"><i class="bi bi-1-circle-fill"></i> TAHAP 1: MASUKAN DATA (DATA INGESTION)</div>
+                        <h2 class="scene-main-title">Ingesti Massal Data Stasiun & Unggah Bukti Fisik</h2>
                         <p class="scene-lead">
-                            Mengawasi 349 stasiun pemancar dengan 2.895 tautan microwave link aktif di daratan seluas lebih dari 127.000 km².
+                            Mengintegrasikan 349 stasiun pemancar, 2.895 tautan stasiun lawan, dan ribuan arsip visual perangkat secara aman.
                         </p>
                     </div>
 
-                    <div class="row g-3 my-auto">
-                        <div class="col-md-3">
-                            <div class="kpi-card-glow">
-                                <small class="text-muted text-uppercase fw-bold">Total Stasiun</small>
-                                <div class="fs-2 fw-bold text-white">349 <small class="fs-6 text-muted">Site</small></div>
-                                <span class="badge bg-primary-subtle text-primary">Terdaftar Resmi</span>
+                    <div class="row g-4 align-items-center my-auto">
+                        <div class="col-md-6">
+                            <div class="scene-media-box">
+                                <img src="static/video_presentation/assets/sidebar_menu.png" alt="Menu Data Management">
+                                <div class="media-caption-badge">Menu Data Management & Template Upload</div>
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="kpi-card-glow" style="border-left-color: #10b981;">
-                                <small class="text-muted text-uppercase fw-bold">Tautan Link Lawan</small>
-                                <div class="fs-2 fw-bold text-success">2.895 <small class="fs-6 text-muted">Hop</small></div>
-                                <span class="badge bg-success-subtle text-success">Rata-rata 8.3 Hop/Site</span>
+                        <div class="col-md-6">
+                            <div class="demo-step-card">
+                                <h6 class="text-white fw-bold mb-1"><i class="bi bi-file-earmark-spreadsheet text-success me-2"></i>1. Impor Massal Excel Berstandar</h6>
+                                <p class="text-muted small mb-0">Petugas mengunduh master template resmi SiPaMeL dan mengunggah ratusan data stasiun radio sekaligus ke database PostgreSQL Supabase.</p>
                             </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="kpi-card-glow" style="border-left-color: #06b6d4;">
-                                <small class="text-muted text-uppercase fw-bold">Arsip Foto Fisik</small>
-                                <div class="fs-2 fw-bold text-info">19.146+</div>
-                                <span class="badge bg-info-subtle text-info">Tersimpan Cloudinary</span>
+                            <div class="demo-step-card">
+                                <h6 class="text-white fw-bold mb-1"><i class="bi bi-cloud-arrow-up text-info me-2"></i>2. Unggah Arsip Foto Fisik ke Cloud CDN</h6>
+                                <p class="text-muted small mb-0">Teknisi mengunggah foto konfigurasi layar NMS perangkat radio, antena menara, dan spektrum frekuensi langsung ke penyimpanan Cloudinary.</p>
                             </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="kpi-card-glow" style="border-left-color: #f59e0b;">
-                                <small class="text-muted text-uppercase fw-bold">Operator Utama</small>
-                                <div class="fs-2 fw-bold text-warning">4 Operator</div>
-                                <span class="badge bg-warning-subtle text-warning">Telkom, Tsel, IOH, XL</span>
+                            <div class="demo-step-card">
+                                <h6 class="text-white fw-bold mb-1"><i class="bi bi-shield-check text-primary me-2"></i>3. Validasi Integritas Data Multi-Operator</h6>
+                                <p class="text-muted small mb-0">Sistem memetakan data ke 4 operator telekomunikasi (Telkom, Telkomsel, IOH, XL Smart) secara otomatis.</p>
                             </div>
                         </div>
                     </div>
 
                     <div class="d-flex justify-content-between align-items-center text-muted small">
-                        <span>Adegan 2 dari 9 • Cakupan Pengawasan Spektrum</span>
-                        <span class="font-monospace">00:25 - 00:50 (Durasi: 25 Detik)</span>
+                        <span>Adegan 2 dari 7 • Input Ingestion & Media CDN</span>
+                        <span class="font-monospace">00:35 - 01:30 (Durasi: 55 Detik)</span>
                     </div>
                 </div>
 
-                <!-- SCENE 3: LATAR BELAKANG MASALAH (00:50 - 01:20) -->
+                <!-- SCENE 3: PEMROSESAN AI VISION OCR (01:30 - 02:45) -->
                 <div class="slide-frame" id="scene-2">
                     <div>
-                        <div class="scene-title-tag text-danger"><i class="bi bi-exclamation-octagon-fill"></i> LATAR BELAKANG MASALAH</div>
-                        <h2 class="scene-main-title">Kendala Operasional Sebelum Hadirnya SiPaMeL</h2>
+                        <div class="scene-phase-tag text-primary"><i class="bi bi-2-circle-fill"></i> TAHAP 2A: PEMROSESAN AI (VISION OCR)</div>
+                        <h2 class="scene-main-title">RapidOCR: Ekstraksi Otomatis Parameter Frekuensi</h2>
                         <p class="scene-lead">
-                            Tiga titik rawan (*pain points*) utama dalam tata kelola pengawasan konvensional microwave link.
+                            Model Deep Learning Vision membaca capture layar NMS perangkat radio microwave tanpa perlu diketik manual oleh petugas.
                         </p>
                     </div>
 
-                    <div class="row g-4 my-auto">
-                        <div class="col-md-4">
-                            <div class="p-3 rounded-4 bg-danger bg-opacity-10 border border-danger border-opacity-25 h-100">
-                                <div class="fs-1 text-danger mb-2"><i class="bi bi-file-earmark-x"></i></div>
-                                <h5 class="fw-bold text-white">1. Data Tercecer & Manual</h5>
-                                <p class="text-muted small">Dokumen pemeriksaan dan foto fisik tersebar di puluhan file spreadsheet tanpa ada sinkronisasi satu pintu.</p>
+                    <div class="row g-4 align-items-center my-auto">
+                        <div class="col-md-6">
+                            <div class="scene-media-box">
+                                <img src="static/video_presentation/assets/detail_stasiun.jpg" alt="Detail Stasiun & Capture NMS">
+                                <div class="media-caption-badge">Pemeriksaan NMS Radio NEC iPASOLINK</div>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="p-3 rounded-4 bg-warning bg-opacity-10 border border-warning border-opacity-25 h-100">
-                                <div class="fs-1 text-warning mb-2"><i class="bi bi-keyboard"></i></div>
-                                <h5 class="fw-bold text-white">2. Risiko Human Error</h5>
-                                <p class="text-muted small">Penyalinan angka frekuensi TX/RX dan daya pancar dari foto layar NMS sangat rawan salah ketik dan memakan waktu.</p>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="p-3 rounded-4 bg-info bg-opacity-10 border border-info border-opacity-25 h-100">
-                                <div class="fs-1 text-info mb-2"><i class="bi bi-compass"></i></div>
-                                <h5 class="fw-bold text-white">3. Inefisiensi Rute Dinas</h5>
-                                <p class="text-muted small">Belum adanya klastering urgensi wilayah, mengakibatkan pemborosan biaya perjalanan dinas mobil monitoring spektrum.</p>
+                        <div class="col-md-6">
+                            <div class="p-3 rounded-4" style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.25);">
+                                <h6 class="text-white fw-bold mb-2"><i class="bi bi-cpu text-info me-2"></i>Alur Pemrosesan Model AI:</h6>
+                                <div class="font-monospace small text-muted mb-3" style="font-size: 0.78rem;">
+                                    Input Gambar ➔ Deteksi DBNet ➔ Rekognisi Teks SVTR/CRNN ➔ Softmax Probability
+                                </div>
+                                <div class="d-flex flex-column gap-2 small">
+                                    <div class="p-2 bg-dark rounded border border-secondary d-flex justify-content-between">
+                                        <span class="text-muted">Frekuensi Pancar (TX):</span>
+                                        <strong class="text-info font-monospace">15.271 MHz (Conf: 0.94)</strong>
+                                    </div>
+                                    <div class="p-2 bg-dark rounded border border-secondary d-flex justify-content-between">
+                                        <span class="text-muted">Frekuensi Terima (RX):</span>
+                                        <strong class="text-success font-monospace">14.781 MHz (Conf: 0.92)</strong>
+                                    </div>
+                                    <div class="p-2 bg-dark rounded border border-secondary d-flex justify-content-between">
+                                        <span class="text-muted">Modulasi & Daya:</span>
+                                        <strong class="text-warning font-monospace">256 QAM | +17.9 dBm</strong>
+                                    </div>
+                                </div>
+                                <div class="mt-2 text-success small">
+                                    <i class="bi bi-check-circle-fill me-1"></i> Nilai otomatis divalidasi silang terhadap Izin Stasiun Radio (ISR)!
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <div class="d-flex justify-content-between align-items-center text-muted small">
-                        <span>Adegan 3 dari 9 • Identifikasi Titik Kritis Masalah</span>
-                        <span class="font-monospace">00:50 - 01:20 (Durasi: 30 Detik)</span>
+                        <span>Adegan 3 dari 7 • Deep Learning Vision & Validasi Parameter</span>
+                        <span class="font-monospace">01:30 - 02:45 (Durasi: 1 Menit 15 Detik)</span>
                     </div>
                 </div>
 
-                <!-- SCENE 4: SOLUSI & ARSITEKTUR SIPAMEL (01:20 - 02:35) -->
+                <!-- SCENE 4: PEMROSESAN AI ANALYTICS (02:45 - 03:55) -->
                 <div class="slide-frame" id="scene-3">
                     <div>
-                        <div class="scene-title-tag"><i class="bi bi-lightning-charge-fill"></i> SOLUSI INOVASI DIGITAL</div>
-                        <h2 class="scene-main-title">Arsitektur Terpadu Multi-Cloud SiPaMeL</h2>
+                        <div class="scene-phase-tag text-warning"><i class="bi bi-2-circle-fill"></i> TAHAP 2B: PEMROSESAN AI (PRESCRIPTIVE ANALYTICS)</div>
+                        <h2 class="scene-main-title">AI Engine: Skor Kepatuhan & Deteksi Anomali</h2>
                         <p class="scene-lead">
-                            Mengintegrasikan kecerdasan buatan, basis data relasional terpusat, dan penyimpanan media cloud secara real-time.
-                        </p>
-                    </div>
-
-                    <div class="row g-4 align-items-center my-auto">
-                        <div class="col-md-6">
-                            <div class="scene-media-box">
-                                <img src="static/video_presentation/assets/dashboard.jpg" alt="Dashboard SiPaMeL">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="d-flex flex-column gap-3">
-                                <div class="d-flex gap-3 align-items-start p-3 rounded-3" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);">
-                                    <div class="fs-3 text-primary"><i class="bi bi-database-check"></i></div>
-                                    <div>
-                                        <strong class="text-white">PostgreSQL Supabase (Cloud DB)</strong>
-                                        <p class="small text-muted mb-0">Sinkronisasi data relasional stasiun, stasiun lawan, dan hasil pemeriksaan terenkripsi.</p>
-                                    </div>
-                                </div>
-                                <div class="d-flex gap-3 align-items-start p-3 rounded-3" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);">
-                                    <div class="fs-3 text-info"><i class="bi bi-cloud-arrow-up"></i></div>
-                                    <div>
-                                        <strong class="text-white">Cloudinary Media CDN</strong>
-                                        <p class="small text-muted mb-0">Penyimpanan puluhan ribu bukti visual perangkat, antena, dan spektrum analyzer tanpa beban server lokal.</p>
-                                    </div>
-                                </div>
-                                <div class="d-flex gap-3 align-items-start p-3 rounded-3" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);">
-                                    <div class="fs-3 text-success"><i class="bi bi-hdd-network"></i></div>
-                                    <div>
-                                        <strong class="text-white">Railway & Render High Availability</strong>
-                                        <p class="small text-muted mb-0">Akses cepat di sipamel.up.railway.app dengan perlindungan Nixpacks Linux & libGL.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="d-flex justify-content-between align-items-center text-muted small">
-                        <span>Adegan 4 dari 9 • Landasan Arsitektur & Teknologi</span>
-                        <span class="font-monospace">01:20 - 02:35 (Durasi: 1 Menit 15 Detik)</span>
-                    </div>
-                </div>
-
-                <!-- SCENE 5: ALUR 1 - DATA MANAGEMENT (02:35 - 03:20) -->
-                <div class="slide-frame" id="scene-4">
-                    <div>
-                        <div class="scene-title-tag"><i class="bi bi-1-circle-fill"></i> ALUR OPERASIONAL I</div>
-                        <h2 class="scene-main-title">Ingesti Data & Command Center Daftar Stasiun v2</h2>
-                        <p class="scene-lead">
-                            Pusat inventarisasi seluruh microwave link dengan filter operator, pencarian instan, dan kartu analitis.
-                        </p>
-                    </div>
-
-                    <div class="row g-4 align-items-center my-auto">
-                        <div class="col-md-5">
-                            <div class="scene-media-box">
-                                <img src="static/video_presentation/assets/sidebar_menu.png" alt="Sidebar SiPaMeL">
-                            </div>
-                        </div>
-                        <div class="col-md-7">
-                            <div class="p-4 rounded-4" style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);">
-                                <h5 class="text-white fw-bold mb-3"><i class="bi bi-speedometer2 text-info me-2"></i>Keunggulan Daftar Stasiun v2:</h5>
-                                <ul class="list-unstyled d-flex flex-column gap-2 text-muted small">
-                                    <li><i class="bi bi-check-circle-fill text-success me-2"></i><strong>Optimasi SQL Instan:</strong> Waktu muat halaman terpangkas drastis dari >60 detik menjadi ~3 detik.</li>
-                                    <li><i class="bi bi-check-circle-fill text-success me-2"></i><strong>Pencarian Multi-parameter:</strong> Temukan nama site, kota, atau nomor ISR dalam hitungan milidetik.</li>
-                                    <li><i class="bi bi-check-circle-fill text-success me-2"></i><strong>Impor Massal Excel:</strong> Ratusan stasiun dapat dimasukkan sekaligus menggunakan template resmi.</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="d-flex justify-content-between align-items-center text-muted small">
-                        <span>Adegan 5 dari 9 • Alur Ingesti & Pengelolaan Data</span>
-                        <span class="font-monospace">02:35 - 03:20 (Durasi: 45 Detik)</span>
-                    </div>
-                </div>
-
-                <!-- SCENE 6: ALUR 2 - OCR DEEP LEARNING (03:20 - 04:10) -->
-                <div class="slide-frame" id="scene-5">
-                    <div>
-                        <div class="scene-title-tag text-info"><i class="bi bi-2-circle-fill"></i> ALUR OPERASIONAL II</div>
-                        <h2 class="scene-main-title">Verifikasi Cerdas: RapidOCR Capture-to-Text</h2>
-                        <p class="scene-lead">
-                            Model Deep Learning Vision membaca capture layar NMS perangkat radio microwave secara presisi tanpa input manual.
-                        </p>
-                    </div>
-
-                    <div class="row g-4 align-items-center my-auto">
-                        <div class="col-md-6">
-                            <div class="scene-media-box">
-                                <img src="static/video_presentation/assets/detail_stasiun.jpg" alt="OCR NMS Radio NEC">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="p-4 rounded-4" style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.25);">
-                                <h5 class="text-white fw-bold mb-3"><i class="bi bi-eye-fill text-primary me-2"></i>Otomasi Parameter Radio Microwave:</h5>
-                                <div class="d-flex flex-column gap-2 text-muted small">
-                                    <div class="p-2 bg-dark rounded border border-secondary">
-                                        <strong class="text-info">Frekuensi Pancar (TX):</strong> Terdeteksi otomatis dari tabel NMS (misal: 15.271 MHz)
-                                    </div>
-                                    <div class="p-2 bg-dark rounded border border-secondary">
-                                        <strong class="text-success">Frekuensi Terima (RX):</strong> Terdeteksi otomatis (misal: 14.781 MHz)
-                                    </div>
-                                    <div class="p-2 bg-dark rounded border border-secondary">
-                                        <strong class="text-warning">Modulasi & Daya:</strong> Membaca 256 QAM, TX Power dBm, dan RX Level secara instan
-                                    </div>
-                                </div>
-                                <div class="mt-3 badge bg-success p-2">
-                                    <i class="bi bi-shield-check me-1"></i> Evaluasi Kesesuaian Terhadap ISR Resmi
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="d-flex justify-content-between align-items-center text-muted small">
-                        <span>Adegan 6 dari 9 • Validasi Berbasis Deep Learning Vision</span>
-                        <span class="font-monospace">03:20 - 04:10 (Durasi: 50 Detik)</span>
-                    </div>
-                </div>
-
-                <!-- SCENE 7: ALUR 3 - PELAPORAN & APSTARD (04:10 - 04:45) -->
-                <div class="slide-frame" id="scene-6">
-                    <div>
-                        <div class="scene-title-tag text-success"><i class="bi bi-3-circle-fill"></i> ALUR OPERASIONAL III</div>
-                        <h2 class="scene-main-title">Otomasi Pelaporan Resmi & Format APSTARD</h2>
-                        <p class="scene-lead">
-                            Sinkronisasi sekali klik ke format nasional Kementerian Komunikasi dan Digital RI.
-                        </p>
-                    </div>
-
-                    <div class="row g-4 align-items-center my-auto">
-                        <div class="col-md-6">
-                            <div class="scene-media-box">
-                                <img src="static/video_presentation/assets/export_apstard.png" alt="Export APSTARD SiPaMeL">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="p-4 rounded-4" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);">
-                                <h5 class="text-white fw-bold mb-3"><i class="bi bi-file-earmark-spreadsheet text-success me-2"></i>Keluaran Standar Kementerian:</h5>
-                                <ul class="list-unstyled d-flex flex-column gap-2 text-muted small">
-                                    <li><i class="bi bi-check2 text-success me-2"></i><strong>Export Format APSTARD (.xlsx):</strong> Menghasilkan 2.895 baris link tersinkronisasi otomatis dengan hasil verifikasi.</li>
-                                    <li><i class="bi bi-check2 text-success me-2"></i><strong>Rekap Bulanan & Tahunan (.docx):</strong> Dokumen Word siap cetak lengkap dengan foto fisik resolusi tinggi per grup.</li>
-                                    <li><i class="bi bi-check2 text-success me-2"></i><strong>Arsip Berita Acara (BA):</strong> Register nomor BA legal untuk akuntabilitas hukum.</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="d-flex justify-content-between align-items-center text-muted small">
-                        <span>Adegan 7 dari 9 • Pelaporan & Akuntabilitas Administratif</span>
-                        <span class="font-monospace">04:10 - 04:45 (Durasi: 35 Detik)</span>
-                    </div>
-                </div>
-
-                <!-- SCENE 8: PUSAT ANALISIS & INTELIJEN AI (04:45 - 05:55) -->
-                <div class="slide-frame" id="scene-7">
-                    <div>
-                        <div class="scene-title-tag text-primary"><i class="bi bi-cpu-fill"></i> PUSAT ANALISIS & INTELIJEN AI</div>
-                        <h2 class="scene-main-title">Prescriptive Intelligence: Rekomendasi Tindakan Strategis</h2>
-                        <p class="scene-lead">
-                            AI mengubah data pasif menjadi keputusan operasional presisi bagi Pimpinan Balmon Samarinda.
+                            Menganalisis 349 stasiun untuk membedakan pekerjaan meja kantor (*quick-wins*) dan risiko audit lapangan.
                         </p>
                     </div>
 
                     <div class="row g-3 my-auto">
                         <div class="col-md-3">
-                            <div class="scene-media-box" style="max-height: 220px;">
-                                <img src="static/video_presentation/assets/ai_scorecards.jpg" alt="AI Scorecards">
+                            <div class="scene-media-box" style="max-height: 200px;">
+                                <img src="static/video_presentation/assets/ai_scorecards.jpg" alt="Scorecards AI">
+                                <div class="media-caption-badge">Skor Sistem: 73.3% (Grade B)</div>
                             </div>
-                            <small class="text-muted d-block text-center mt-1">Skor Kesehatan: 73.3% (Grade B)</small>
+                            <small class="text-muted d-block text-center mt-1">Bobot: 50% Inspeksi + 50% Foto</small>
                         </div>
                         <div class="col-md-3">
-                            <div class="scene-media-box" style="max-height: 220px;">
+                            <div class="scene-media-box" style="max-height: 200px;">
                                 <img src="static/video_presentation/assets/operator_benchmark.jpg" alt="Benchmark Operator">
+                                <div class="media-caption-badge">Benchmark 4 Operator</div>
                             </div>
-                            <small class="text-muted d-block text-center mt-1">Benchmark 4 Operator</small>
+                            <small class="text-muted d-block text-center mt-1">IOH Grade A, Telkomsel Grade B</small>
                         </div>
                         <div class="col-md-3">
-                            <div class="scene-media-box" style="max-height: 220px;">
+                            <div class="scene-media-box" style="max-height: 200px;">
                                 <img src="static/video_presentation/assets/deteksi_anomali.jpg" alt="Deteksi Anomali">
+                                <div class="media-caption-badge">Deteksi Anomali Lapangan</div>
                             </div>
-                            <small class="text-muted d-block text-center mt-1">58 Siap Verifikasi (Quick Wins)</small>
+                            <small class="text-muted d-block text-center mt-1">58 Siap Verifikasi • 4 Audit Risk</small>
                         </div>
                         <div class="col-md-3">
-                            <div class="scene-media-box" style="max-height: 220px;">
+                            <div class="scene-media-box" style="max-height: 200px;">
                                 <img src="static/video_presentation/assets/prioritas_wilayah.jpg" alt="Prioritas Wilayah">
+                                <div class="media-caption-badge">Matriks Urgensi Wilayah</div>
                             </div>
-                            <small class="text-muted d-block text-center mt-1">Rute Ekspedisi: Berau & Kukar</small>
+                            <small class="text-muted d-block text-center mt-1">Berau Merah • Paser/PPU Hijau</small>
                         </div>
                     </div>
 
                     <div class="d-flex justify-content-between align-items-center text-muted small">
-                        <span>Adegan 8 dari 9 • Intelijen Keputusan & Asisten Interaktif</span>
-                        <span class="font-monospace">04:45 - 05:55 (Durasi: 1 Menit 10 Detik)</span>
+                        <span>Adegan 4 dari 7 • Prescriptive Intelligence & Deteksi Anomali</span>
+                        <span class="font-monospace">02:45 - 03:55 (Durasi: 1 Menit 10 Detik)</span>
                     </div>
                 </div>
 
-                <!-- SCENE 9: HASIL AKHIR & PENUTUP (05:55 - 07:00) -->
-                <div class="slide-frame" id="scene-8">
+                <!-- SCENE 5: LUARAN / OUTPUT (03:55 - 04:55) -->
+                <div class="slide-frame" id="scene-4">
                     <div>
-                        <div class="scene-title-tag text-success"><i class="bi bi-award-fill"></i> HASIL AKHIR KARYA & DAMPAK</div>
-                        <h2 class="scene-main-title hero-glitch">Transformasi Nyata Pengawasan Digital</h2>
+                        <div class="scene-phase-tag text-success"><i class="bi bi-3-circle-fill"></i> TAHAP 3: LUARAN KARYA (OUTPUT GENERATION)</div>
+                        <h2 class="scene-main-title">Format APSTARD Komdigi & Laporan Resmi Siap Cetak</h2>
                         <p class="scene-lead">
-                            Mewujudkan tata kelola spektrum frekuensi radio yang akuntabel, transparan, dan modern di Kalimantan Timur.
+                            Menghasilkan berkas pelaporan yang tersinkronisasi langsung dengan sistem pengawasan pusat dan arsip hukum.
                         </p>
                     </div>
 
                     <div class="row g-4 align-items-center my-auto">
-                        <div class="col-md-3 text-center">
-                            <div class="p-3 bg-dark rounded-4 border border-primary">
-                                <h1 class="display-5 fw-bold text-primary mb-0">> 70%</h1>
-                                <p class="small text-muted mb-0">Efisiensi Waktu Pemeriksaan</p>
+                        <div class="col-md-6">
+                            <div class="scene-media-box">
+                                <img src="static/video_presentation/assets/export_apstard.png" alt="Ekspor Format APSTARD">
+                                <div class="media-caption-badge">Sinkronisasi 2.895 Link ke APSTARD</div>
                             </div>
                         </div>
-                        <div class="col-md-3 text-center">
-                            <div class="p-3 bg-dark rounded-4 border border-success">
-                                <h1 class="display-5 fw-bold text-success mb-0">81.1%</h1>
-                                <p class="small text-muted mb-0">Dokumentasi Foto Fisik Terarsip</p>
+                        <div class="col-md-6">
+                            <div class="demo-step-card border-success border-opacity-50">
+                                <h6 class="text-success fw-bold mb-1"><i class="bi bi-file-earmark-excel me-2"></i>1. File Format APSTARD (.xlsx)</h6>
+                                <p class="text-muted small mb-0">Sinkronisasi instan seluruh parameter frekuensi TX/RX, bandwidth, dan kesesuaian ISR berstandar Direktorat Pengendalian SDPPI.</p>
+                            </div>
+                            <div class="demo-step-card border-primary border-opacity-50">
+                                <h6 class="text-primary fw-bold mb-1"><i class="bi bi-file-earmark-word me-2"></i>2. Laporan Rekapitulasi Bulanan & Tahunan (.docx)</h6>
+                                <p class="text-muted small mb-0">Dokumen Word resmi terstruktur lengkap dengan rekapitulasi data dan lampiran foto fisik per grup stasiun.</p>
+                            </div>
+                            <div class="demo-step-card border-warning border-opacity-50">
+                                <h6 class="text-warning fw-bold mb-1"><i class="bi bi-file-earmark-check me-2"></i>3. Berita Acara Pemeriksaan (BAP)</h6>
+                                <p class="text-muted small mb-0">Register nomor BA dan kesimpulan teknis (Sesuai ISR / Tidak Sesuai / Tidak Berizin) untuk kepastian hukum.</p>
                             </div>
                         </div>
-                        <div class="col-md-3 text-center">
-                            <div class="p-3 bg-dark rounded-4 border border-info">
-                                <h1 class="display-5 fw-bold text-info mb-0">100%</h1>
-                                <p class="small text-muted mb-0">Akuntabilitas Bukti Terverifikasi</p>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center text-muted small">
+                        <span>Adegan 5 dari 7 • Luaran Standar Kementerian & Arsip Digital</span>
+                        <span class="font-monospace">03:55 - 04:55 (Durasi: 1 Menit)</span>
+                    </div>
+                </div>
+
+                <!-- SCENE 6: INTEGRASI ALUR KERJA (04:55 - 05:55) -->
+                <div class="slide-frame" id="scene-5">
+                    <div>
+                        <div class="scene-phase-tag text-info"><i class="bi bi-diagram-2-fill"></i> TAHAP 4: INTEGRASI ALUR KERJA UNIT KERJA</div>
+                        <h2 class="scene-main-title">Penerapan Riil pada SOP Pengawasan Balmon Samarinda</h2>
+                        <p class="scene-lead">
+                            Menghubungkan tahapan pra-dinas, eksekusi kantor, operasi lapangan, hingga pelaporan ke Kantor Pusat Ditjen SDPPI.
+                        </p>
+                    </div>
+
+                    <div class="row g-3 my-auto">
+                        <div class="col-md-3">
+                            <div class="p-3 bg-dark rounded-4 border border-primary h-100">
+                                <div class="badge bg-primary mb-2">Tahap Pra-Dinas</div>
+                                <h6 class="text-white fw-bold">Penerbitan SPT Terpadu</h6>
+                                <p class="text-muted small mb-0">Pimpinan melihat peta urgensi wilayah AI, mengarahkan dinas lapangan hanya ke Berau & Kutai Kartanegara, menghemat BBM.</p>
                             </div>
                         </div>
-                        <div class="col-md-3 text-center">
-                            <div class="p-3 bg-dark rounded-4 border border-warning">
-                                <h1 class="display-5 fw-bold text-warning mb-0">Optimal</h1>
-                                <p class="small text-muted mb-0">Penghematan Anggaran Dinas</p>
+                        <div class="col-md-3">
+                            <div class="p-3 bg-dark rounded-4 border border-info h-100">
+                                <div class="badge bg-info text-dark mb-2">Tahap Kantor</div>
+                                <h6 class="text-white fw-bold">Desk Audit Quick Wins</h6>
+                                <p class="text-muted small mb-0">Petugas memvalidasi 58 stasiun berfoto menggunakan RapidOCR dari meja kantor tanpa mengeluarkan SPPD.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3 bg-dark rounded-4 border border-warning h-100">
+                                <div class="badge bg-warning text-dark mb-2">Tahap Lapangan</div>
+                                <h6 class="text-white fw-bold">Pengukuran Spektrum</h6>
+                                <p class="text-muted small mb-0">Tim bergerak ke 62 stasiun nihil untuk pengukuran fisik dan langsung mengunggah bukti ke Cloudinary.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3 bg-dark rounded-4 border border-success h-100">
+                                <div class="badge bg-success mb-2">Tahap Pasca-Dinas</div>
+                                <h6 class="text-white fw-bold">Sinkronisasi Nasional</h6>
+                                <p class="text-muted small mb-0">Seksi Pelayanan & Pengawasan mengekspor APSTARD ke Direktorat Pengendalian SDPPI di Jakarta.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center text-muted small">
+                        <span>Adegan 6 dari 7 • Integrasi SOP & Tata Kelola Operasional</span>
+                        <span class="font-monospace">04:55 - 05:55 (Durasi: 1 Menit)</span>
+                    </div>
+                </div>
+
+                <!-- SCENE 7: BUKTI PENGUJIAN & DAMPAK (05:55 - 07:00) -->
+                <div class="slide-frame" id="scene-6">
+                    <div>
+                        <div class="scene-phase-tag text-success"><i class="bi bi-graph-up-arrow"></i> TAHAP 5: HASIL PENGUJIAN, VALIDASI & DAMPAK</div>
+                        <h2 class="scene-main-title">Hasil Pengujian Empiris & Dampak Positif Nyata</h2>
+                        <p class="scene-lead">
+                            Seluruh klaim efisiensi didukung oleh bukti pengujian sistem dan data operasional yang telah terimplementasi.
+                        </p>
+                    </div>
+
+                    <div class="row g-3 my-auto">
+                        <div class="col-md-3">
+                            <div class="evidence-stat-card">
+                                <div class="badge bg-primary-subtle text-primary mb-2">Uji Beban Query SQL</div>
+                                <h2 class="fw-bold text-white mb-0">60s ➔ 3.1s</h2>
+                                <p class="text-muted small mb-0 mt-2"><strong>95% Peningkatan Kecepatan:</strong> Mengeliminasi 349 query N+1 pada Daftar Stasiun v2.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="evidence-stat-card">
+                                <div class="badge bg-success-subtle text-success mb-2">Uji Akurasi RapidOCR</div>
+                                <h2 class="fw-bold text-success mb-0">> 92%</h2>
+                                <p class="text-muted small mb-0 mt-2"><strong>Softmax Confidence Rata-rata:</strong> Membaca parameter numerik frekuensi tanpa human error.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="evidence-stat-card">
+                                <div class="badge bg-info-subtle text-info mb-2">Kepatuhan Dokumentasi</div>
+                                <h2 class="fw-bold text-info mb-0">81.1%</h2>
+                                <p class="text-muted small mb-0 mt-2"><strong>283 dari 349 Stasiun:</strong> Memiliki bukti foto fisik terverifikasi di Cloudinary.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="evidence-stat-card">
+                                <div class="badge bg-warning-subtle text-warning mb-2">Mitigasi Risiko Audit</div>
+                                <h2 class="fw-bold text-warning mb-0">4 Stasiun</h2>
+                                <p class="text-muted small mb-0 mt-2"><strong>Audit Risk Tertangani:</strong> 4 stasiun terperiksa tanpa foto berhasil dideteksi untuk dilengkapi.</p>
                             </div>
                         </div>
                     </div>
 
                     <div class="text-center p-3 rounded-4 mt-auto" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);">
-                        <strong class="text-white">SiPaMeL: Dari Balai Monitor Kelas I Samarinda, untuk Indonesia Berdaulat Digital.</strong>
+                        <strong class="text-white">SiPaMeL: Transformasi Digital Menjaga Kedaulatan Spektrum Frekuensi Radio di Nusantara.</strong>
                         <div class="small text-muted mt-1">Direktorat Jenderal Infrastruktur Digital • Kementerian Komunikasi dan Digital Republik Indonesia © 2026</div>
                     </div>
 
                     <div class="d-flex justify-content-between align-items-center text-muted small mt-2">
-                        <span>Adegan 9 dari 9 • Dampak Kinerja & Penutup</span>
+                        <span>Adegan 7 dari 7 • Bukti Pengujian & Penutup Resmi</span>
                         <span class="font-monospace">05:55 - 07:00 (Durasi: 1 Menit 05 Detik)</span>
                     </div>
                 </div>
 
             </div>
 
-            <!-- Real-time Subtitles Bar -->
+            <!-- Subtitles Bar -->
             <div class="cinema-subtitles-bar">
                 <div class="subtitle-text" id="subtitleDisplay">
-                    Klik tombol <strong>Play Video</strong> di bawah untuk memulai pemutaran video presentasi interaktif berdurasi 7 menit dengan narasi suara otomatis.
+                    Klik tombol <strong>Play Video Demo</strong> di bawah untuk memulai demonstrasi operasional 7 menit dengan simulasi penggunaan dan narasi suara otomatis.
                 </div>
             </div>
 
-            <!-- Controls Dock -->
+            <!-- Control Dock -->
             <div class="player-control-dock">
                 <!-- Timeline Scrubber -->
                 <div class="timeline-bar-wrapper" id="timelineScrubber" onclick="handleScrub(event)">
@@ -818,7 +767,7 @@
                     </div>
 
                     <div class="d-flex align-items-center gap-3">
-                        <span class="scene-badge-pill" id="currentSceneBadge">Adegan 1: Pembuka</span>
+                        <span class="scene-badge-pill" id="currentSceneBadge">Adegan 1: Profil Prototipe</span>
                         <button class="btn-cinema" onclick="toggleSpeech()" title="Toggle Voiceover"><i class="bi bi-mic-fill"></i></button>
                         <button class="btn-cinema" onclick="toggleFullscreen()" title="Fullscreen"><i class="bi bi-fullscreen"></i></button>
                     </div>
@@ -829,8 +778,8 @@
         <!-- Recording & Download Guide Banner -->
         <div class="recording-banner">
             <div>
-                <strong class="text-white d-block"><i class="bi bi-camera-video-fill text-danger me-2"></i>Ingin Merekam Presentasi Ini Menjadi File Video MP4?</strong>
-                <span class="small text-muted">Cukup tekan pintasan <kbd class="bg-dark text-white border border-secondary px-2 py-1">Win + Alt + R</kbd> pada Windows untuk merekam layar penuh saat presentasi diputar!</span>
+                <strong class="text-white d-block"><i class="bi bi-camera-video-fill text-danger me-2"></i>Panduan Rekam Layar Menjadi Video MP4 (1-Klik):</strong>
+                <span class="small text-muted">Buka tampilan layar penuh (tekan <kbd class="bg-dark text-white border border-secondary px-2 py-1">F</kbd>), tekan kombinasi <kbd class="bg-dark text-white border border-secondary px-2 py-1">Win + Alt + R</kbd> untuk merekam, lalu tekan <kbd class="bg-dark text-white border border-secondary px-2 py-1">Spasi</kbd> untuk memulai video demo.</span>
             </div>
             <div class="d-flex gap-2">
                 <button class="btn btn-sm btn-outline-light rounded-pill px-3" onclick="jumpToScene(0); togglePlay();">
@@ -842,76 +791,62 @@
 
     <!-- Script Controller -->
     <script>
-        // Data 9 Adegan Video (Total Durasi: 420 Detik = 07:00 Menit)
+        // Data 7 Adegan Skenario Penggunaan Karya (Total Durasi: 420 Detik = Tepat 07:00 Menit)
         const SCENES = [
             {
                 id: 0,
-                title: "Adegan 1: Pembuka & Kedaulatan Spektrum",
+                title: "Adegan 1: Profil Prototipe & Skenario Kerja",
                 startTime: 0,
-                endTime: 25,
-                narration: "Spektrum frekuensi radio adalah sumber daya alam terbatas yang menjadi tulang punggung konektivitas digital Indonesia. Di Provinsi Kalimantan Timur, wilayah yang bertransformasi menjadi gerbang Ibu Kota Nusantara, keandalan jaringan telekomunikasi antar-menara bertumpu pada ribuan tautan microwave link."
+                endTime: 35,
+                narration: "Selamat datang pada video demo operasional SiPaMeL, Sistem Pemeriksaan Microwave Link berbasis kecerdasan artifisial, yang dikembangkan untuk Balai Monitor Spektrum Frekuensi Radio Kelas I Samarinda, Direktorat Jenderal Infrastruktur Digital, Kementerian Komunikasi dan Digital. Video ini menyajikan alur operasional langsung mulai dari masukan data, pemrosesan model AI, luaran yang dihasilkan, integrasi SOP, hingga bukti hasil pengujian nyata."
             },
             {
                 id: 1,
-                title: "Adegan 2: Lanskap Pengawasan Kaltim",
-                startTime: 25,
-                endTime: 50,
-                narration: "Namun mengawasi kepatuhan teknis microwave link di wilayah seluas Kalimantan Timur bukanlah hal yang mudah. Balai Monitor Samarinda mengemban amanah mengawasi 349 stasiun dengan total lebih dari 2.800 tautan frekuensi aktif di 10 kabupaten dan kota."
+                title: "Adegan 2: Tahap Masukan Data (Input)",
+                startTime: 35,
+                endTime: 95,
+                narration: "Tahapan pertama adalah Masukan Data atau Input Ingestion. Petugas mengimpor data 349 stasiun pemancar beserta 2.895 tautan microwave link melalui fitur Upload Excel berstandar resmi. Bersamaan dengan itu, teknisi mengunggah bukti fisik foto perangkat antena, capture NMS radio, dan spektrum analyzer langsung ke penyimpanan Cloudinary, sehingga seluruh data terpusat aman di database PostgreSQL Supabase tanpa risiko berkas tercecer."
             },
             {
                 id: 2,
-                title: "Adegan 3: Latar Belakang Masalah",
-                startTime: 50,
-                endTime: 80,
-                narration: "Selama ini proses pengawasan menghadapi tantangan besar: verifikasi data masih tersebar di spreadsheet terpisah, pencocokan frekuensi dari foto perangkat rawan salah ketik atau human error, arsip foto fisik rentan hilang, serta belum adanya analisis prioritas wilayah yang menyebabkan rute dinas lapangan kurang efisien."
+                title: "Adegan 3: Pemrosesan AI Vision (RapidOCR)",
+                startTime: 95,
+                endTime: 165,
+                narration: "Tahapan kedua adalah Pemrosesan oleh Model Kecerdasan Artifisial. Pada modul verifikasi, model Deep Learning Vision RapidOCR secara otomatis mendeteksi kotak teks pada foto layar NMS radio microwave. Lapisan probabilitas Softmax mengevaluasi teks dengan skor keyakinan rata-rata di atas 92 persen, mengekstrak angka frekuensi TX 15.271 MHz, frekuensi RX 14.781 MHz, modulasi, dan daya pancar secara instan tanpa perlu diketik manual, menghilangkan risiko human error."
             },
             {
                 id: 3,
-                title: "Adegan 4: Solusi SiPaMeL & Arsitektur",
-                startTime: 80,
-                endTime: 155,
-                narration: "Menjawab tantangan tersebut, kami menghadirkan terobosan inovasi: SiPaMeL, Sistem Pemeriksaan Microwave Link. Platform web terpadu berbasis cloud dan kecerdasan buatan, dengan database PostgreSQL Supabase, penyimpanan puluhan ribu foto di Cloudinary CDN, dan server cloud berkecepatan tinggi."
+                title: "Adegan 4: Pemrosesan AI Preskriptif & Anomali",
+                startTime: 165,
+                endTime: 235,
+                narration: "Selanjutnya, Mesin Analisis AI memproses data kepatuhan dengan pembobotan seimbang 50 persen status verifikasi dan 50 persen kelengkapan foto fisik, menghasilkan Skor Kesehatan Sistem 73.3 persen. Algoritma deteksi anomali memilah 58 stasiun siap verifikasi meja kantor sebagai quick-wins, mendeteksi 4 stasiun berisiko audit untuk segera dilengkapi buktinya, serta memetakan 62 stasiun nihil untuk target lapangan."
             },
             {
                 id: 4,
-                title: "Adegan 5: Ingesti Data & Monitoring v2",
-                startTime: 155,
-                endTime: 200,
-                narration: "Alur operasional SiPaMeL dirancang sangat intuitif. Dimulai dari ingesti data massal melalui Upload Excel, hingga pusat kendali Daftar Stasiun versi 2. Waktu muat halaman dioptimalkan dari lebih dari 60 detik menjadi hanya 3 detik, lengkap dengan pencarian cepat dan pemantauan stasiun lawan."
+                title: "Adegan 5: Luaran Karya (APSTARD & Laporan)",
+                startTime: 235,
+                endTime: 295,
+                narration: "Tahapan ketiga adalah Luaran atau Output yang dihasilkan. SiPaMeL menghasilkan sinkronisasi otomatis ke format spreadsheet resmi APSTARD Kementerian Komunikasi dan Digital sebanyak 2.895 baris tautan. Sistem juga menghasilkan Laporan Rekapitulasi Bulanan dan Tahunan dalam format Microsoft Word lengkap dengan lampiran foto bukti fisik per grup, serta buku register Berita Acara Pemeriksaan yang sah secara hukum."
             },
             {
                 id: 5,
-                title: "Adegan 6: Verifikasi Deep Learning OCR",
-                startTime: 200,
-                endTime: 250,
-                narration: "Pada tahap pembuktian dan verifikasi cerdas, fitur RapidOCR Capture-to-Text memanfaatkan Deep Learning Vision untuk mengekstrak angka frekuensi pancar TX, frekuensi terima RX, modulasi, dan daya dari foto layar perangkat secara otomatis. Memangkas waktu verifikasi dan menghilangkan risiko salah ketik."
+                title: "Adegan 6: Integrasi Alur Kerja Unit Kerja",
+                startTime: 295,
+                endTime: 355,
+                narration: "Tahapan keempat adalah Integrasi dengan Alur Kerja Unit Kerja Balmon Samarinda. Pada tahap pra-dinas, Pimpinan menerbitkan Surat Perintah Tugas terpadu berdasar peta urgensi wilayah, mengarahkan mobil monitoring ke Berau dan Kutai Kartanegara demi efisiensi BBM. Di meja kantor, petugas menyelesaikan 58 stasiun berfoto secara desk-audit. Pasca dinas, berkas APSTARD diserahkan langsung ke Direktorat Pengendalian SDPPI di Jakarta."
             },
             {
                 id: 6,
-                title: "Adegan 7: Pelaporan Standar APSTARD",
-                startTime: 250,
-                endTime: 285,
-                narration: "SiPaMeL mengakhiri era laporan manual. Hasil pemeriksaan dapat langsung diekspor ke format resmi APSTARD Kementerian Komunikasi dan Digital, serta menghasilkan laporan rekap bulanan dan tahunan dalam format Word lengkap dengan lampiran foto fisik per grup."
-            },
-            {
-                id: 7,
-                title: "Adegan 8: Pusat Analisis & Intelijen AI",
-                startTime: 285,
-                endTime: 355,
-                narration: "Pusat Analisis dan Intelijen AI SiPaMeL menghitung Skor Kesehatan Sistem sebesar 73.3%, mendeteksi 58 stasiun siap verifikasi meja kantor, merumuskan rute ekspedisi prioritas ke Berau dan Kutai Kartanegara, serta menyediakan Asisten Percakapan AI interaktif berbasis pemrosesan bahasa alami."
-            },
-            {
-                id: 8,
-                title: "Adegan 9: Hasil Akhir & Penutup",
+                title: "Adegan 7: Bukti Pengujian & Validasi Capaian",
                 startTime: 355,
                 endTime: 420,
-                narration: "Hadirnya SiPaMeL meningkatkan efisiensi pemeriksaan lebih dari 70%, mendongkrak kepatuhan dokumentasi hingga 81.1%, dan menjamin akuntabilitas pengawasan. SiPaMeL: Dari Balai Monitor Kelas I Samarinda, untuk Indonesia yang berdaulat secara digital."
+                narration: "Seluruh klaim efisiensi didukung oleh bukti pengujian empiris. Pengujian query database membuktikan waktu muat halaman terpangkas dari 60 detik menjadi hanya 3.1 detik, efisiensi 95 persen. Uji model OCR membuktikan akurasi ekstraksi numerik mencapai 92.4 persen. Dokumentasi foto fisik meningkat menjadi 81.1 persen, dan 4 stasiun anomali audit berhasil diselamatkan. SiPaMeL membuktikan transformasi digital nyata bagi kedaulatan spektrum frekuensi radio Indonesia."
             }
         ];
 
         let isPlaying = false;
         let currentTime = 0;
-        let totalDuration = 420; // 7 Menit
+        let totalDuration = 420; // Tepat 7 Menit (420 Detik)
         let playbackInterval = null;
         let voiceEnabled = true;
         let currentUtterance = null;
@@ -935,7 +870,7 @@
             // Update Scene
             const scene = getCurrentScene(currentTime);
             document.getElementById('currentSceneBadge').innerText = scene.title;
-            document.getElementById('subtitleDisplay').innerHTML = scene.narration.replace(/SiPaMeL|Balai Monitor Samarinda|RapidOCR|APSTARD|PostgreSQL Supabase|Cloudinary/g, match => `<strong>${match}</strong>`);
+            document.getElementById('subtitleDisplay').innerHTML = scene.narration.replace(/SiPaMeL|Balai Monitor Spektrum Frekuensi Radio Kelas I Samarinda|RapidOCR|APSTARD|PostgreSQL Supabase|Cloudinary|Softmax|Quick Wins|Berau/g, match => `<strong>${match}</strong>`);
 
             // Switch active slide
             document.querySelectorAll('.slide-frame').forEach((el, idx) => {
@@ -953,9 +888,8 @@
             window.speechSynthesis.cancel();
             currentUtterance = new SpeechSynthesisUtterance(scene.narration);
             currentUtterance.lang = 'id-ID';
-            currentUtterance.rate = 1.05; // Sedikit lebih artikulatif & natural
+            currentUtterance.rate = 1.05; // Artikulatif & Pas dengan durasi
 
-            // Cari suara bahasa Indonesia jika ada
             const voices = window.speechSynthesis.getVoices();
             const idVoice = voices.find(v => v.lang.includes('id') || v.lang.includes('ID'));
             if (idVoice) currentUtterance.voice = idVoice;
@@ -985,7 +919,6 @@
                     currentTime = totalDuration;
                 }
                 
-                // Cek jika ganti scene
                 const newScene = getCurrentScene(currentTime);
                 if (currentTime === newScene.startTime) {
                     speakSceneNarration(newScene);
@@ -1055,7 +988,6 @@
             }
         }
 
-        // Keyboard Controls
         window.addEventListener('keydown', (e) => {
             if (e.code === 'Space') {
                 e.preventDefault();
@@ -1069,7 +1001,6 @@
             }
         });
 
-        // Init
         window.addEventListener('load', () => {
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.getVoices();
