@@ -4550,78 +4550,103 @@ def admin_operator_hapus_laporan(laporan_id):
 @login_required
 @admin_master_required
 def admin_master_dashboard():
-    total_stations = Stasiun.query.count()
-    total_opponents = StasiunLawan.query.count()
-    
-    # ===== STATISTIK UPLOAD =====
-    stations_with_uploads = Stasiun.query.filter(Stasiun.uploads.any()).count()
-    stations_without_uploads = total_stations - stations_with_uploads
-    
-    # ===== STATISTIK PEMERIKSAAN =====
-    stations_checked = Stasiun.query.filter(Stasiun.status_pemeriksaan == 'sudah_diperiksa').count()
-    stations_unchecked = Stasiun.query.filter(Stasiun.status_pemeriksaan == 'belum_diperiksa').count()
-    
-    # ===== STATISTIK PER OPERATOR =====
-    # Telkom
-    telkom_stations = Stasiun.query.filter_by(operator='telkom').count()
-    telkom_uploaded = Stasiun.query.filter(Stasiun.operator == 'telkom', Stasiun.uploads.any()).count()
-    telkom_not_uploaded = telkom_stations - telkom_uploaded
-    telkom_checked = Stasiun.query.filter(Stasiun.operator == 'telkom', Stasiun.status_pemeriksaan == 'sudah_diperiksa').count()
-    telkom_unchecked = telkom_stations - telkom_checked
-    
-    # Telkomsel
-    telkomsel_stations = Stasiun.query.filter_by(operator='telkomsel').count()
-    telkomsel_uploaded = Stasiun.query.filter(Stasiun.operator == 'telkomsel', Stasiun.uploads.any()).count()
-    telkomsel_not_uploaded = telkomsel_stations - telkomsel_uploaded
-    telkomsel_checked = Stasiun.query.filter(Stasiun.operator == 'telkomsel', Stasiun.status_pemeriksaan == 'sudah_diperiksa').count()
-    telkomsel_unchecked = telkomsel_stations - telkomsel_checked
-    
-    # IOH (ganti dari indosat)
-    ioh_stations = Stasiun.query.filter_by(operator='ioh').count()
-    ioh_uploaded = Stasiun.query.filter(Stasiun.operator == 'ioh', Stasiun.uploads.any()).count()
-    ioh_not_uploaded = ioh_stations - ioh_uploaded
-    ioh_checked = Stasiun.query.filter(Stasiun.operator == 'ioh', Stasiun.status_pemeriksaan == 'sudah_diperiksa').count()
-    ioh_unchecked = ioh_stations - ioh_checked
-    
-    # XL Smart (ganti dari xl)
-    xl_smart_stations = Stasiun.query.filter_by(operator='xl smart').count()
-    xl_smart_uploaded = Stasiun.query.filter(Stasiun.operator == 'xl smart', Stasiun.uploads.any()).count()
-    xl_smart_not_uploaded = xl_smart_stations - xl_smart_uploaded
-    xl_smart_checked = Stasiun.query.filter(Stasiun.operator == 'xl smart', Stasiun.status_pemeriksaan == 'sudah_diperiksa').count()
-    xl_smart_unchecked = xl_smart_stations - xl_smart_checked
-    
-    # ===== STATISTIK OPPONENTS PER OPERATOR =====
-    telkom_opponents = StasiunLawan.query.join(Stasiun).filter(Stasiun.operator == 'telkom').count()
-    telkomsel_opponents = StasiunLawan.query.join(Stasiun).filter(Stasiun.operator == 'telkomsel').count()
-    ioh_opponents = StasiunLawan.query.join(Stasiun).filter(Stasiun.operator == 'ioh').count()
-    xl_smart_opponents = StasiunLawan.query.join(Stasiun).filter(Stasiun.operator == 'xl smart').count()
-    
-    recent_stations = Stasiun.query.order_by(Stasiun.created_at.desc()).limit(5).all()
+    from sqlalchemy import func
+    from sqlalchemy.orm import joinedload
+
+    # 1. Agregasi Stasiun per operator dan status pemeriksaan (1 Query Agregasi Cepat)
+    st_agg = db.session.query(
+        Stasiun.operator,
+        Stasiun.status_pemeriksaan,
+        func.count(Stasiun.id)
+    ).group_by(Stasiun.operator, Stasiun.status_pemeriksaan).all()
+
+    total_stations = 0
+    stations_checked = 0
+    stations_unchecked = 0
+    op_stations = {'telkom': 0, 'telkomsel': 0, 'ioh': 0, 'xl smart': 0}
+    op_checked = {'telkom': 0, 'telkomsel': 0, 'ioh': 0, 'xl smart': 0}
+
+    for op, status, cnt in st_agg:
+        total_stations += cnt
+        if status == 'sudah_diperiksa':
+            stations_checked += cnt
+            if op in op_checked:
+                op_checked[op] += cnt
+        else:
+            stations_unchecked += cnt
+        if op in op_stations:
+            op_stations[op] += cnt
+
+    # 2. Agregasi stasiun yang memiliki foto upload per operator (1 Query Cepat)
+    op_uploaded = dict(
+        db.session.query(Stasiun.operator, func.count(func.distinct(UploadGambar.stasiun_id)))
+        .join(UploadGambar, Stasiun.id == UploadGambar.stasiun_id)
+        .group_by(Stasiun.operator).all()
+    )
+    stations_with_uploads = sum(op_uploaded.values())
+    stations_without_uploads = max(0, total_stations - stations_with_uploads)
+
+    # 3. Agregasi tautan stasiun lawan per operator (1 Query Cepat)
+    op_opponents = dict(
+        db.session.query(Stasiun.operator, func.count(StasiunLawan.id))
+        .join(StasiunLawan, Stasiun.id == StasiunLawan.stasiun_id)
+        .group_by(Stasiun.operator).all()
+    )
+    total_opponents = sum(op_opponents.values())
+
+    # Mapping variabel per operator
+    telkom_stations = op_stations.get('telkom', 0)
+    telkom_uploaded = op_uploaded.get('telkom', 0)
+    telkom_not_uploaded = max(0, telkom_stations - telkom_uploaded)
+    telkom_checked = op_checked.get('telkom', 0)
+    telkom_unchecked = max(0, telkom_stations - telkom_checked)
+    telkom_opponents = op_opponents.get('telkom', 0)
+
+    telkomsel_stations = op_stations.get('telkomsel', 0)
+    telkomsel_uploaded = op_uploaded.get('telkomsel', 0)
+    telkomsel_not_uploaded = max(0, telkomsel_stations - telkomsel_uploaded)
+    telkomsel_checked = op_checked.get('telkomsel', 0)
+    telkomsel_unchecked = max(0, telkomsel_stations - telkomsel_checked)
+    telkomsel_opponents = op_opponents.get('telkomsel', 0)
+
+    ioh_stations = op_stations.get('ioh', 0)
+    ioh_uploaded = op_uploaded.get('ioh', 0)
+    ioh_not_uploaded = max(0, ioh_stations - ioh_uploaded)
+    ioh_checked = op_checked.get('ioh', 0)
+    ioh_unchecked = max(0, ioh_stations - ioh_checked)
+    ioh_opponents = op_opponents.get('ioh', 0)
+
+    xl_smart_stations = op_stations.get('xl smart', 0)
+    xl_smart_uploaded = op_uploaded.get('xl smart', 0)
+    xl_smart_not_uploaded = max(0, xl_smart_stations - xl_smart_uploaded)
+    xl_smart_checked = op_checked.get('xl smart', 0)
+    xl_smart_unchecked = max(0, xl_smart_stations - xl_smart_checked)
+    xl_smart_opponents = op_opponents.get('xl smart', 0)
+
+    # 4. User stats (1 Query Cepat)
+    user_counts = dict(db.session.query(User.role, func.count(User.id)).group_by(User.role).all())
+    user_stats = {
+        'admin_master': user_counts.get('admin_master', 0),
+        'admin_operator': user_counts.get('admin_operator', 0),
+        'user_operator': user_counts.get('user_operator', 0),
+    }
+
+    # 5. Recent items (Eager load uploads agar bebas N+1 di template)
+    recent_stations = Stasiun.query.options(joinedload(Stasiun.uploads)).order_by(Stasiun.created_at.desc()).limit(5).all()
     recent_users = User.query.order_by(User.created_at.desc()).limit(5).all()
     current_date = datetime.now().strftime('%d %B %Y')
-    
-    # Get user statistics
-    user_stats = {
-        'admin_master': User.query.filter_by(role='admin_master').count(),
-        'admin_operator': User.query.filter_by(role='admin_operator').count(),
-        'user_operator': User.query.filter_by(role='user_operator').count(),
-    }
-    
-    # ===== PERBAIKAN: Ambil daftar kota case-insensitive =====
-    from sqlalchemy import func
-    
+
+    # 6. Kota list
     kota_raw = db.session.query(
         func.lower(Stasiun.kota).label('kota_lower'),
         Stasiun.kota
     ).distinct(func.lower(Stasiun.kota))\
      .order_by(func.lower(Stasiun.kota))\
      .all()
-    
-    # Mapping untuk menyimpan format standar
+
     kota_mapping = {}
     for kota_lower, kota_original in kota_raw:
         if kota_lower not in kota_mapping:
-            # Cari format standar dari KOTA_LIST
             found = False
             for std_kota in KOTA_LIST:
                 if std_kota.lower() == kota_lower:
@@ -4630,12 +4655,8 @@ def admin_master_dashboard():
                     break
             if not found:
                 kota_mapping[kota_lower] = kota_original.strip().title()
-    
-    kota_list = list(kota_mapping.values())
-    
-    # Jika tidak ada kota di database, gunakan KOTA_LIST sebagai fallback
-    if not kota_list:
-        kota_list = KOTA_LIST
+
+    kota_list = list(kota_mapping.values()) if kota_mapping else KOTA_LIST
     
     return render_template('admin_master/dashboard.html',
                          total_stations=total_stations,
@@ -6870,6 +6891,7 @@ def admin_operator_dashboard():
     
     recent_stations = Stasiun.query\
         .filter_by(operator=operator)\
+        .options(joinedload(Stasiun.uploads))\
         .order_by(Stasiun.created_at.desc())\
         .limit(5).all()
     
