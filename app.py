@@ -4636,27 +4636,8 @@ def admin_master_dashboard():
     recent_users = User.query.order_by(User.created_at.desc()).limit(5).all()
     current_date = datetime.now().strftime('%d %B %Y')
 
-    # 6. Kota list
-    kota_raw = db.session.query(
-        func.lower(Stasiun.kota).label('kota_lower'),
-        Stasiun.kota
-    ).distinct(func.lower(Stasiun.kota))\
-     .order_by(func.lower(Stasiun.kota))\
-     .all()
-
-    kota_mapping = {}
-    for kota_lower, kota_original in kota_raw:
-        if kota_lower not in kota_mapping:
-            found = False
-            for std_kota in KOTA_LIST:
-                if std_kota.lower() == kota_lower:
-                    kota_mapping[kota_lower] = std_kota
-                    found = True
-                    break
-            if not found:
-                kota_mapping[kota_lower] = kota_original.strip().title()
-
-    kota_list = list(kota_mapping.values()) if kota_mapping else KOTA_LIST
+    # 6. Kota list (Menggunakan KOTA_LIST konstan tanpa query berat)
+    kota_list = KOTA_LIST
     
     return render_template('admin_master/dashboard.html',
                          total_stations=total_stations,
