@@ -4779,6 +4779,10 @@ def admin_master_ocr():
 def video_presentation():
     return render_template('video_presentation.html')
 
+@app.route('/video-demo', methods=['GET'])
+def video_demo():
+    return render_template('video_demo_operasional.html')
+
 @app.route('/admin-operator/ocr', methods=['GET'])
 @login_required
 @admin_operator_required
