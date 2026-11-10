@@ -2,3 +2,6 @@ name = "sipamel"
 main = "cloudflare-worker/worker.js"
 compatibility_date = "2024-01-01"
 workers_dev = true
+
+[triggers]
+crons = ["*/10 * * * *"]

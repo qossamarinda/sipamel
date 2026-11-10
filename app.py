@@ -14,13 +14,9 @@ if sys.platform == 'win32':
     if hasattr(sys.stderr, 'reconfigure'):
         sys.stderr.reconfigure(encoding='utf-8', errors='replace')
 
-# Import RapidOCR early to initialize ONNX runtime & OpenMP threads
-try:
-    from rapidocr_onnxruntime import RapidOCR
-    RAPID_OCR_AVAILABLE = True
-except Exception as _e:
-    RAPID_OCR_AVAILABLE = False
-    print(f"RapidOCR not available: {_e}")
+# Cek ketersediaan RapidOCR tanpa memuat model ONNX secara langsung saat boot (hemat RAM & cepat start)
+import importlib.util
+RAPID_OCR_AVAILABLE = importlib.util.find_spec("rapidocr_onnxruntime") is not None
 
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory, session, current_app, send_file, make_response
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
@@ -3271,6 +3267,11 @@ def validate_image_file(file_obj, max_size_mb=5, log_warnings=False):
 # AUTHENTICATION ROUTES
 # ============================================================================
 
+@app.route('/health')
+def health_check():
+    """Lightweight health check and keep-alive endpoint without DB overhead"""
+    return jsonify({'status': 'ok', 'service': 'sipamel'}), 200
+
 @app.route('/')
 def index():
     if current_user.is_authenticated:
@@ -4812,15 +4813,7 @@ def get_rapid_ocr():
             print(f"Error initializing RapidOCR: {e}")
     return rapid_ocr_instance
 
-# Pre-warm RapidOCR asynchronously at server startup so first request has zero cold-start delay
-import threading
-def _prewarm_rapidocr():
-    try:
-        get_rapid_ocr()
-    except Exception as e:
-        print(f"RapidOCR prewarm notice: {e}")
-
-threading.Thread(target=_prewarm_rapidocr, daemon=True).start()
+# Lazy-load RapidOCR on first OCR request so container startup on cloud (Render 512MB/0.1CPU) stays fast and avoids 502
 
 @app.route('/api/ocr/rapidocr', methods=['POST'])
 @login_required
